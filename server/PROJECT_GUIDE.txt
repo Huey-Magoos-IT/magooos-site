@@ -1,0 +1,118 @@
+=== PROJECT ARCHITECTURE ===
+[Next.js 14] client/src/app/
+  - App Router: dashboardWrapper.tsx + layout.tsx
+  - Dynamic views: /projects/[id]/page.tsx
+  - Auth flow: authProvider.tsx → Cognito
+
+[Express API] server/src/
+  - Controllers: taskController.ts ↔ Prisma models
+  - Routes: JWT validation → API Gateway
+
+[State Management] client/src/state/
+  - Redux Toolkit: api.ts handles Cognito token injection
+  - Dark mode: persisted via local storage
+
+=== AWS SERVICE MAP ===
+Frontend:
+Amplify (CI/CD) → S3 (assets) ↔ CloudFront
+
+Backend:
+EC2 (auto-scaled) ←→ RDS (VPC)
+  ↑          ↓
+ Cognito   Lambda (cron/users)
+  │          │
+ API Gateway ←─┘
+
+=== CRITICAL CODE PATTERNS ===
+1. Priority Routing System:
+   - client/src/app/priority/[level]/page.tsx
+   - Reusable template: reusablePriorityPage/index.tsx
+
+2. Component Architecture:
+   - Modal system: ModalNewProject ↔ ModalNewTask
+   - View components: BoardView ↔ taskController.ts
+
+3. Security Implementation:
+   - server/prisma/schema.prisma: RBAC models
+   - client/.env.local: Amplify config
+   - server/ecosystem.config.js: PM2 hardening
+
+AWS Infrastructure:
+- EC2 auto-scaling groups for backend API
+- RDS PostgreSQL with read replicas and daily backups
+- S3 buckets with versioning and access logging
+- Cognito user pools with custom attributes
+- API Gateway with rate limiting
+- Lambda functions for cron jobs
+- CloudWatch monitoring and alerting
+
+Development Ecosystem:
+- CI/CD pipelines with Amplify and GitHub Actions
+- Infrastructure-as-code (Terraform) for AWS resources
+- Local development environment with Docker
+- Automated testing with Jest and Cypress
+- Error tracking with Sentry integration
+- Documentation system with architecture diagrams
+
+=== AWS OPERATIONAL DETAILS ===
+
+Network Architecture:
+- Multi-AZ VPC with public/private subnets
+- Internet/NAT gateways with CIDR management
+- Security groups restricting traffic to required ports
+
+EC2 Configuration:
+- Amazon Linux AMI with PM2 process management
+- Security hardening: SSH only via IAM keys, weekly AMI updates
+- Auto-scaling based on CPU/memory metrics
+
+RDS Security:
+- Private subnet placement with encrypted storage
+- Daily automated backups retained for 35 days
+- Connection limits and query timeouts
+
+Cognito Integration:
+- Frontend uses AWS Amplify UI components
+- API Gateway Cognito authorizers for all endpoints
+- JWT tokens required with 1-hour expiration
+- Post-confirmation Lambda syncs users to RDS
+- MFA enforcement for admin users
+
+S3 Configuration:
+- Versioned buckets with access logging
+- Lifecycle policies transitioning to Glacier after 30 days
+- CORS rules for frontend access
+- Bucket policies restricting uploads to authenticated users
+
+IAM Policies:
+- EC2: S3 write access, Cognito admin privileges
+- Lambda: RDS read/write access
+- Amplify: CodeCommit pull access
+
+Monitoring:
+- CloudWatch alarms for:
+  - API 5xx errors > 1%
+  - RDS CPU > 75%
+  - S3 bucket size > 80% capacity
+- Daily service health reports
+
+=== TECHNICAL STACK ===
+Frontend:
+- Next.js 14 with TypeScript
+- Redux Toolkit for state management
+- Tailwind CSS + Material UI components
+- Drag-and-drop functionality with react-dnd
+- Charting with Recharts
+
+Backend:
+- Node.js/Express REST API
+- Prisma for database management
+- JWT authentication
+- AWS SDK integrations
+
+DevOps:
+- PostgreSQL on AWS RDS
+- EC2 for backend hosting
+- S3 for file storage
+- Cognito for user authentication
+- PM2 process management
