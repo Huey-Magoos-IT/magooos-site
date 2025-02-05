@@ -22,6 +22,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
+/* LOGGING MIDDLEWARE */
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
+  next();
+});
+
 /* ROUTES */
 app.get("/", (req, res) => {
   res.send("This is home route");
