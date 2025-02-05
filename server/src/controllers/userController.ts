@@ -32,11 +32,6 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const postUser = async (req: Request, res: Response) => {
-  console.log("POST /users request received:", {
-    body: req.body,
-    headers: req.headers
-  });
-  
   try {
     const {
       username,
@@ -45,12 +40,6 @@ export const postUser = async (req: Request, res: Response) => {
       teamId = 1,
     } = req.body;
     
-    console.log("Attempting to create user with data:", {
-      username,
-      cognitoId,
-      profilePictureUrl,
-      teamId
-    });
     const newUser = await prisma.user.create({
       data: {
         username,
@@ -59,10 +48,8 @@ export const postUser = async (req: Request, res: Response) => {
         teamId,
       },
     });
-    console.log("User created successfully:", newUser);
     res.json({ message: "User Created Successfully", newUser });
   } catch (error: any) {
-    console.error("Error creating user:", error);
     res
       .status(500)
       .json({ message: `Error creating user: ${error.message}` });
