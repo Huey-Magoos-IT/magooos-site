@@ -32,6 +32,7 @@ model User {
 model Team {
   id                   Int           @id @default(autoincrement())
   teamName             String
+  isAdmin              Boolean       @default(false)
   productOwnerUserId   Int?
   projectManagerUserId Int?
   projectTeams         ProjectTeam[]

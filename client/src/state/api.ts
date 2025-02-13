@@ -24,6 +24,14 @@ export enum Status {
   Completed = "Completed",
 }
 
+export interface Team {
+  id: number;
+  teamName: string;
+  isAdmin: boolean;
+  productOwnerUserId?: number;
+  projectManagerUserId?: number;
+}
+
 export interface User {
   userId?: number;
   username: string;
@@ -31,6 +39,7 @@ export interface User {
   profilePictureUrl?: string;
   cognitoId?: string;
   teamId?: number;
+  team?: Team;
 }
 
 export interface Attachment {
@@ -65,13 +74,6 @@ export interface SearchResults {
   tasks?: Task[];
   projects?: Project[];
   users?: User[];
-}
-
-export interface Team {
-  teamId: number;
-  teamName: string;
-  productOwnerUserId?: number;
-  projectManagerUserId?: number;
 }
 
 export const api = createApi({
@@ -159,6 +161,14 @@ export const api = createApi({
       query: () => "teams",
       providesTags: ["Teams"],
     }),
+    createTeam: build.mutation<Team, Partial<Team>>({
+      query: (team) => ({
+        url: "teams",
+        method: "POST",
+        body: team,
+      }),
+      invalidatesTags: ["Teams"],
+    }),
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
     }),
@@ -174,6 +184,7 @@ export const {
   useSearchQuery,
   useGetUsersQuery,
   useGetTeamsQuery,
+  useCreateTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
 } = api;

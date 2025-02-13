@@ -1,7 +1,14 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  },
+  log: ['query', 'info', 'warn', 'error']
+});
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,6 +28,9 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
       where: {
         cognitoId: cognitoId,
       },
+      include: {
+        team: true // Include team details for access control
+      }
     });
 
     res.json(user);
