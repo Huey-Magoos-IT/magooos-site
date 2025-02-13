@@ -6,7 +6,7 @@ module.exports = {
       args: "start",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 80,
         DATABASE_URL: process.env.DATABASE_URL
       },
       error_file: "/home/ubuntu/.pm2/logs/magooos-backend-error.log",

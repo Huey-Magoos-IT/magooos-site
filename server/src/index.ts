@@ -49,15 +49,17 @@ app.use("/users", userRoutes);
 app.use("/teams", teamRoutes);
 
 /* SERVER */
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 80;
 app.listen(port, "0.0.0.0", () => {
-  console.log("=================================");
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`Server running on port ${port}`);
-  console.log(`CORS origin: ${process.env.NODE_ENV === 'production' 
+  console.log("\n=================================");
+  console.log(`🚀 Server Status`);
+  console.log(`---------------------------------`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  console.log(`🔌 Port: ${port}`);
+  console.log(`🔒 CORS: ${process.env.NODE_ENV === 'production'
     ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
     : 'http://localhost:3000'}`);
-  console.log("=================================");
+  console.log(`=================================\n`);
 });
 
 process.on('unhandledRejection', (reason, promise) => {

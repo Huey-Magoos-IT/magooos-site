@@ -213,32 +213,113 @@ npx prisma generate
 // ecosystem.config.js
 module.exports = {
   apps: [{
-    name: "magoo-api",
-    script: "./dist/index.js",
-    env_production: {
+    name: "magooos-backend",
+    script: "npm",
+    args: "start",
+    env: {
       NODE_ENV: "production",
-      DATABASE_URL: process.env.RDS_CONNECTION_STRING,
-      COGNITO_POOL_ID: process.env.AWS_COGNITO_POOL_ID
-    }
+      PORT: 3000,
+      DATABASE_URL: process.env.DATABASE_URL
+    },
+    error_file: "/home/ubuntu/.pm2/logs/magooos-backend-error.log",
+    out_file: "/home/ubuntu/.pm2/logs/magooos-backend-out.log",
+    time: true,
+    watch: false,
+    instances: 1,
+    exec_mode: "fork",
+    max_memory_restart: "500M",
+    restart_delay: 4000,
+    autorestart: true
   }]
 }
 ```
 
-### Security Implementation
+### API Gateway Integration
+The server is configured to handle API Gateway's `/prod` stage prefix:
+
 ```typescript
-// Auth Middleware (src/middleware/auth.ts)
-const verifyToken = (token: string) => {
-  return jwt.verify(token, process.env.COGNITO_POOL_ID!);
+// src/index.ts
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
+    : 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Error handling middleware
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Global error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+```
+
+### Enhanced Controller Implementation
+Example of robust controller implementation with validation and error handling:
+
+```typescript
+// src/controllers/teamController.ts
+export const createTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamName, isAdmin } = req.body;
+  console.log("[POST /teams] Creating team:", { teamName, isAdmin });
+
+  // Input validation
+  if (!teamName || typeof teamName !== 'string' || teamName.trim().length === 0) {
+    console.error("[POST /teams] Invalid team name");
+    res.status(400).json({ message: "Team name is required" });
+    return;
+  }
+
+  try {
+    // Check for duplicates
+    const existingTeam = await prisma.team.findFirst({
+      where: { teamName: teamName.trim() }
+    });
+
+    if (existingTeam) {
+      console.error("[POST /teams] Team name already exists:", teamName);
+      res.status(409).json({ message: "Team name already exists" });
+      return;
+    }
+
+    const team = await prisma.team.create({
+      data: {
+        teamName: teamName.trim(),
+        isAdmin: Boolean(isAdmin)
+      }
+    });
+
+    console.log("[POST /teams] Team created:", team);
+    res.status(201).json(team);
+  } catch (error: any) {
+    console.error("[POST /teams] Error:", error);
+    res.status(500).json({ 
+      message: "Error creating team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 };
 ```
 
 ## Maintenance & Operations
 
-| Task                      | Command                          | Frequency       |
-|---------------------------|----------------------------------|-----------------|
-| Database Backups          | pg_dump -h RDS_ENDPOINT ...     | Daily           |
-| Prisma Migrations         | npx prisma migrate deploy       | On schema change|
-| PM2 Process Monitoring    | pm2 logs magoo-api --lines 100  | As needed       |
+| Task                      | Command                                | Frequency       |
+|---------------------------|----------------------------------------|-----------------|
+| Database Backups          | pg_dump -h RDS_ENDPOINT ...           | Daily           |
+| Prisma Migrations         | npx prisma migrate deploy             | On schema change|
+| PM2 Process Monitoring    | pm2 logs magooos-backend --lines 100  | As needed       |
+| Server Status Check       | pm2 list                              | Daily           |
+| Error Log Review         | pm2 logs magooos-backend --err        | Daily           |
+| NGINX Config Test        | sudo nginx -t                         | After changes   |
+| API Gateway Test        | curl -v API_GATEWAY_URL/prod/teams    | After deploy    |
 
 ## Troubleshooting
 
