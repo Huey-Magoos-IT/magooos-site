@@ -36,28 +36,39 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const createTeam = async (req: Request, res: Response): Promise<void> => {
-  const { teamName, isAdmin = false } = req.body;
+  const { teamName, isAdmin } = req.body;
+
   try {
-    const newTeam = await prisma.team.create({
+    const team = await prisma.team.create({
       data: {
         teamName,
-        isAdmin,
-        productOwnerUserId: null,
-        projectManagerUserId: null
+        isAdmin: isAdmin || false
       }
     });
 
-    // Return in same format as getTeams
-    const teamWithUsernames = {
-      ...newTeam,
-      productOwnerUsername: null,
-      projectManagerUsername: null
-    };
-
-    res.status(201).json(teamWithUsernames);
+    res.json(team);
   } catch (error: any) {
     res
       .status(500)
       .json({ message: `Error creating team: ${error.message}` });
+  }
+};
+
+export const joinTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { userId: Number(userId) },
+      data: { teamId: Number(teamId) },
+      include: { team: true }
+    });
+
+    res.json(updatedUser);
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: `Error joining team: ${error.message}` });
   }
 };

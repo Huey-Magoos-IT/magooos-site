@@ -108,6 +108,7 @@ export const api = createApi({
           return { error: error.message || "Could not fetch user data" };
         }
       },
+      providesTags: ["Users"],
     }),
     getProjects: build.query<Project[], void>({
       query: () => "projects",
@@ -161,13 +162,21 @@ export const api = createApi({
       query: () => "teams",
       providesTags: ["Teams"],
     }),
-    createTeam: build.mutation<Team, Partial<Team>>({
+    createTeam: build.mutation<Team, { teamName: string; isAdmin: boolean }>({
       query: (team) => ({
         url: "teams",
         method: "POST",
         body: team,
       }),
       invalidatesTags: ["Teams"],
+    }),
+    joinTeam: build.mutation<User, { teamId: number; userId: number }>({
+      query: ({ teamId, userId }) => ({
+        url: `teams/${teamId}/join`,
+        method: "POST",
+        body: { userId },
+      }),
+      invalidatesTags: ["Users"],
     }),
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
@@ -185,6 +194,7 @@ export const {
   useGetUsersQuery,
   useGetTeamsQuery,
   useCreateTeamMutation,
+  useJoinTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
 } = api;

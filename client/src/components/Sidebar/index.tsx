@@ -29,15 +29,14 @@ import React, { useState } from "react";
 
 const Sidebar = () => {
   const [showProjects, setShowProjects] = useState(true);
-  const [showPriority, setShowPriority] = useState(true);
-
+  const [showDepartments, setShowDepartments] = useState(true);
+  const { data: currentUser } = useGetAuthUserQuery({});
   const { data: projects } = useGetProjectsQuery();
+  const isAdmin = currentUser?.userDetails?.team?.isAdmin;
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
   );
-
-  const { data: currentUser } = useGetAuthUserQuery({});
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -123,41 +122,27 @@ const Sidebar = () => {
             />
           ))}
 
-        {/* PRIORITIES LINKS */}
+        {/* DEPARTMENTS LINKS */}
         <button
-          onClick={() => setShowPriority((prev) => !prev)}
+          onClick={() => setShowDepartments((prev) => !prev)}
           className="flex w-full items-center justify-between px-8 py-3 text-gray-500"
         >
-          <span className="">Priority</span>
-          {showPriority ? (
+          <span className="">Departments</span>
+          {showDepartments ? (
             <ChevronUp className="h-5 w-5" />
           ) : (
             <ChevronDown className="h-5 w-5" />
           )}
         </button>
-        {showPriority && (
+        {showDepartments && (
           <>
-            <SidebarLink
-              icon={AlertCircle}
-              label="Urgent"
-              href="/priority/urgent"
-            />
-            <SidebarLink
-              icon={ShieldAlert}
-              label="High"
-              href="/priority/high"
-            />
-            <SidebarLink
-              icon={AlertTriangle}
-              label="Medium"
-              href="/priority/medium"
-            />
-            <SidebarLink icon={AlertOctagon} label="Low" href="/priority/low" />
-            <SidebarLink
-              icon={Layers3}
-              label="Backlog"
-              href="/priority/backlog"
-            />
+            {isAdmin && (
+              <SidebarLink
+                icon={Layers3}
+                label="Data"
+                href="/departments/data"
+              />
+            )}
           </>
         )}
       </div>
