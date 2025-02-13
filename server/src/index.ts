@@ -20,7 +20,22 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
+    : 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+/* ERROR HANDLING */
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Error:', err.stack);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
 
 /* ROUTES */
 app.get("/", (req, res) => {
@@ -36,5 +51,15 @@ app.use("/teams", teamRoutes);
 /* SERVER */
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on part ${port}`);
+  console.log("=================================");
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Server running on port ${port}`);
+  console.log(`CORS origin: ${process.env.NODE_ENV === 'production' 
+    ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
+    : 'http://localhost:3000'}`);
+  console.log("=================================");
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

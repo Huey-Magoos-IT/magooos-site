@@ -43,7 +43,7 @@ AWS Infrastructure:
 - S3 buckets with versioning and access logging
 - Cognito user pools with custom attributes
 - API Gateway with rate limiting
-- Lambda functions for cron jobs
+- Lambda functions for cron jobs and user management
 - CloudWatch monitoring and alerting
 
 Development Ecosystem:
@@ -58,8 +58,14 @@ Development Ecosystem:
 
 Network Architecture:
 - Multi-AZ VPC with public/private subnets
-- Internet/NAT gateways with CIDR management
-- Security groups restricting traffic to required ports
+- NAT Gateway in public subnet for Lambda outbound traffic
+- Internet Gateway for public subnet access
+- Private subnets route through NAT Gateway (0.0.0.0/0)
+- Security groups with least-privilege access:
+  * EC2: Inbound from API Gateway
+  * RDS: Inbound from EC2 only
+  * Lambda: Outbound through NAT Gateway
+  * NAT Gateway: No inbound, all outbound
 
 EC2 Configuration:
 - Amazon Linux AMI with PM2 process management
@@ -70,6 +76,14 @@ RDS Security:
 - Private subnet placement with encrypted storage
 - Daily automated backups retained for 35 days
 - Connection limits and query timeouts
+- Security group allows access only from EC2 instances
+
+Lambda Configuration:
+- VPC-enabled for RDS access
+- Private subnet placement with NAT Gateway access
+- Cognito triggers for user management
+- Security group allows outbound HTTPS (443)
+- IAM role with VPC execution permissions
 
 Cognito Integration:
 - Frontend uses AWS Amplify UI components
@@ -86,7 +100,7 @@ S3 Configuration:
 
 IAM Policies:
 - EC2: S3 write access, Cognito admin privileges
-- Lambda: RDS read/write access
+- Lambda: RDS read/write access, VPC execution
 - Amplify: CodeCommit pull access
 
 Monitoring:
@@ -95,6 +109,7 @@ Monitoring:
   - RDS CPU > 75%
   - S3 bucket size > 80% capacity
 - Daily service health reports
+- Lambda execution logs and metrics
 
 === TECHNICAL STACK ===
 Frontend:
@@ -116,3 +131,69 @@ DevOps:
 - S3 for file storage
 - Cognito for user authentication
 - PM2 process management
+
+=== EC2 SETUP AND MAINTENANCE ===
+
+Initial Setup:
+1. Connect to EC2 Instance:
+   - Use EC2 Instance Connect
+   - Instance IP: 3.15.240.21
+   - Security Groups: huey_ec2-sg (ports 22, 80, 443)
+
+2. Node.js Installation:
+   ```bash
+   sudo su -
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+   . ~/.nvm/nvm.sh
+   nvm install node
+   ```
+
+3. Git and Repository Setup:
+   ```bash
+   sudo yum update -y
+   sudo yum install git -y
+   git clone [repository-url]
+   cd magooos-site/server
+   npm install
+   ```
+
+4. PM2 Process Management:
+   ```bash
+   npm i pm2 -g
+   # Create ecosystem.config.js
+   pm2 start ecosystem.config.js
+   pm2 startup systemd
+   ```
+
+Server Configuration:
+1. Port Configuration:
+   - Express server runs on port 3000
+   - NGINX reverse proxy forwards port 80 → 3000
+   - Security group allows inbound: 22 (SSH), 80 (HTTP), 443 (HTTPS)
+
+2. API Gateway Integration:
+   - Proxy integration to EC2 public IP (3.15.240.21)
+   - {proxy+} resource forwards all paths
+   - HTTP integration type with proxy enabled
+
+Maintenance Procedures:
+1. Code Updates:
+   ```bash
+   cd /home/ubuntu/magooos-site
+   git pull origin main
+   cd server
+   npm install
+   pm2 restart all
+   ```
+
+2. Server Monitoring:
+   ```bash
+   pm2 list          # Check process status
+   pm2 logs          # View application logs
+   pm2 monit         # Monitor CPU/Memory
+   ```
+
+3. Common Issues:
+   - Port conflicts: Check `netstat -tuln`
+   - Process crashes: View logs with `pm2 logs`
+   - Permission issues: Verify user ownership

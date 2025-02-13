@@ -1,12 +1,23 @@
 module.exports = {
   apps: [
     {
-      name: "project-management",
+      name: "magooos-backend",
       script: "npm",
-      args: "run dev",
+      args: "start",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
+        PORT: 3000,
+        DATABASE_URL: process.env.DATABASE_URL
       },
+      error_file: "/home/ubuntu/.pm2/logs/magooos-backend-error.log",
+      out_file: "/home/ubuntu/.pm2/logs/magooos-backend-out.log",
+      time: true,
+      watch: false,
+      instances: 1,
+      exec_mode: "fork",
+      max_memory_restart: "500M",
+      restart_delay: 4000,
+      autorestart: true
     },
   ],
 };
