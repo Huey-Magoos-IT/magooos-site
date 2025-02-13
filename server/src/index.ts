@@ -21,8 +21,8 @@ app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
+  origin: process.env.NODE_ENV === 'production'
+    ? 'https://master.d25xr2dg5ij9ce.amplifyapp.com'
     : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
