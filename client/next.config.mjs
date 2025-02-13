@@ -9,6 +9,13 @@ const nextConfig = {
         pathname: "/**",
       }
     ]
+  },
+  webpack: (config, { isServer }) => {
+    // Suppress punycode warning
+    config.ignoreWarnings = [
+      { module: /node_modules\/punycode/ }
+    ];
+    return config;
   }
 };
 

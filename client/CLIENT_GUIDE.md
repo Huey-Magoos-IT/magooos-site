@@ -133,8 +133,15 @@ client/
 
 7. Additional Features:
 - `search/page.tsx`: Global search interface with filters and real-time results.
-- `settings/page.tsx`: User preferences, notifications, and account settings.
-- `teams/page.tsx`: Team creation, member management, and role assignments.
+- `settings/page.tsx`: Displays user profile, team membership, and Cognito details. Shows real-time user data including:
+  * Username and Cognito ID
+  * Current team and team type (admin/regular)
+  * User ID and system details
+- `teams/page.tsx`: Enhanced team management with:
+  * Create teams with optional admin privileges
+  * Join existing teams with real-time status updates
+  * View team type (admin/regular) and current membership
+  * Improved UI with validation and error handling
 - `timeline/page.tsx`: Organization-wide timeline showing all project milestones.
 - `users/page.tsx`: User administration, role management, and team assignments.
 
@@ -148,8 +155,9 @@ client/
 ```mermaid
 sequenceDiagram
     Component->>+RTK Query: Dispatch API Call
-    RTK Query->>+Backend: Authenticated Request
-    Backend->>+RTK Query: Structured Response
+    RTK Query->>+API Gateway: Authenticated Request
+    API Gateway->>+EC2: Proxy Request
+    EC2->>+RTK Query: Structured Response
     RTK Query->>+Component: Normalized Data
     Component->>+Redux: UI State Updates
 ```
@@ -186,6 +194,7 @@ state/
 // api.ts - Core RTK Query Configuration
 export const api = createApi({
   baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     prepareHeaders: async (headers) => {
       const session = await fetchAuthSession();
       headers.set("Authorization", `Bearer ${session.tokens?.accessToken}`);
@@ -193,11 +202,34 @@ export const api = createApi({
     }
   }),
   endpoints: (build) => ({
-    getProjects: build.query<Project[], void>({
-      query: () => "projects",
-      providesTags: ["Projects"]
+    // Team Management
+    getTeams: build.query<Team[], void>({
+      query: () => "teams",
+      providesTags: ["Teams"]
     }),
-    // 15+ other endpoints...
+    createTeam: build.mutation<Team, { teamName: string; isAdmin: boolean }>({
+      query: (body) => ({
+        url: "teams",
+        method: "POST",
+        body
+      }),
+      invalidatesTags: ["Teams"]
+    }),
+    joinTeam: build.mutation<void, { teamId: number; userId: number }>({
+      query: ({ teamId, userId }) => ({
+        url: `teams/${teamId}/join`,
+        method: "POST",
+        body: { userId }
+      }),
+      invalidatesTags: ["Teams", "Auth"]
+    }),
+
+    // User Management
+    getAuthUser: build.query<{ userDetails: User }, void>({
+      query: () => "users/me",
+      providesTags: ["Auth"]
+    }),
+    // ... other endpoints
   })
 });
 ```
@@ -240,11 +272,21 @@ useGetTasksQuery({ projectId }); // Cache: 2min
 // next.config.mjs
 export default {
   publicRuntimeConfig: {
-    apiEndpoint: process.env.NEXT_PUBLIC_API_URL,
+    apiEndpoint: process.env.NEXT_PUBLIC_API_BASE_URL,
     cognitoPoolId: process.env.NEXT_PUBLIC_COGNITO_POOL_ID
   },
   productionBrowserSourceMaps: true
 };
+```
+
+### AWS Integration
+```text
+Frontend Flow:
+Amplify (CI/CD) → CloudFront → S3
+API Flow:
+Client → API Gateway (/prod/*) → EC2 → RDS
+Authentication:
+Cognito → Lambda → API Gateway
 ```
 
 ### Build Optimization
