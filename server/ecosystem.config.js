@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "magooos-backend",
-      script: "./dist/index.js",
+      script: "./dist/src/index.js", 
       env: {
         NODE_ENV: "production",
         PORT: 80,
