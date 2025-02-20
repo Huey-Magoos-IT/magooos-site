@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import AuthProvider from "./authProvider";
 import StoreProvider, { useAppSelector } from "./redux";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isSidebarCollapsed = useAppSelector(
@@ -39,7 +41,9 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <StoreProvider>
       <AuthProvider>
-        <DashboardLayout>{children}</DashboardLayout>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DashboardLayout>{children}</DashboardLayout>
+        </LocalizationProvider>
       </AuthProvider>
     </StoreProvider>
   );

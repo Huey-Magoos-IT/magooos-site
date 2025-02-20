@@ -5,9 +5,25 @@ import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Autocomplete, TextField, Chip } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { format } from "date-fns";
 
 const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://huey-site-summary-data.s3.us-east-2.amazonaws.com";
 const ITEMS_PER_PAGE = 15;
+
+// Default values
+const DEFAULT_LOCATION_IDS = [
+  "1767","1825","4045","4046","4077","4078","4120","4145","4146","4147","4148",
+  "4149","4150","4165","4166","4167","4225","4237","4238","4241","4242","4243",
+  "4244","4245","4246","4247","4248","4249","4250","4251","4252","4253","4254",
+  "4255","4256","4258","4259","4260","4261","4350","4799","4814","4849","4867",
+  "4868","4872","4878","4884","4885","4886","4887","5346","5359","5559","5561",
+  "5563","5691","5765","5805","5865","6658","6705","6778","6785","6809","7025",
+  "7027","9559","9591","9905","9999","10093","10150"
+];
+
+const DEFAULT_DISCOUNT_IDS = [77406, 135733, 135736, 135737, 135738, 135739, 135910];
 
 const DataPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
@@ -16,6 +32,37 @@ const DataPage = () => {
   const [filesLoading, setFilesLoading] = useState(true);
   const [filesError, setFilesError] = useState<string|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Form state
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(DEFAULT_LOCATION_IDS);
+  const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
+  const [newDiscountId, setNewDiscountId] = useState("");
+
+  const handleAddDiscountId = () => {
+    const id = parseInt(newDiscountId);
+    if (!isNaN(id) && !discountIds.includes(id)) {
+      setDiscountIds([...discountIds, id]);
+      setNewDiscountId("");
+    }
+  };
+
+  const handleRemoveDiscountId = (id: number) => {
+    setDiscountIds(discountIds.filter(x => x !== id));
+  };
+
+  const formatDateForApi = (date: Date | null) => {
+    return date ? format(date, "MMddyyyy") : "";
+  };
+
+  const getFormData = () => ({
+    start_date: formatDateForApi(startDate),
+    end_date: formatDateForApi(endDate),
+    output_bucket: "huey-site-summary-data",
+    location_id: selectedLocations.join(","),
+    discount_ids: discountIds
+  });
 
   const fetchFiles = async () => {
     setFilesLoading(true);
@@ -81,7 +128,82 @@ const DataPage = () => {
           <p className="dark:text-neutral-400">Team: {userTeam.teamName}</p>
           <p className="text-green-600 dark:text-green-400">Access Level: Admin</p>
         </div>
+
+        {/* Data Generation Form */}
+        <div className="mt-8 mb-8 p-4 border rounded dark:border-stroke-dark">
+          <h3 className="text-lg font-semibold mb-4 dark:text-white">Generate Data Report</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DatePicker
+              label="Start Date"
+              value={startDate}
+              onChange={(newValue) => setStartDate(newValue)}
+              format="MMddyyyy"
+              className="bg-white dark:bg-dark-tertiary"
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  fullWidth: true,
+                }
+              }}
+            />
+            <DatePicker
+              label="End Date"
+              value={endDate}
+              onChange={(newValue) => setEndDate(newValue)}
+              format="MMddyyyy"
+              className="bg-white dark:bg-dark-tertiary"
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  fullWidth: true,
+                }
+              }}
+            />
+
+            <div className="md:col-span-2">
+              <Autocomplete
+                multiple
+                options={DEFAULT_LOCATION_IDS}
+                value={selectedLocations}
+                onChange={(_, newValue) => setSelectedLocations(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Location IDs"
+                    variant="outlined"
+                    className="bg-white dark:bg-dark-tertiary"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <div className="mb-2">
+                <TextField
+                  label="Add Discount ID"
+                  value={newDiscountId}
+                  onChange={(e) => setNewDiscountId(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
+                  variant="outlined"
+                  className="bg-white dark:bg-dark-tertiary"
+                  fullWidth
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {discountIds.map((id) => (
+                  <Chip
+                    key={id}
+                    label={id}
+                    onDelete={() => handleRemoveDiscountId(id)}
+                    className="bg-blue-100 dark:bg-dark-tertiary"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
         
+        {/* File List */}
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold dark:text-white">Available Data Files</h3>
