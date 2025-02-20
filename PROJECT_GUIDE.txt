@@ -3,18 +3,23 @@
   - App Router: dashboardWrapper.tsx + layout.tsx
   - Dynamic views: /projects/[id]/page.tsx
   - Auth flow: authProvider.tsx → Cognito
+  - Team-based access control: teams/page.tsx
+  - Department pages: Restricted access based on team admin status
 
 [Express API] server/src/
   - Controllers: taskController.ts ↔ Prisma models
   - Routes: JWT validation → API Gateway
+  - Team management: teamController.ts with admin privileges
 
 [State Management] client/src/state/
   - Redux Toolkit: api.ts handles Cognito token injection
   - Dark mode: persisted via local storage
+  - Team state: managed through RTK Query
 
 === AWS SERVICE MAP ===
 Frontend:
 Amplify (CI/CD) → S3 (assets) ↔ CloudFront
+  Domain: https://master.d25xr2dg5ij9ce.amplifyapp.com
 
 Backend:
 EC2 (auto-scaled) ←→ RDS (VPC)
@@ -22,27 +27,50 @@ EC2 (auto-scaled) ←→ RDS (VPC)
  Cognito   Lambda (cron/users)
   │          │
  API Gateway ←─┘
+  Endpoint: https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod
+
+S3 Buckets:
+1. Profile Pictures:
+   - Bucket: huey-site-images.s3.us-east-2.amazonaws.com
+   - Public access for profile images
+   - Used in UserCard component with Next.js Image
+   - Default profile picture: p1.jpeg
+
+2. Data Department (Planned):
+   - New bucket for CSV data storage
+   - Will be Restricted access for admin teams (first implemented as a public bucket)
+   - Will be integrated with data department page
+   - Purpose: Display CSV data for analysis
 
 === CRITICAL CODE PATTERNS ===
-1. Priority Routing System:
+1. Department Access Control:
+   - Department pages require admin team membership
+   - Access verification through team.isAdmin
+   - Restricted content with proper error handling
+   - Reusable access control components
+
+2. Priority System (Legacy):
    - client/src/app/priority/[level]/page.tsx
    - Reusable template: reusablePriorityPage/index.tsx
+   - Priority levels: Urgent, High, Medium, Low, Backlog (this will be removed for department pages)
 
-2. Component Architecture:
+3. Component Architecture:
    - Modal system: ModalNewProject ↔ ModalNewTask
    - View components: BoardView ↔ taskController.ts
+   - Team components: Enhanced with admin privileges
 
-3. Security Implementation:
-   - server/prisma/schema.prisma: RBAC models
+4. Security Implementation:
+   - server/prisma/schema.prisma: RBAC models with team-based access
    - client/.env.local: Amplify config
    - server/ecosystem.config.js: PM2 hardening
+   - Team-based authorization: isAdmin field controls access
 
 AWS Infrastructure:
-- EC2 auto-scaling groups for backend API
+- EC2 auto-scaling groups for backend API (port 80)
 - RDS PostgreSQL with read replicas and daily backups
 - S3 buckets with versioning and access logging
 - Cognito user pools with custom attributes
-- API Gateway with rate limiting
+- API Gateway with rate limiting and updated CORS
 - Lambda functions for cron jobs and user management
 - CloudWatch monitoring and alerting
 
@@ -71,6 +99,7 @@ EC2 Configuration:
 - Amazon Linux AMI with PM2 process management
 - Security hardening: SSH only via IAM keys, weekly AMI updates
 - Auto-scaling based on CPU/memory metrics
+- Port 80 exposed for API Gateway integration
 
 RDS Security:
 - Private subnet placement with encrypted storage
@@ -93,15 +122,23 @@ Cognito Integration:
 - MFA enforcement for admin users
 
 S3 Configuration:
-- Versioned buckets with access logging
-- Lifecycle policies transitioning to Glacier after 30 days
-- CORS rules for frontend access
-- Bucket policies restricting uploads to authenticated users
+1. Profile Pictures Bucket (huey-site-images):
+   - Public read access for profile images
+   - CORS enabled for frontend access
+   - Used by UserCard component
+   - Default profile images stored at root level
+
+2. Data Department Bucket (Planned):
+   - Private access with IAM roles
+   - CORS rules for frontend access
+   - Bucket policies restricting access to admin teams
+   - Will store CSV data for analysis
 
 IAM Policies:
 - EC2: S3 write access, Cognito admin privileges
 - Lambda: RDS read/write access, VPC execution
 - Amplify: CodeCommit pull access
+- Data Bucket: Restricted to admin team access
 
 Monitoring:
 - CloudWatch alarms for:
@@ -167,14 +204,15 @@ Initial Setup:
 
 Server Configuration:
 1. Port Configuration:
-   - Express server runs on port 3000
-   - NGINX reverse proxy forwards port 80 → 3000
+   - Express server runs on port 80
+   - API Gateway forwards to port 80
    - Security group allows inbound: 22 (SSH), 80 (HTTP), 443 (HTTPS)
 
 2. API Gateway Integration:
    - Proxy integration to EC2 public IP (3.15.240.21)
    - {proxy+} resource forwards all paths
    - HTTP integration type with proxy enabled
+   - CORS configured for Amplify domain
 
 Maintenance Procedures:
 1. Code Updates:
