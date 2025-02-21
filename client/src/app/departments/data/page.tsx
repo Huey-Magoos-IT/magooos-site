@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
-import { Autocomplete, TextField, Chip } from "@mui/material";
+import { Autocomplete, TextField, Chip, Button } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 
@@ -39,6 +39,7 @@ const DataPage = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>(DEFAULT_LOCATION_IDS);
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddDiscountId = () => {
     const id = parseInt(newDiscountId);
@@ -56,13 +57,25 @@ const DataPage = () => {
     return date ? format(date, "MMddyyyy") : "";
   };
 
-  const getFormData = () => ({
-    start_date: formatDateForApi(startDate),
-    end_date: formatDateForApi(endDate),
-    output_bucket: "huey-site-summary-data",
-    location_id: selectedLocations.join(","),
-    discount_ids: discountIds
-  });
+  const handleGenerateReport = async () => {
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates");
+      return;
+    }
+
+    setIsGenerating(true);
+    const formData = {
+      start_date: formatDateForApi(startDate),
+      end_date: formatDateForApi(endDate),
+      output_bucket: "huey-site-summary-data",
+      location_id: selectedLocations.join(","),
+      discount_ids: discountIds
+    };
+
+    console.log("Generating report with data:", formData);
+    // TODO: Add API call here
+    setIsGenerating(false);
+  };
 
   const fetchFiles = async () => {
     setFilesLoading(true);
@@ -143,6 +156,7 @@ const DataPage = () => {
                 textField: {
                   variant: "outlined",
                   fullWidth: true,
+                  className: "bg-white dark:bg-dark-tertiary"
                 }
               }}
             />
@@ -156,6 +170,7 @@ const DataPage = () => {
                 textField: {
                   variant: "outlined",
                   fullWidth: true,
+                  className: "bg-white dark:bg-dark-tertiary"
                 }
               }}
             />
@@ -199,6 +214,18 @@ const DataPage = () => {
                   />
                 ))}
               </div>
+            </div>
+
+            <div className="md:col-span-2 mt-4">
+              <Button
+                variant="contained"
+                onClick={handleGenerateReport}
+                disabled={isGenerating || !startDate || !endDate}
+                fullWidth
+                className="bg-blue-500 hover:bg-blue-600 text-white py-3"
+              >
+                {isGenerating ? "Generating..." : "Generate Report"}
+              </Button>
             </div>
           </div>
         </div>
