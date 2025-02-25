@@ -1,11 +1,11 @@
 "use client";
 
-import { useGetAuthUserQuery } from "@/state/api";
+import { useGetAuthUserQuery, useGenerateDataReportMutation } from "@/state/api";
 import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
-import { Autocomplete, TextField, Chip, Button } from "@mui/material";
+import { Autocomplete, TextField, Chip, Button, Alert, Snackbar } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 
@@ -27,11 +27,17 @@ const DEFAULT_DISCOUNT_IDS = [77406, 135733, 135736, 135737, 135738, 135739, 135
 
 const DataPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
+  const [generateReport, { isLoading: isGenerating }] = useGenerateDataReportMutation();
   const userTeam = authData?.userDetails?.team;
   const [files, setFiles] = useState<string[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
   const [filesError, setFilesError] = useState<string|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [notification, setNotification] = useState<{open: boolean, message: string, severity: 'success' | 'error'}>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -39,7 +45,6 @@ const DataPage = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>(DEFAULT_LOCATION_IDS);
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddDiscountId = () => {
     const id = parseInt(newDiscountId);
@@ -59,22 +64,52 @@ const DataPage = () => {
 
   const handleGenerateReport = async () => {
     if (!startDate || !endDate) {
-      alert("Please select both start and end dates");
+      setNotification({
+        open: true,
+        message: "Please select both start and end dates",
+        severity: 'error'
+      });
       return;
     }
 
-    setIsGenerating(true);
     const formData = {
       start_date: formatDateForApi(startDate),
       end_date: formatDateForApi(endDate),
-      output_bucket: "huey-site-summary-data",
+      output_bucket: "redflag-reporting",
       location_id: selectedLocations.join(","),
       discount_ids: discountIds
     };
 
-    console.log("Generating report with data:", formData);
-    // TODO: Add API call here
-    setIsGenerating(false);
+    try {
+      console.log("Generating report with data:", formData);
+      const response = await generateReport(formData).unwrap();
+      
+      if (response.success) {
+        setNotification({
+          open: true,
+          message: "Report generation started successfully. The file will appear in the list when ready.",
+          severity: 'success'
+        });
+        
+        // Set a timeout to refresh the file list after a delay
+        setTimeout(() => {
+          fetchFiles();
+        }, 10000); // Refresh after 10 seconds
+      } else {
+        setNotification({
+          open: true,
+          message: response.message || "Failed to generate report",
+          severity: 'error'
+        });
+      }
+    } catch (err: any) {
+      console.error("Report generation failed:", err);
+      setNotification({
+        open: true,
+        message: err.message || "Failed to generate report",
+        severity: 'error'
+      });
+    }
   };
 
   const fetchFiles = async () => {
@@ -104,6 +139,10 @@ const DataPage = () => {
   useEffect(() => {
     fetchFiles();
   }, []);
+
+  const handleCloseNotification = () => {
+    setNotification({...notification, open: false});
+  };
 
   const totalPages = Math.ceil(files.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -322,6 +361,22 @@ const DataPage = () => {
           )}
         </div>
       </div>
+
+      {/* Notification */}
+      <Snackbar 
+        open={notification.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

@@ -76,6 +76,20 @@ export interface SearchResults {
   users?: User[];
 }
 
+export interface DataReportParams {
+  start_date: string;
+  end_date: string;
+  output_bucket: string;
+  location_id: string;
+  discount_ids: number[];
+}
+
+export interface DataReportResponse {
+  success: boolean;
+  message: string;
+  jobId?: string;
+}
+
 export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -89,7 +103,7 @@ export const api = createApi({
     },
   }),
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "DataReports"],
   endpoints: (build) => ({
     getAuthUser: build.query({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
@@ -181,6 +195,14 @@ export const api = createApi({
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
     }),
+    generateDataReport: build.mutation<DataReportResponse, DataReportParams>({
+      query: (params) => ({
+        url: "data/generate-report",
+        method: "POST",
+        body: params,
+      }),
+      invalidatesTags: ["DataReports"],
+    }),
   }),
 });
 
@@ -197,4 +219,5 @@ export const {
   useJoinTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
+  useGenerateDataReportMutation,
 } = api;
