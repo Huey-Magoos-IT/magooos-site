@@ -31,7 +31,7 @@ export const generateReport = async (req: Request, res: Response): Promise<void>
   const options = {
     hostname: 'puvzjk01yl.execute-api.us-east-2.amazonaws.com',
     port: 443,
-    path: '/prod/data/generate-report',
+    path: '/prod/lambda/Qu_API_Extraction_3-0',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
