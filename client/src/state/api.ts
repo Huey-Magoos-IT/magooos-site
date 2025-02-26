@@ -181,6 +181,24 @@ export const api = createApi({
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
     }),
+    
+    // Lambda function endpoint for data processing
+    processData: build.mutation<
+      { message: string; reportKey?: string },
+      {
+        start_date: string;
+        end_date: string;
+        output_bucket: string;
+        location_id: string;
+        discount_ids: number[];
+      }
+    >({
+      query: (data) => ({
+        url: 'lambda-functions/process-data',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -197,4 +215,5 @@ export const {
   useJoinTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
+  useProcessDataMutation,
 } = api;

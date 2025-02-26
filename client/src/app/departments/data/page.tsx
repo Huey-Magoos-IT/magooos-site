@@ -1,11 +1,11 @@
 "use client";
 
-import { useGetAuthUserQuery } from "@/state/api";
+import { useGetAuthUserQuery, useProcessDataMutation } from "@/state/api";
 import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
-import { Autocomplete, TextField, Chip, Button } from "@mui/material";
+import { RefreshCw, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { Autocomplete, TextField, Chip, Button, CircularProgress } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 
@@ -31,7 +31,12 @@ const DataPage = () => {
   const [files, setFiles] = useState<string[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
   const [filesError, setFilesError] = useState<string|null>(null);
+  const [lambdaError, setLambdaError] = useState<string|null>(null);
+  const [reportStatus, setReportStatus] = useState<string|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Initialize the Lambda function mutation hook
+  const [processData, { isLoading: isProcessing }] = useProcessDataMutation();
 
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -64,6 +69,9 @@ const DataPage = () => {
     }
 
     setIsGenerating(true);
+    setLambdaError(null);
+    setReportStatus(null);
+    
     const formData = {
       start_date: formatDateForApi(startDate),
       end_date: formatDateForApi(endDate),
@@ -73,8 +81,26 @@ const DataPage = () => {
     };
 
     console.log("Generating report with data:", formData);
-    // TODO: Add API call here
-    setIsGenerating(false);
+    
+    try {
+      // Call the Lambda function via API Gateway
+      const result = await processData(formData).unwrap();
+      console.log("Lambda function result:", result);
+      
+      // Set success message
+      setReportStatus("Report generation initiated successfully! Check the file list below for your report once it's ready.");
+      
+      // Refresh the file list after a short delay to show the new file
+      setTimeout(() => {
+        fetchFiles();
+      }, 5000); // Wait 5 seconds before refreshing
+    } catch (error: any) {
+      console.error("Error calling Lambda function:", error);
+      setLambdaError(typeof error === 'object' && error !== null ? error.toString() : String(error));
+      setReportStatus(`Error: Failed to process data. Please check the console for details.`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const fetchFiles = async () => {
@@ -224,8 +250,32 @@ const DataPage = () => {
                 fullWidth
                 className="bg-blue-500 hover:bg-blue-600 text-white py-3"
               >
-                {isGenerating ? "Generating..." : "Generate Report"}
+                {isGenerating ? (
+                  <div className="flex items-center justify-center">
+                    <CircularProgress size={20} className="text-white mr-2" />
+                    <span>Generating...</span>
+                  </div>
+                ) : "Generate Report"}
               </Button>
+              
+              {reportStatus && (
+                <div className={`mt-4 p-3 rounded flex items-start ${reportStatus.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                  {!reportStatus.includes("Error") && <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />}
+                  <div>
+                    {reportStatus}
+                    {!reportStatus.includes("Error") && (
+                      <p className="text-sm mt-1">The file will appear in the list below once processing is complete.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {lambdaError && (
+                <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
+                  <p className="font-semibold">Error Details:</p>
+                  <p className="text-sm overflow-auto max-h-24">{lambdaError}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -240,12 +290,17 @@ const DataPage = () => {
               disabled={filesLoading}
             >
               <RefreshCw className={`h-4 w-4 ${filesLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              Refresh Files
             </button>
           </div>
 
           {filesLoading && (
-            <div className="text-gray-500 text-center py-4 dark:text-neutral-400">Loading files...</div>
+            <div className="text-gray-500 text-center py-4 dark:text-neutral-400">
+              <div className="flex justify-center items-center">
+                <CircularProgress size={24} className="mr-2" />
+                <span>Loading files...</span>
+              </div>
+            </div>
           )}
 
           {filesError && (
