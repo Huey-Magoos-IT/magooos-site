@@ -194,7 +194,7 @@ export const api = createApi({
       }
     >({
       query: (data) => ({
-        url: 'lambda-functions/process-data',
+        url: 'data-report/generate',
         method: 'POST',
         body: data,
       }),

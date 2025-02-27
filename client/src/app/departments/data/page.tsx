@@ -1,6 +1,7 @@
 "use client";
 
-import { useGetAuthUserQuery, useProcessDataMutation } from "@/state/api";
+import { useGetAuthUserQuery } from "@/state/api";
+import { useProcessDataMutation } from "@/state/lambdaApi";
 import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -34,6 +35,8 @@ const DataPage = () => {
   const [lambdaError, setLambdaError] = useState<string|null>(null);
   const [reportStatus, setReportStatus] = useState<string|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [newFilePattern, setNewFilePattern] = useState<string|null>(null);
+  const [highlightedFile, setHighlightedFile] = useState<string|null>(null);
   
   // Initialize the Lambda function mutation hook
   const [processData, { isLoading: isProcessing }] = useProcessDataMutation();
@@ -90,6 +93,11 @@ const DataPage = () => {
       // Set success message
       setReportStatus("Report generation initiated successfully! Check the file list below for your report once it's ready.");
       
+      // Create a pattern to identify the new file based on the date range
+      const filePattern = `${formatDateForApi(startDate)}${formatDateForApi(endDate)}`;
+      setNewFilePattern(filePattern);
+      setHighlightedFile(null);
+      
       // Refresh the file list after a short delay to show the new file
       setTimeout(() => {
         fetchFiles();
@@ -117,6 +125,32 @@ const DataPage = () => {
 
       const keys = xmlDoc.getElementsByTagName("Key");
       const fileList = Array.from(keys).map(key => key.textContent || "").filter(Boolean);
+      
+      // If we have a pattern to look for, find any files that match it
+      if (newFilePattern) {
+        const potentialNewFile = fileList.find(file => file.includes(newFilePattern));
+        
+        if (potentialNewFile && potentialNewFile !== highlightedFile) {
+          // Found a potential new file
+          setHighlightedFile(potentialNewFile);
+          
+          // Find which page the new file is on
+          const fileIndex = fileList.indexOf(potentialNewFile);
+          const filePage = Math.floor(fileIndex / ITEMS_PER_PAGE) + 1;
+          
+          // Set current page to show the new file
+          setCurrentPage(filePage);
+          
+          // Scroll to the file after a short delay
+          setTimeout(() => {
+            const fileRow = document.getElementById(`file-row-${potentialNewFile}`);
+            if (fileRow) {
+              fileRow.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 500);
+        }
+      }
+      
       setFiles(fileList);
       setFilesError(null);
     } catch (err) {
@@ -322,23 +356,39 @@ const DataPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-stroke-dark">
-                    {currentFiles.map((file, index) => (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors duration-200 dark:hover:bg-dark-tertiary">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-neutral-300">
-                          {file}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <a
-                            href={`${S3_DATA_BUCKET}/${file}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Download
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
+                    {currentFiles.map((file, index) => {
+                      const isHighlighted = file === highlightedFile;
+                      return (
+                        <tr
+                          id={`file-row-${file}`}
+                          key={index}
+                          className={`transition-colors duration-300 ${
+                            isHighlighted
+                              ? "bg-yellow-100 dark:bg-yellow-900/30"
+                              : "hover:bg-gray-50 dark:hover:bg-dark-tertiary"
+                          }`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-neutral-300">
+                            {file}
+                            {isHighlighted && (
+                              <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full dark:bg-green-900 dark:text-green-300">
+                                New
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <a
+                              href={`${S3_DATA_BUCKET}/${file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              Download
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {currentFiles.length === 0 && (
                       <tr>
                         <td colSpan={2} className="text-center py-4 text-gray-500 dark:text-neutral-400">
