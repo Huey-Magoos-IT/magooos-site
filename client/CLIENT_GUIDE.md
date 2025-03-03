@@ -155,9 +155,15 @@ client/
 ```mermaid
 sequenceDiagram
     Component->>+RTK Query: Dispatch API Call
-    RTK Query->>+API Gateway: Authenticated Request
-    API Gateway->>+EC2: Proxy Request
-    EC2->>+RTK Query: Structured Response
+    alt Standard API Operations
+        RTK Query->>+Main API Gateway: Authenticated Request
+        Main API Gateway->>+EC2: Proxy Request
+        EC2->>+RTK Query: Structured Response
+    else Lambda Operations
+        RTK Query->>+Lambda API Gateway: Direct Request
+        Lambda API Gateway->>+Lambda Function: Execute
+        Lambda Function->>+RTK Query: Function Response
+    end
     RTK Query->>+Component: Normalized Data
     Component->>+Redux: UI State Updates
 ```
@@ -190,6 +196,8 @@ state/
 ```
 
 ### API Service Architecture
+
+#### Main API Configuration
 ```typescript
 // api.ts - Core RTK Query Configuration
 export const api = createApi({
@@ -232,6 +240,40 @@ export const api = createApi({
     // ... other endpoints
   })
 });
+```
+
+#### Lambda API Configuration
+```typescript
+// lambdaApi.ts - Direct Lambda Integration
+export const lambdaApi = createApi({
+  reducerPath: "lambdaApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_LAMBDA_API_URL,
+    prepareHeaders: async (headers) => {
+      // Same auth as main API
+      const session = await fetchAuthSession();
+      const { accessToken } = session.tokens ?? {};
+      if (accessToken) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+      }
+      return headers;
+    },
+  }),
+  endpoints: (builder) => ({
+    // Data processing endpoint - direct Lambda access
+    processData: builder.mutation<DataReportResponse, DataReportRequest>({
+      query: (data) => ({
+        url: "process-data",  // Matches Lambda API Gateway resource path
+        method: "POST",
+        body: data,
+      }),
+    }),
+    // Additional Lambda endpoints can be added here
+  }),
+});
+
+// Export hooks for use in components
+export const { useProcessDataMutation } = lambdaApi;
 ```
 
 ## 4. Component Catalog

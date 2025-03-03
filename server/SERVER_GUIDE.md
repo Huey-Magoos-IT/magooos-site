@@ -235,17 +235,32 @@ module.exports = {
 ```
 
 ### API Gateway Integration
-The server is configured to handle API Gateway's `/prod` stage prefix:
+
+#### Main API Gateway (Proxy Integration)
+The main Express server is configured to handle API Gateway's `/prod` stage prefix:
 
 ```typescript
 // src/index.ts
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? 'https://main.d2qm7hnxk5z1hy.amplifyapp.com'
     : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+```
+
+#### Direct Lambda API Gateway
+A separate API Gateway is used for direct Lambda integrations to bypass the Express backend:
+
+- **Gateway ID**: sutpql04fb.execute-api.us-east-2.amazonaws.com/prod
+- **Integration Type**: Direct Lambda (non-proxy)
+- **Resources**:
+  * `/process-data` - Data extraction and report generation
+- **Lambda Function**: Qu_API_Extraction_3-0
+- **Frontend Integration**: Accessed via `lambdaApi.ts` in the client
+
+This separation improves performance for compute-intensive operations by eliminating proxy integration overhead. Both gateways use the same Cognito authentication mechanism to maintain security.
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: any) => {

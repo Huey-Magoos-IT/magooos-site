@@ -137,11 +137,18 @@ const Sidebar = () => {
         {showDepartments && (
           <>
             {isAdmin && (
-              <SidebarLink
-                icon={Layers3}
-                label="Data"
-                href="/departments/data"
-              />
+              <>
+                <SidebarLink
+                  icon={Layers3}
+                  label="Data"
+                  href="/departments/data"
+                />
+                <SidebarLink
+                  icon={Layers3}
+                  label="Reporting"
+                  href="/departments/reporting"
+                />
+              </>
             )}
           </>
         )}

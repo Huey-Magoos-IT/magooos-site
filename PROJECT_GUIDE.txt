@@ -13,6 +13,7 @@
 
 [State Management] client/src/state/
   - Redux Toolkit: api.ts handles Cognito token injection
+  - Lambda API: lambdaApi.ts for direct Lambda function access
   - Dark mode: persisted via local storage
   - Team state: managed through RTK Query
 
@@ -24,10 +25,11 @@ Amplify (CI/CD) → S3 (assets) ↔ CloudFront
 Backend:
 EC2 (auto-scaled) ←→ RDS (VPC)
   ↑          ↓
- Cognito   Lambda (cron/users)
+ Cognito   Lambda (cron/users, data-processing)
   │          │
  API Gateway ←─┘
-  Endpoint: https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod
+  Main Endpoint: https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod
+  Lambda Endpoint: https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod
 
 S3 Buckets:
 1. Profile Pictures:
@@ -113,6 +115,11 @@ Lambda Configuration:
 - Cognito triggers for user management
 - Security group allows outbound HTTPS (443)
 - IAM role with VPC execution permissions
+- Direct Lambda API Gateway integration:
+  * Dedicated API Gateway: sutpql04fb.execute-api.us-east-2.amazonaws.com
+  * Non-proxy integration for data processing functions
+  * Same Cognito authentication as main API Gateway
+  * Frontend access via lambdaApi.ts configuration
 
 Cognito Integration:
 - Frontend uses AWS Amplify UI components
