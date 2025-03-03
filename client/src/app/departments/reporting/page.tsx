@@ -5,10 +5,11 @@ import { useProcessDataMutation } from "@/state/lambdaApi";
 import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
-import { Autocomplete, TextField, Chip, Button, CircularProgress } from "@mui/material";
+import { RefreshCw, ChevronLeft, ChevronRight, CheckCircle, X } from "lucide-react";
+import { Autocomplete, TextField, Chip, Button, CircularProgress, Grid, Box, Typography } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
+import LocationTable, { Location } from "@/components/LocationTable";
 
 const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://huey-site-summary-data.s3.us-east-2.amazonaws.com";
 const ITEMS_PER_PAGE = 15;
@@ -44,10 +45,23 @@ const ReportingPage = () => {
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>(DEFAULT_LOCATION_IDS);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // For compatibility with old code, initialize with default locations
+  useEffect(() => {
+    // Create sample location objects for the DEFAULT_LOCATION_IDS
+    const defaultLocations = DEFAULT_LOCATION_IDS.map(id => ({
+      id,
+      name: `Location ${id}`
+    }));
+    setSelectedLocations(defaultLocations);
+  }, []);
+  
+  // Derived state for just the location IDs
+  const selectedLocationIds = selectedLocations.map(loc => loc.id);
 
   const handleAddDiscountId = () => {
     const id = parseInt(newDiscountId);
@@ -59,6 +73,14 @@ const ReportingPage = () => {
 
   const handleRemoveDiscountId = (id: number) => {
     setDiscountIds(discountIds.filter(x => x !== id));
+  };
+
+  const handleAddLocation = (location: Location) => {
+    setSelectedLocations(prev => [...prev, location]);
+  };
+
+  const handleRemoveLocation = (locationId: string) => {
+    setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
   };
 
   const formatDateForApi = (date: Date | null) => {
@@ -79,7 +101,7 @@ const ReportingPage = () => {
       start_date: formatDateForApi(startDate),
       end_date: formatDateForApi(endDate),
       output_bucket: "huey-site-summary-data",
-      location_id: selectedLocations.join(","),
+      location_id: selectedLocations.map(loc => loc.id).join(","),
       discount_ids: discountIds
     };
 
@@ -209,113 +231,138 @@ const ReportingPage = () => {
         {/* Data Generation Form */}
         <div className="mt-8 mb-8 p-4 border rounded dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 dark:text-white">Generate Data Report</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DatePicker
-              label="Start Date"
-              value={startDate}
-              onChange={(newValue) => setStartDate(newValue)}
-              format="MMddyyyy"
-              className="bg-white dark:bg-dark-tertiary"
-              slotProps={{
-                textField: {
-                  variant: "outlined",
-                  fullWidth: true,
-                  className: "bg-white dark:bg-dark-tertiary"
-                }
-              }}
-            />
-            <DatePicker
-              label="End Date"
-              value={endDate}
-              onChange={(newValue) => setEndDate(newValue)}
-              format="MMddyyyy"
-              className="bg-white dark:bg-dark-tertiary"
-              slotProps={{
-                textField: {
-                  variant: "outlined",
-                  fullWidth: true,
-                  className: "bg-white dark:bg-dark-tertiary"
-                }
-              }}
-            />
-
-            <div className="md:col-span-2">
-              <Autocomplete
-                multiple
-                options={DEFAULT_LOCATION_IDS}
-                value={selectedLocations}
-                onChange={(_, newValue) => setSelectedLocations(newValue)}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Location IDs"
-                    variant="outlined"
-                    className="bg-white dark:bg-dark-tertiary"
-                  />
-                )}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <div className="mb-2">
-                <TextField
-                  label="Add Discount ID"
-                  value={newDiscountId}
-                  onChange={(e) => setNewDiscountId(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
-                  variant="outlined"
-                  className="bg-white dark:bg-dark-tertiary"
-                  fullWidth
+          
+          <Grid container spacing={4}>
+            {/* Left column - Form inputs */}
+            <Grid item xs={12} md={6}>
+              <div className="space-y-4">
+                <DatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(newValue) => setStartDate(newValue)}
+                  format="MMddyyyy"
+                  className="bg-white dark:bg-dark-tertiary w-full"
+                  slotProps={{
+                    textField: {
+                      variant: "outlined",
+                      fullWidth: true,
+                      className: "bg-white dark:bg-dark-tertiary"
+                    }
+                  }}
                 />
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {discountIds.map((id) => (
-                  <Chip
-                    key={id}
-                    label={id}
-                    onDelete={() => handleRemoveDiscountId(id)}
-                    className="bg-blue-100 dark:bg-dark-tertiary"
-                  />
-                ))}
-              </div>
-            </div>
+                
+                <DatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(newValue) => setEndDate(newValue)}
+                  format="MMddyyyy"
+                  className="bg-white dark:bg-dark-tertiary w-full"
+                  slotProps={{
+                    textField: {
+                      variant: "outlined",
+                      fullWidth: true,
+                      className: "bg-white dark:bg-dark-tertiary"
+                    }
+                  }}
+                />
 
-            <div className="md:col-span-2 mt-4">
-              <Button
-                variant="contained"
-                onClick={handleGenerateReport}
-                disabled={isGenerating || !startDate || !endDate}
-                fullWidth
-                className="bg-blue-500 hover:bg-blue-600 text-white py-3"
-              >
-                {isGenerating ? (
-                  <div className="flex items-center justify-center">
-                    <CircularProgress size={20} className="text-white mr-2" />
-                    <span>Generating...</span>
-                  </div>
-                ) : "Generate Report"}
-              </Button>
-              
-              {reportStatus && (
-                <div className={`mt-4 p-3 rounded flex items-start ${reportStatus.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                  {!reportStatus.includes("Error") && <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />}
-                  <div>
-                    {reportStatus}
-                    {!reportStatus.includes("Error") && (
-                      <p className="text-sm mt-1">The file will appear in the list below once processing is complete.</p>
+                <div>
+                  <Typography className="font-medium mb-2 dark:text-white">Selected Locations</Typography>
+                  <Box className="p-3 bg-gray-50 border rounded min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark">
+                    {selectedLocations.length === 0 ? (
+                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                        No locations selected yet. Select locations from the table.
+                      </Typography>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedLocations.map((location) => (
+                          <Chip
+                            key={location.id}
+                            label={`${location.name} (${location.id})`}
+                            onDelete={() => handleRemoveLocation(location.id)}
+                            className="bg-blue-50 dark:bg-blue-900/30 dark:text-blue-200"
+                            deleteIcon={<X className="h-4 w-4" />}
+                          />
+                        ))}
+                      </div>
                     )}
+                  </Box>
+                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                    {selectedLocations.length} location{selectedLocations.length !== 1 ? 's' : ''} selected
+                  </Typography>
+                </div>
+
+                <div>
+                  <div className="mb-2">
+                    <TextField
+                      label="Add Discount ID"
+                      value={newDiscountId}
+                      onChange={(e) => setNewDiscountId(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
+                      variant="outlined"
+                      className="bg-white dark:bg-dark-tertiary"
+                      fullWidth
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {discountIds.map((id) => (
+                      <Chip
+                        key={id}
+                        label={id}
+                        onDelete={() => handleRemoveDiscountId(id)}
+                        className="bg-blue-100 dark:bg-dark-tertiary"
+                        deleteIcon={<X className="h-4 w-4" />}
+                      />
+                    ))}
                   </div>
                 </div>
-              )}
-              
-              {lambdaError && (
-                <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
-                  <p className="font-semibold">Error Details:</p>
-                  <p className="text-sm overflow-auto max-h-24">{lambdaError}</p>
+
+                <div className="mt-4">
+                  <Button
+                    variant="contained"
+                    onClick={handleGenerateReport}
+                    disabled={isGenerating || !startDate || !endDate || selectedLocations.length === 0}
+                    fullWidth
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-3"
+                  >
+                    {isGenerating ? (
+                      <div className="flex items-center justify-center">
+                        <CircularProgress size={20} className="text-white mr-2" />
+                        <span>Generating...</span>
+                      </div>
+                    ) : "Generate Report"}
+                  </Button>
+                  
+                  {reportStatus && (
+                    <div className={`mt-4 p-3 rounded flex items-start ${reportStatus.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                      {!reportStatus.includes("Error") && <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />}
+                      <div>
+                        {reportStatus}
+                        {!reportStatus.includes("Error") && (
+                          <p className="text-sm mt-1">The file will appear in the list below once processing is complete.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {lambdaError && (
+                    <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
+                      <p className="font-semibold">Error Details:</p>
+                      <p className="text-sm overflow-auto max-h-24">{lambdaError}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </Grid>
+            
+            {/* Right column - Location Table */}
+            <Grid item xs={12} md={6}>
+              <LocationTable
+                selectedLocationIds={selectedLocationIds}
+                onLocationSelect={handleAddLocation}
+              />
+            </Grid>
+          </Grid>
         </div>
         
         {/* File List */}
