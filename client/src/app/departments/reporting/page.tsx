@@ -14,15 +14,15 @@ import LocationTable, { Location } from "@/components/LocationTable";
 const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://huey-site-summary-data.s3.us-east-2.amazonaws.com";
 const ITEMS_PER_PAGE = 15;
 
-// Default values
+// Default values from DynamoDB - all 78 locations
 const DEFAULT_LOCATION_IDS = [
-  "1767","1825","4045","4046","4077","4078","4120","4145","4146","4147","4148",
-  "4149","4150","4165","4166","4167","4225","4237","4238","4241","4242","4243",
-  "4244","4245","4246","4247","4248","4249","4250","4251","4252","4253","4254",
-  "4255","4256","4258","4259","4260","4261","4350","4799","4814","4849","4867",
-  "4868","4872","4878","4884","4885","4886","4887","5346","5359","5559","5561",
-  "5563","5691","5765","5805","5865","6658","6705","6778","6785","6809","7025",
-  "7027","9559","9591","9905","9999","10093","10150"
+  "4145","4849","5561","9905","4167","4249","4885","7025","4255","4878","4045",
+  "4872","4166","4868","4887","7027","4245","5563","6785","10533","4258","4046",
+  "5765","4148","4886","4243","4814","4884","4261","4120","10477","4147","4260",
+  "4242","5805","4350","6809","5559","4252","4146","10448","4165","10534","6705",
+  "5691","4238","10497","4867","9559","4256","10150","10093","4250","4150","4259",
+  "4253","4225","5359","4254","10476","5346","9591","9999","4078","4251","5865",
+  "1825","4799","4077","4247","4241","6658","4244","4248","6778","4237","4149","4246"
 ];
 
 const DEFAULT_DISCOUNT_IDS = [77406, 135733, 135736, 135737, 135738, 135739, 135910];
@@ -50,15 +50,8 @@ const ReportingPage = () => {
   const [newDiscountId, setNewDiscountId] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // For compatibility with old code, initialize with default locations
-  useEffect(() => {
-    // Create sample location objects for the DEFAULT_LOCATION_IDS
-    const defaultLocations = DEFAULT_LOCATION_IDS.map(id => ({
-      id,
-      name: `Location ${id}`
-    }));
-    setSelectedLocations(defaultLocations);
-  }, []);
+  // Don't initialize with default locations anymore
+  // Let users explicitly select locations or leave empty for all
   
   // Derived state for just the location IDs
   const selectedLocationIds = selectedLocations.map(loc => loc.id);
@@ -97,11 +90,16 @@ const ReportingPage = () => {
     setLambdaError(null);
     setReportStatus(null);
     
+    // If no locations are selected, use all default locations
+    const locationIds = selectedLocations.length > 0
+      ? selectedLocations.map(loc => loc.id).join(",")
+      : DEFAULT_LOCATION_IDS.join(",");
+    
     const formData = {
       start_date: formatDateForApi(startDate),
       end_date: formatDateForApi(endDate),
       output_bucket: "huey-site-summary-data",
-      location_id: selectedLocations.map(loc => loc.id).join(","),
+      location_id: locationIds,
       discount_ids: discountIds
     };
 
@@ -271,7 +269,7 @@ const ReportingPage = () => {
                   <Box className="p-3 bg-gray-50 border rounded min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark">
                     {selectedLocations.length === 0 ? (
                       <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
-                        No locations selected yet. Select locations from the table.
+                        Leave blank for all locations. Or select specific locations from the table.
                       </Typography>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -288,7 +286,9 @@ const ReportingPage = () => {
                     )}
                   </Box>
                   <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
-                    {selectedLocations.length} location{selectedLocations.length !== 1 ? 's' : ''} selected
+                    {selectedLocations.length > 0
+                      ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
+                      : "All locations will be used"}
                   </Typography>
                 </div>
 
@@ -321,7 +321,7 @@ const ReportingPage = () => {
                   <Button
                     variant="contained"
                     onClick={handleGenerateReport}
-                    disabled={isGenerating || !startDate || !endDate || selectedLocations.length === 0}
+                    disabled={isGenerating || !startDate || !endDate}
                     fullWidth
                     className="bg-blue-500 hover:bg-blue-600 text-white py-3"
                   >
