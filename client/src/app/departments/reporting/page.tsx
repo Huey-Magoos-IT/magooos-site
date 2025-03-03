@@ -124,7 +124,11 @@ const ReportingPage = () => {
       }
 
       const keys = xmlDoc.getElementsByTagName("Key");
-      const fileList = Array.from(keys).map(key => key.textContent || "").filter(Boolean);
+      // Get files and reverse the order so newest files appear first
+      const fileList = Array.from(keys)
+        .map(key => key.textContent || "")
+        .filter(Boolean)
+        .reverse(); // Reverse to show newest files first
       
       // If we have a pattern to look for, find any files that match it
       if (newFilePattern) {
