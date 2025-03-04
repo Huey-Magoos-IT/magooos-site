@@ -62,7 +62,7 @@ model Task {
   title          String
   description    String?
   status         String?
-  priority       String?
+  priority       String? @db.VarChar(20) //Did I change this?
   tags           String?
   startDate      DateTime?
   dueDate        DateTime?

@@ -13,9 +13,10 @@ import {
   Box,
   IconButton,
   TableSortLabel,
-  CircularProgress
+  CircularProgress,
+  Button
 } from '@mui/material';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, RefreshCw } from 'lucide-react';
 import { useGetLocationsQuery } from '../../state/lambdaApi';
 
 // Define the location type based on DynamoDB schema
@@ -41,7 +42,16 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   
   // Get locations from DynamoDB via the Lambda API Gateway
-  const { data, isLoading, error } = useGetLocationsQuery();
+  const { data, isLoading, error, refetch } = useGetLocationsQuery();
+
+  // Display error details if in development
+  const errorDetails = useMemo(() => {
+    if (!error) return null;
+    if (typeof error === 'object') {
+      return JSON.stringify(error, null, 2);
+    }
+    return String(error);
+  }, [error]);
 
   // Filter out already selected locations
   const availableLocations = useMemo(() => {
@@ -134,8 +144,29 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={2} className="text-center py-4 text-red-500 dark:text-red-400">
-                  Error loading locations. Please try again.
+                <TableCell colSpan={2} className="text-center py-4">
+                  <div className="text-red-500 dark:text-red-400 mb-2">
+                    Error loading locations from DynamoDB.
+                  </div>
+                  {errorDetails && (
+                    <div className="text-xs overflow-auto max-h-24 bg-gray-100 dark:bg-dark-tertiary p-2 rounded mb-2">
+                      {errorDetails}
+                    </div>
+                  )}
+                  <div className="flex gap-2 justify-center mt-2">
+                    <Button 
+                      variant="outlined" 
+                      color="primary" 
+                      size="small"
+                      onClick={() => refetch()}
+                      startIcon={<RefreshCw className="h-4 w-4" />}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Note: The API Gateway requires proper authentication and permissions to access DynamoDB.
+                  </div>
                 </TableCell>
               </TableRow>
             ) : sortedLocations.length > 0 ? (
