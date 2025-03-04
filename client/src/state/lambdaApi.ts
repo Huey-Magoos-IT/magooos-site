@@ -21,19 +21,16 @@ export interface DataReportResponse {
   status?: string;
 }
 
-// Location interface to match DynamoDB structure
+// Location interface
 export interface Location {
   id: string;
   name: string;
-  __typename?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  __typename: string;
 }
 
-// Location response interface
+// Locations response interface
 export interface LocationsResponse {
   locations: Location[];
-  count: number;
 }
 
 // Create the API with RTK Query
@@ -61,20 +58,16 @@ export const lambdaApi = createApi({
       }),
     }),
     
-    // Get locations from DynamoDB endpoint
+    // Locations endpoint - direct DynamoDB integration
     getLocations: builder.query<LocationsResponse, void>({
       query: () => ({
-        url: "locations", // Will create this endpoint in Lambda/API Gateway
-        method: "GET",
+        url: "locations",
+        method: "GET", // API Gateway will transform this to the DynamoDB POST operation
       }),
+      keepUnusedDataFor: 86400, // 24 hours since locations update infrequently
     }),
-    
-    // Add additional Lambda endpoints here as needed
   }),
 });
 
 // Export the hooks for use in components
-export const {
-  useProcessDataMutation,
-  useGetLocationsQuery
-} = lambdaApi;
+export const { useProcessDataMutation, useGetLocationsQuery } = lambdaApi;

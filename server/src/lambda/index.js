@@ -1,7 +1,5 @@
 import https from "node:https";
-import { handler as getLocationsHandler } from "./getLocations.js";
 
-// Create user handler - triggered on Cognito post-confirmation
 export const handler = async (event) => {
     console.log("Lambda triggered with event:", JSON.stringify(event, null, 2));
 
@@ -84,6 +82,3 @@ export const handler = async (event) => {
         return event;
     }
 };
-
-// Export getLocations handler for API Gateway
-export { getLocationsHandler };
