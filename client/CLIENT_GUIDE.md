@@ -64,6 +64,8 @@ client/
 │   ├── components/
 │   │   ├── Header/
 │   │   │   └── index.tsx
+│   │   ├── LocationTable/
+│   │   │   └── index.tsx
 │   │   ├── Modal/
 │   │   │   └── index.tsx
 │   │   ├── ModalNewTask/
@@ -80,7 +82,7 @@ client/
 │   │       └── index.tsx
 │   └── state/
 │       ├── api.ts
-│       ├── redux.tsx
+│       ├── lambdaApi.ts
 │       └── index.ts
 ```
 
@@ -114,6 +116,7 @@ client/
 
 5. Core Components:
 - `Header/index.tsx`: Page header with breadcrumbs, actions, and contextual navigation.
+- `LocationTable/index.tsx`: Interactive table displaying locations from DynamoDB with sorting capabilities.
 - `Modal/index.tsx`: Reusable modal dialog with backdrop and animation support.
 - `ModalNewTask/index.tsx`: Task creation form with rich text editor and file attachments.
 - `Navbar/index.tsx`: Top navigation bar with search, notifications, and user menu.
@@ -129,6 +132,9 @@ client/
   * Users: Profile management and permissions
   * Teams: Team creation and member management
   * Search: Global search across all entities
+- `lambdaApi.ts`: Defines Lambda function endpoints and direct DynamoDB interactions.
+  * Data processing: Report generation and analysis
+  * Locations: DynamoDB integration for location data
 - `index.ts`: Exports store configuration and typed hooks for state access.
 
 7. Additional Features:
@@ -150,6 +156,7 @@ client/
 - **State Management**: Redux Toolkit with API slice pattern
 - **View Systems**: Board/Table/Timeline view implementations
 - **Data Flow**: RTK Query endpoints for API interactions
+- **Direct DynamoDB**: API Gateway integration for location data
 
 ### State Management Flow
 ```mermaid
@@ -163,6 +170,10 @@ sequenceDiagram
         RTK Query->>+Lambda API Gateway: Direct Request
         Lambda API Gateway->>+Lambda Function: Execute
         Lambda Function->>+RTK Query: Function Response
+    else DynamoDB Operations
+        RTK Query->>+Lambda API Gateway: Direct Request
+        Lambda API Gateway->>+DynamoDB: Execute Operation
+        DynamoDB->>+RTK Query: Data Response
     end
     RTK Query->>+Component: Normalized Data
     Component->>+Redux: UI State Updates
@@ -180,6 +191,7 @@ sequenceDiagram
 ```text
 state/
 ├── api.ts            # RTK Query endpoint definitions
+├── lambdaApi.ts      # Lambda and DynamoDB endpoints
 ├── redux.tsx         # Store configuration
 └── index.ts          # State exports
 ```
@@ -244,7 +256,7 @@ export const api = createApi({
 
 #### Lambda API Configuration
 ```typescript
-// lambdaApi.ts - Direct Lambda Integration
+// lambdaApi.ts - Lambda and DynamoDB Integration
 export const lambdaApi = createApi({
   reducerPath: "lambdaApi",
   baseQuery: fetchBaseQuery({
@@ -268,12 +280,24 @@ export const lambdaApi = createApi({
         body: data,
       }),
     }),
-    // Additional Lambda endpoints can be added here
+    
+    // Locations endpoint - direct DynamoDB integration
+    getLocations: builder.query<LocationsResponse, void>({
+      query: () => ({
+        url: "locations",
+        method: "POST", // API Gateway transforms to DynamoDB operation
+        body: {}, // Empty body, mapping template provides TableName
+      }),
+      keepUnusedDataFor: 86400, // 24 hours cache
+    }),
   }),
 });
 
 // Export hooks for use in components
-export const { useProcessDataMutation } = lambdaApi;
+export const { 
+  useProcessDataMutation,
+  useGetLocationsQuery 
+} = lambdaApi;
 ```
 
 ## 4. Component Catalog
@@ -284,6 +308,7 @@ export const { useProcessDataMutation } = lambdaApi;
 | Sidebar         | Collapsible project navigation        | isSidebarCollapsed (Redux) |
 | TaskCard        | Drag-and-drop, status updates         | useUpdateTaskStatus        |
 | BoardView       | DnD context provider                  | useGetProjectsTasks        |
+| LocationTable   | Location selection, sorting           | useGetLocationsQuery       |
 
 ### Data Visualization Components
 ```typescript
@@ -293,6 +318,37 @@ export const { useProcessDataMutation } = lambdaApi;
     <SortableTask key={task.id} task={task} />
   ))}
 </DndContext>
+
+// LocationTable implementation
+<TableContainer>
+  <Table>
+    <TableHead>
+      <TableRow>
+        <TableCell>
+          <TableSortLabel
+            active={orderBy === 'name'}
+            direction={orderBy === 'name' ? order : 'asc'}
+            onClick={() => handleRequestSort('name')}
+          >
+            Location Name
+          </TableSortLabel>
+        </TableCell>
+        <TableCell>ID</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {sortedLocations.map((location) => (
+        <TableRow 
+          key={location.id}
+          onClick={() => onLocationSelect(location)}
+        >
+          <TableCell>{location.name}</TableCell>
+          <TableCell>{location.id}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+</TableContainer>
 ```
 
 ## 5. Performance Patterns
@@ -301,12 +357,14 @@ export const { useProcessDataMutation } = lambdaApi;
 // RTK Query automatic caching
 useGetProjectsQuery(); // Cache: 5min
 useGetTasksQuery({ projectId }); // Cache: 2min
+useGetLocationsQuery(); // Cache: 24hrs (infrequently changing data)
 ```
 
 ### Optimization Techniques
 1. **Memoization**: React.memo for complex components
 2. **Virtualization**: react-window for long lists
 3. **Bundle Splitting**: Dynamic imports for view systems
+4. **Selective Fetching**: Direct service integrations for specific data needs
 
 ## 6. Deployment & Environment
 ### Runtime Configuration
@@ -315,6 +373,7 @@ useGetTasksQuery({ projectId }); // Cache: 2min
 export default {
   publicRuntimeConfig: {
     apiEndpoint: process.env.NEXT_PUBLIC_API_BASE_URL,
+    lambdaEndpoint: process.env.NEXT_PUBLIC_LAMBDA_API_URL,
     cognitoPoolId: process.env.NEXT_PUBLIC_COGNITO_POOL_ID
   },
   productionBrowserSourceMaps: true
@@ -325,8 +384,13 @@ export default {
 ```text
 Frontend Flow:
 Amplify (CI/CD) → CloudFront → S3
+
 API Flow:
 Client → API Gateway (/prod/*) → EC2 → RDS
+
+Lambda Flow:
+Client → Lambda API Gateway → Lambda/DynamoDB
+
 Authentication:
 Cognito → Lambda → API Gateway
 ```

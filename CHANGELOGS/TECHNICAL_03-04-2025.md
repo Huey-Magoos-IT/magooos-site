@@ -1,101 +1,64 @@
 # Technical Changelog - March 4, 2025
 
-## Location Management System Implementation
+## Direct DynamoDB Integration Implementation
 
-### Overview
-Implemented a comprehensive location management system for the Reporting Department page, allowing admin users to select and filter locations for data report generation. This feature enhances the reporting capabilities by providing granular control over which locations are included in generated reports.
+### Issue Background
+The LocationTable component was previously using hardcoded location data. To improve data accuracy and maintainability, we needed a way to fetch location data directly from a data source without adding AWS SDK dependencies.
 
-### New Components
+### Solution Implemented
+Created a direct integration between API Gateway and DynamoDB that allows the frontend to retrieve location data without requiring Lambda functions or AWS SDK, resulting in faster performance and reduced complexity.
 
-#### 1. LocationTable Component
-- **File**: `client/src/components/LocationTable/index.tsx`
-- **Purpose**: Displays a sortable table of available locations for selection
-- **Key Features**:
-  - Interactive table with location names and IDs
-  - Column sorting (ascending/descending)
-  - Search functionality
-  - Real-time filtering to exclude already selected locations
-  - Responsive design with dark mode support
-  - Hover effects for improved user experience
+### Technical Details
 
-#### 2. Location Type Interfaces
-- Defined `Location` interface to standardize location data structure
-- Properties include: id, name, createdAt, updatedAt, __typename
-- Type-safe implementation with TypeScript
+#### AWS Infrastructure Changes
+1. **API Gateway DynamoDB Integration**
+   - Added new endpoint to existing Lambda API Gateway: `/locations`
+   - Method: POST with direct DynamoDB service integration
+   - Integration Type: AWS Service (DynamoDB)
+   - Action: Scan
+   - Resource: Location-u3tk7jwqujcqfedzbv7hksrt4a-NONE table
 
-### Reporting Department Integration
+2. **API Gateway Configuration**
+   - Added request mapping template to format DynamoDB Scan operation
+   - Added response mapping template to transform DynamoDB response format
+   - Configured CORS to allow cross-origin requests
+   - Maintained same authorization pattern as other endpoints
 
-#### 1. Updated Reporting Page
-- **File**: `client/src/app/departments/reporting/page.tsx`
-- **Key Changes**:
-  - Integrated LocationTable component for location selection
-  - Implemented multi-select functionality for locations
-  - Added UI for displaying selected locations with removal option
-  - Updated API request to use selected locations for report generation
-  - Visual feedback for empty and populated selection states
+3. **IAM Permissions**
+   - Added AmazonDynamoDBReadOnlyAccess to API Gateway role
+   - Restricted permissions to specific DynamoDB table
+   - Maintained security best practices with least privilege access
 
-#### 2. Enhanced Form Controls
-- Improved date selection with standardized format (MMddyyyy)
-- Added clear validation for form submissions
-- Improved UI for discount ID management
-- Added responsive grid layout for form elements
+#### Frontend Changes
+1. **Lambda API Client Enhancement**
+   - Updated `client/src/state/lambdaApi.ts` with new location endpoint
+   - Added `getLocations` query using RTK Query
+   - Configured proper authentication and error handling
+   - Set caching duration to 24 hours for locations data
 
-### Security Enhancements
+2. **LocationTable Component Update**
+   - Modified `client/src/components/LocationTable/index.tsx` to use dynamic data
+   - Replaced hardcoded location data with RTK Query hook
+   - Added loading states and error handling
+   - Enhanced UI feedback for data fetching states
+   - Maintained existing sorting and filtering capabilities
 
-#### 1. Admin Access Control
-- Restricted access to Reporting Department based on team admin status
-- Added explicit security checks before rendering sensitive components
-- Clear error messaging for unauthorized access attempts
-- Redirect links to team management for users without proper access
+3. **Reporting Department Integration**
+   - LocationTable now displays actual location data from DynamoDB
+   - Maintained existing location selection functionality
+   - Improved user experience with real-time data
 
-#### 2. API Integration Security
-- Lambda function calls require authentication via Cognito tokens
-- Data validation before API submission
-- Secure handling of location IDs and discount IDs
+### Architecture Impact
+This implementation enhances the system architecture by:
+1. Establishing a pattern for direct DynamoDB access without Lambda or SDK
+2. Reducing API call latency by eliminating Lambda cold starts
+3. Providing a reusable approach for other simple data access needs
+4. Maintaining consistent authentication and security patterns
 
-### Real-time Feedback System
+### Security Considerations
+- Authentication is handled through the same Cognito flow as existing endpoints
+- Read-only access to the specific DynamoDB table
+- Proper error handling to prevent data leakage
 
-#### 1. Loading States
-- Visual indicators during report generation
-- Progress spinners for long-running operations
-- Disabled controls during processing to prevent duplicate submissions
-
-#### 2. Report Status Tracking
-- Success/error messaging with appropriate styling
-- Detailed error reporting with expandable error details
-- Automatic file list refreshing after report generation
-- Highlighted new files in the file list for easy identification
-
-### User Experience Improvements
-
-#### 1. File Management Interface
-- Paginated file list for better performance with large datasets
-- Sort order showing newest files first
-- Direct download links for generated reports
-- Visual distinction for newly generated files
-- File count and pagination controls
-
-#### 2. Form Validation
-- Date range validation for report generation
-- Clear messaging for required fields
-- Interactive form elements with appropriate keyboard shortcuts
-
-### Technical Implementation Details
-
-#### 1. State Management
-- Local React state for UI components
-- RTK Query for API operations
-- Optimized re-renders with React hooks (useMemo, useEffect)
-- Asynchronous data loading with proper error handling
-
-#### 2. API Integration
-- Direct Lambda integration via the Lambda API Gateway
-- Configured to use shared authentication mechanism
-- Proper error handling for API failures
-- Asynchronous processing with feedback mechanisms
-
-### Testing and Validation
-- Verified proper rendering in light and dark modes
-- Tested location selection and deselection
-- Validated form submission and API integration
-- Confirmed admin-only access restrictions
+### Testing Notes
+The implementation has been tested in the Reporting Department page, confirming that location data is successfully retrieved from DynamoDB and properly displayed in the LocationTable component.

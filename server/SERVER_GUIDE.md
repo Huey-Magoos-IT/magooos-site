@@ -206,7 +206,7 @@ npx prisma migrate dev --name add_notifications
 npx prisma generate
 ```
 
-## AWS Integration (Original + Enhanced)
+## AWS Integration
 
 ### EC2 Configuration
 ```javascript
@@ -251,17 +251,55 @@ app.use(cors({
 ```
 
 #### Direct Lambda API Gateway
-A separate API Gateway is used for direct Lambda integrations to bypass the Express backend:
+A separate API Gateway is used for direct Lambda integrations and DynamoDB access:
 
 - **Gateway ID**: sutpql04fb.execute-api.us-east-2.amazonaws.com/prod
-- **Integration Type**: Direct Lambda (non-proxy)
+- **Integration Types**:
+  * Direct Lambda (non-proxy) for compute functions
+  * AWS Service Integration for DynamoDB operations
 - **Resources**:
-  * `/process-data` - Data extraction and report generation
-- **Lambda Function**: Qu_API_Extraction_3-0
+  * `/process-data` - Data extraction and report generation (Lambda)
+  * `/locations` - Location data retrieval (DynamoDB)
 - **Frontend Integration**: Accessed via `lambdaApi.ts` in the client
 
-This separation improves performance for compute-intensive operations by eliminating proxy integration overhead. Both gateways use the same Cognito authentication mechanism to maintain security.
+This separation provides several advantages:
+1. Improved performance by eliminating proxy overhead
+2. Direct service integration for simple data operations
+3. Reduced cold start latency for data retrieval
 
+#### DynamoDB Integration
+The DynamoDB integration uses API Gateway's AWS Service Integration feature:
+
+```
+// API Gateway: /locations POST Method Request
+Integration Request:
+{
+  "TableName": "Location-u3tk7jwqujcqfedzbv7hksrt4a-NONE"
+}
+
+// API Gateway: /locations POST Method Response
+Integration Response:
+{
+  "locations": [
+    #foreach($item in $inputRoot.Items)
+    {
+      "id": "$item.id.S",
+      "name": "$item.name.S",
+      "__typename": "Location"
+    }#if($foreach.hasNext),#end
+    #end
+  ]
+}
+```
+
+This pattern provides several advantages:
+1. No Lambda cold starts for simple data operations
+2. No SDK dependencies in frontend or backend code
+3. Simplified maintenance with declarative mapping templates
+4. Consistent authentication using the same Cognito flow
+
+### Error Handling Middleware
+```typescript
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: any) => {
   console.error('Error:', err.stack);
@@ -332,9 +370,10 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
 | Prisma Migrations         | npx prisma migrate deploy             | On schema change|
 | PM2 Process Monitoring    | pm2 logs magooos-backend --lines 100  | As needed       |
 | Server Status Check       | pm2 list                              | Daily           |
-| Error Log Review         | pm2 logs magooos-backend --err        | Daily           |
-| NGINX Config Test        | sudo nginx -t                         | After changes   |
-| API Gateway Test        | curl -v API_GATEWAY_URL/prod/teams    | After deploy    |
+| Error Log Review          | pm2 logs magooos-backend --err        | Daily           |
+| NGINX Config Test         | sudo nginx -t                         | After changes   |
+| API Gateway Test          | curl -v API_GATEWAY_URL/prod/teams    | After deploy    |
+| DynamoDB Table Status     | aws dynamodb describe-table           | Weekly          |
 
 ## Troubleshooting
 
@@ -356,3 +395,15 @@ echo $TOKEN | jq -R 'split(".") | .[1] | @base64d | fromjson'
 rm -rf node_modules/.prisma
 npm install
 npx prisma generate
+```
+
+4. **API Gateway Integration Issues**
+```bash
+# Test API Gateway endpoints:
+curl -v -H "Authorization: Bearer $TOKEN" https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod/locations
+```
+
+5. **DynamoDB Access Issues**
+```bash
+# Check IAM permissions for the API Gateway role
+aws iam list-attached-role-policies --role-name ApiGatewayDynamoDBRole

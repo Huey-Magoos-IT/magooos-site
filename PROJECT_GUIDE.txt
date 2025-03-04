@@ -1,4 +1,11 @@
 === PROJECT ARCHITECTURE ===
+
+!!! IMPORTANT DEVELOPMENT REQUIREMENT !!!
+THE AWS SDK IS STRICTLY PROHIBITED IN THIS PROJECT CODEBASE.
+All AWS integrations must use direct HTTP/HTTPS requests, API Gateway integrations,
+or other SDK-less approaches. This applies to all components, including Lambda functions.
+DO NOT INTRODUCE AWS SDK DEPENDENCIES UNDER ANY CIRCUMSTANCES.
+
 [Next.js 14] client/src/app/
   - App Router: dashboardWrapper.tsx + layout.tsx
   - Dynamic views: /projects/[id]/page.tsx
@@ -30,6 +37,10 @@ EC2 (auto-scaled) ←→ RDS (VPC)
  API Gateway ←─┘
   Main Endpoint: https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod
   Lambda Endpoint: https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod
+
+DynamoDB:
+  - Locations table (Location-u3tk7jwqujcqfedzbv7hksrt4a-NONE)
+  - Direct API Gateway integration for location data
 
 S3 Buckets:
 1. Profile Pictures:
@@ -67,6 +78,18 @@ S3 Buckets:
    - server/ecosystem.config.js: PM2 hardening
    - Team-based authorization: isAdmin field controls access
 
+5. Direct DynamoDB Integration:
+   - API Gateway to DynamoDB without Lambda or SDK
+   - Uses mapping templates for request/response transformation
+   - Reusable pattern for simple data access requirements
+   - Implemented for LocationTable component
+
+6. AWS SDK Prohibition:
+   - AWS SDK must NOT be used anywhere in the codebase
+   - All AWS services must be accessed via HTTP requests, API Gateway, or other SDK-less methods
+   - Direct HTTP requests are preferred for AWS service interactions
+   - Use mapping templates in API Gateway for service integration
+
 AWS Infrastructure:
 - EC2 auto-scaling groups for backend API (port 80)
 - RDS PostgreSQL with read replicas and daily backups
@@ -74,6 +97,7 @@ AWS Infrastructure:
 - Cognito user pools with custom attributes
 - API Gateway with rate limiting and updated CORS
 - Lambda functions for cron jobs and user management
+- DynamoDB for location data and reference tables
 - CloudWatch monitoring and alerting
 
 Development Ecosystem:
@@ -121,6 +145,12 @@ Lambda Configuration:
   * Same Cognito authentication as main API Gateway
   * Frontend access via lambdaApi.ts configuration
 
+DynamoDB Configuration:
+- On-demand capacity mode for cost efficiency
+- Location data stored in Location-u3tk7jwqujcqfedzbv7hksrt4a-NONE table
+- API Gateway direct integration for /locations endpoint
+- Read-only access through IAM role permissions
+
 Cognito Integration:
 - Frontend uses AWS Amplify UI components
 - API Gateway Cognito authorizers for all endpoints
@@ -146,6 +176,7 @@ IAM Policies:
 - Lambda: RDS read/write access, VPC execution
 - Amplify: CodeCommit pull access
 - Data Bucket: Restricted to admin team access
+- API Gateway: DynamoDB read-only access for locations table
 
 Monitoring:
 - CloudWatch alarms for:
@@ -167,7 +198,7 @@ Backend:
 - Node.js/Express REST API
 - Prisma for database management
 - JWT authentication
-- AWS SDK integrations
+- Direct AWS integration (NO AWS SDK allowed)
 
 DevOps:
 - PostgreSQL on AWS RDS
