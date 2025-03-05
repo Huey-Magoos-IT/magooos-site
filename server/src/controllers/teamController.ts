@@ -5,14 +5,18 @@ const prisma = new PrismaClient();
 
 export const getRoles = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log("[GET /roles] Fetching all roles");
+    console.log("[GET /teams/roles] Fetching all roles");
     
     const roles = await prisma.role.findMany();
     
-    console.log(`[GET /roles] Found ${roles.length} roles`);
+    console.log(`[GET /teams/roles] Found ${roles.length} roles:`);
+    roles.forEach(role => {
+      console.log(`- ${role.name} (ID: ${role.id}): ${role.description || 'No description'}`);
+    });
+    
     res.json(roles);
   } catch (error: any) {
-    console.error("[GET /roles] Error:", error);
+    console.error("[GET /teams/roles] Error:", error);
     res.status(500).json({
       message: "Error retrieving roles",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -48,8 +52,16 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
       });
     });
 
+    // Make sure teamRoles is properly serialized in the response
+    const processedTeams = teams.map(team => ({
+      ...team,
+      teamRoles: team.teamRoles
+    }));
+
     console.log(`[GET /teams] Found ${teams.length} teams`);
-    res.json(teams);
+    console.log("Sample team with roles:", JSON.stringify(processedTeams[0], null, 2));
+    
+    res.json(processedTeams);
   } catch (error: any) {
     console.error("[GET /teams] Error:", error);
     res.status(500).json({
