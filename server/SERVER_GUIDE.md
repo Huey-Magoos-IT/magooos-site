@@ -57,7 +57,14 @@ server/
 3. **Team Controller** (`controllers/teamController.ts`)
    - Team creation and management
    - Member assignments
-   - Role management (Product Owner, Project Manager)
+   - Role-based access control
+     - ADMIN role: Full system access (equivalent to legacy isAdmin=true)
+     - DATA role: Access to data department
+     - REPORTING role: Access to reporting department
+   - Role assignment endpoints:
+     - Get available roles
+     - Add/remove roles from teams
+   - Permission checking utility functions
 
 4. **User Controller** (`controllers/userController.ts`)
    - User profile management
@@ -88,6 +95,10 @@ server/
    - Team CRUD operations
    - Member management endpoints
    - Team assignment handling
+   - Role management endpoints:
+     - GET /teams/roles - List all available roles
+     - POST /teams/:teamId/roles - Add a role to a team
+     - DELETE /teams/:teamId/roles/:roleId - Remove a role from a team
 
 4. **User Routes** (`routes/userRoutes.ts`)
    - User profile operations
@@ -109,23 +120,35 @@ Core Models:
    - Team associations
    - Task relationships (author/assignee)
 
-2. **Team**
+2. **Role**
+   - Role name (e.g., ADMIN, DATA, REPORTING)
+   - Optional description
+   - Relationship to teams through TeamRole
+
+3. **TeamRole**
+   - Many-to-many relationship between Team and Role
+   - Unique constraint on teamId+roleId combinations
+   - Cascade deletion with parent entities
+
+4. **Team**
    - Team structure
    - Leadership roles
    - Project associations
+   - Role assignments via TeamRole
+   - Legacy isAdmin field (maintained for backward compatibility)
 
-3. **Project**
+5. **Project**
    - Project metadata
    - Timeline information
    - Team assignments
 
-4. **Task**
+6. **Task**
    - Core task information
    - Status and priority
    - Assignments and relationships
    - Comments and attachments
 
-5. **Supporting Models**
+7. **Supporting Models**
    - TaskAssignment: Many-to-many user-task relationships
    - Attachment: File management
    - Comment: Task discussions
@@ -166,43 +189,146 @@ sequenceDiagram
 
 ## Modification Guide
 
-### Adding Features (Example: Notifications)
+### Adding Features (Example: Role-Based Access Control)
 
-1. **Extend Prisma Schema**
-```prisma
-// Add to schema.prisma
-model Notification {
-  id        Int      @id @default(autoincrement())
-  message   String
-  userId    Int
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId])
-}
-```
-
-2. **Create Controller**
+1. **Implementing Permission Checks in Controllers**
 ```typescript
-// src/controllers/notificationController.ts
-export const getNotifications = async (userId: number) => {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' }
-  });
+// src/controllers/departmentController.ts
+export const getDataDepartmentData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Get current user from JWT token
+    const userId = req.user.userId;
+    
+    // Get user with team and roles
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    // Check if user's team has access to data department (DATA role or ADMIN role)
+    const hasDataAccess = user?.team?.teamRoles.some(
+      tr => tr.role.name === 'DATA' || tr.role.name === 'ADMIN'
+    );
+    
+    if (!hasDataAccess) {
+      return res.status(403).json({
+        message: "Access denied: requires DATA or ADMIN role"
+      });
+    }
+    
+    // Proceed with data department logic for authorized users
+    const departmentData = await prisma.dataRecord.findMany();
+    return res.json(departmentData);
+  } catch (error: any) {
+    console.error("[GET /data] Error:", error);
+    res.status(500).json({ message: "Error retrieving data department information" });
+  }
 };
 ```
 
-3. **Implement Route**
+2. **Using the hasRole Utility Function**
 ```typescript
-// src/routes/notificationRoutes.ts
-router.get('/notifications', 
-  authMiddleware,
-  notificationController.getNotifications
-);
+// src/controllers/accessController.ts
+import { hasRole } from "../controllers/teamController";
+
+export const checkDepartmentAccess = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { department } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { userId: req.user.userId },
+      include: { team: true }
+    });
+    
+    if (!user?.team) {
+      return res.status(403).json({ message: "User must be in a team" });
+    }
+    
+    // Map department to required role
+    const requiredRole = department.toUpperCase();
+    
+    // Check if user's team has the required role
+    const hasAccess = await hasRole(user.team.id, requiredRole) ||
+                      await hasRole(user.team.id, 'ADMIN');
+    
+    if (!hasAccess) {
+      return res.status(403).json({
+        message: `Access denied: requires ${requiredRole} role`
+      });
+    }
+    
+    next();
+  } catch (error: any) {
+    console.error("[checkDepartmentAccess] Error:", error);
+    res.status(500).json({ message: "Error checking access permissions" });
+  }
+};
+
+// Usage in routes:
+router.get('/departments/:department', checkDepartmentAccess, getDepartmentData);
 ```
 
-4. **Generate Migration**
+3. **Creating New Roles and Assigning to Teams**
+```typescript
+// Migration or seed script
+async function setupRoles() {
+  // Create standard roles
+  const roles = [
+    { name: 'ADMIN', description: 'Full system access' },
+    { name: 'DATA', description: 'Access to data department' },
+    { name: 'REPORTING', description: 'Access to reporting department' }
+  ];
+  
+  for (const role of roles) {
+    await prisma.role.upsert({
+      where: { name: role.name },
+      update: { description: role.description },
+      create: {
+        name: role.name,
+        description: role.description
+      }
+    });
+  }
+  
+  // Grant roles to existing admin teams
+  const adminTeams = await prisma.team.findMany({
+    where: { isAdmin: true }
+  });
+  
+  const adminRole = await prisma.role.findUnique({
+    where: { name: 'ADMIN' }
+  });
+  
+  if (adminRole) {
+    for (const team of adminTeams) {
+      await prisma.teamRole.upsert({
+        where: {
+          teamId_roleId: {
+            teamId: team.id,
+            roleId: adminRole.id
+          }
+        },
+        update: {},
+        create: {
+          teamId: team.id,
+          roleId: adminRole.id
+        }
+      });
+    }
+  }
+}
+```
+
+4. **Generate Migration for Role Models**
 ```bash
-npx prisma migrate dev --name add_notifications
+npx prisma migrate dev --name add_role_based_access
 npx prisma generate
 ```
 

@@ -3,14 +3,24 @@ import fs from "fs";
 import path from "path";
 const prisma = new PrismaClient();
 
-async function deleteAllData(orderedFileNames: string[]) {
-  const modelNames = orderedFileNames.map((fileName) => {
-    const modelName = path.basename(fileName, path.extname(fileName));
-    return modelName.charAt(0).toUpperCase() + modelName.slice(1);
-  });
+// The correct deletion order to respect foreign key constraints
+async function deleteAllData() {
+  const deletionOrder = [
+    // Delete dependent tables first (children)
+    "Comment",
+    "Attachment",
+    "TaskAssignment",
+    "TeamRole", // New table from role-based access control
+    "Task",
+    "ProjectTeam",
+    "User",
+    "Project",
+    "Team",
+    "Role", // New table from role-based access control
+  ];
 
-  for (const modelName of modelNames) {
-    const model: any = prisma[modelName as keyof typeof prisma];
+  for (const modelName of deletionOrder) {
+    const model: any = prisma[modelName.toLowerCase() as keyof typeof prisma];
     try {
       await model.deleteMany({});
       console.log(`Cleared data from ${modelName}`);
@@ -89,41 +99,67 @@ async function migrateAdminTeams() {
 
 async function main() {
   const dataDirectory = path.join(__dirname, "seedData");
+  
+  // Flag to control whether to clear and reseed data
+  // Set to false if you only want to run the role setup and migration
+  const shouldClearAndReseedData = false;
 
-  const orderedFileNames = [
-    "team.json",
-    "project.json",
-    "projectTeam.json",
-    "user.json",
-    "task.json",
-    "attachment.json",
-    "comment.json",
-    "taskAssignment.json",
-  ];
+  if (shouldClearAndReseedData) {
+    console.log("Clearing existing data...");
+    await deleteAllData();
+    
+    console.log("Seeding base data...");
+    // Correct creation order (parents first)
+    const creationOrder = [
+      "team.json",
+      "project.json",
+      "user.json",
+      "projectTeam.json",
+      "task.json",
+      "attachment.json",
+      "comment.json",
+      "taskAssignment.json",
+    ];
+    
+    for (const fileName of creationOrder) {
+      const filePath = path.join(dataDirectory, fileName);
+      const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      const modelName = path.basename(fileName, path.extname(fileName));
+      const model: any = prisma[modelName as keyof typeof prisma];
 
-  await deleteAllData(orderedFileNames);
-
-  for (const fileName of orderedFileNames) {
-    const filePath = path.join(dataDirectory, fileName);
-    const jsonData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    const modelName = path.basename(fileName, path.extname(fileName));
-    const model: any = prisma[modelName as keyof typeof prisma];
-
-    try {
-      for (const data of jsonData) {
-        await model.create({ data });
+      try {
+        for (const data of jsonData) {
+          // Use upsert instead of create to avoid unique constraint issues
+          const idField = modelName === "user" ? "userId" : "id";
+          
+          if (data[idField]) {
+            await model.upsert({
+              where: { [idField]: data[idField] },
+              update: data,
+              create: data
+            });
+          } else {
+            await model.create({ data });
+          }
+        }
+        console.log(`Seeded ${modelName} with data from ${fileName}`);
+      } catch (error) {
+        console.error(`Error seeding data for ${modelName}:`, error);
       }
-      console.log(`Seeded ${modelName} with data from ${fileName}`);
-    } catch (error) {
-      console.error(`Error seeding data for ${modelName}:`, error);
     }
+  } else {
+    console.log("Skipping data clearing and reseeding, proceeding with role setup only.");
   }
   
-  // Set up roles after base data is seeded
-  await setupRoles();
-  
-  // Migrate existing admin teams to have the ADMIN role
-  await migrateAdminTeams();
+  try {
+    // Set up roles
+    await setupRoles();
+    
+    // Migrate existing admin teams to have the ADMIN role
+    await migrateAdminTeams();
+  } catch (error) {
+    console.error("Error in role setup or migration:", error);
+  }
 }
 
 main()
