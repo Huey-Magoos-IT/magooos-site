@@ -29,7 +29,15 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
         cognitoId: cognitoId,
       },
       include: {
-        team: true // Include team details for access control
+        team: {
+          include: {
+            teamRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }
       }
     });
 

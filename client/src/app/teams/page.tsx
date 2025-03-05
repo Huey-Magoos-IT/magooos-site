@@ -300,24 +300,58 @@ const TeamsPage = () => {
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => handleJoinTeam(team.id)}
-                className={`px-4 py-2 rounded ${
-                  authData?.userDetails?.teamId === team.id
-                    ? 'bg-green-500 text-white'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-                disabled={authData?.userDetails?.teamId === team.id}
-              >
-                {authData?.userDetails?.teamId === team.id ? 'Current Team' : 'Join Team'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleJoinTeam(team.id)}
+                  className={`px-4 py-2 rounded ${
+                    authData?.userDetails?.teamId === team.id
+                      ? 'bg-green-500 text-white'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                  disabled={authData?.userDetails?.teamId === team.id}
+                >
+                  {authData?.userDetails?.teamId === team.id ? 'Current Team' : 'Join Team'}
+                </button>
+                
+                {/* Settings menu for admins */}
+                {isUserAdmin && (
+                  <div className="relative">
+                    <button
+                      onClick={() => openTeamSettings(team.id)}
+                      className="p-2 text-gray-500 rounded-full hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-tertiary"
+                    >
+                      <Settings size={18} />
+                    </button>
+                    
+                    {/* Settings dropdown */}
+                    {showSettingsFor === team.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 dark:bg-dark-tertiary">
+                        <button
+                          onClick={() => openEditModal(team)}
+                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center gap-2 dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                          <Edit size={14} />
+                          Rename Team
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(team)}
+                          className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center gap-2 dark:text-red-400 dark:hover:bg-gray-800"
+                        >
+                          <Trash2 size={14} />
+                          Delete Team
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Role management for existing teams - only visible to admin users */}
-            {authData?.userDetails?.team?.isAdmin && (
+            {isUserAdmin && (
               <div className="mt-3 pt-3 border-t dark:border-gray-700">
                 <h4 className="text-sm font-medium mb-2 dark:text-white">Manage Roles:</h4>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                   {roles?.map(role => {
                     const hasRole = team.teamRoles?.some(tr => tr.role.id === role.id);
                     return (
