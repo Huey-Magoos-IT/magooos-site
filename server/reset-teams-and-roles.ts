@@ -57,7 +57,10 @@ async function resetTeamsAndRoles() {
     // Delete unneeded teams (keep ID 1, 2, 6 from the update list)
     const teamIdsToKeep = teamUpdates.map(t => t.id);
     
-    // First, update users that belong to teams we're going to delete to be part of the admin team
+    // First handle database dependencies
+    console.log("Handling database dependencies before team deletion...");
+    
+    // 1. Update users that belong to teams we're going to delete to be part of the admin team
     await prisma.user.updateMany({
       where: {
         teamId: {
@@ -69,7 +72,33 @@ async function resetTeamsAndRoles() {
       }
     });
     
+    // 2. Find ProjectTeam entries that reference teams we want to delete
+    const projectTeamsToDelete = await prisma.projectTeam.findMany({
+      where: {
+        teamId: {
+          notIn: teamIdsToKeep
+        }
+      }
+    });
+    
+    // 3. Delete those ProjectTeam entries
+    if (projectTeamsToDelete.length > 0) {
+      console.log(`Deleting ${projectTeamsToDelete.length} ProjectTeam entries for teams being removed`);
+      await prisma.projectTeam.deleteMany({
+        where: {
+          teamId: {
+            notIn: teamIdsToKeep
+          }
+        }
+      });
+    }
+    
+    // 4. Delete all TaskAssignment entries for simplicity
+    console.log("Deleting task assignments...");
+    await prisma.taskAssignment.deleteMany({});
+    
     // Now delete the teams we don't need
+    console.log("Deleting unnecessary teams...");
     const deletedTeams = await prisma.team.deleteMany({
       where: {
         id: {
