@@ -29,6 +29,23 @@ model User {
   team            Team?            @relation(fields: [teamId], references: [id])
 }
 
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  teamRoles   TeamRole[]
+}
+
+model TeamRole {
+  id      Int   @id @default(autoincrement())
+  teamId  Int
+  roleId  Int
+  team    Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role    Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, roleId])
+}
+
 model Team {
   id                   Int           @id @default(autoincrement())
   teamName             String
@@ -37,6 +54,7 @@ model Team {
   projectManagerUserId Int?
   projectTeams         ProjectTeam[]
   user                 User[]
+  teamRoles            TeamRole[]
 }
 
 model Project {

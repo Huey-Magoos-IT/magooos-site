@@ -3,6 +3,23 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export const getRoles = async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log("[GET /roles] Fetching all roles");
+    
+    const roles = await prisma.role.findMany();
+    
+    console.log(`[GET /roles] Found ${roles.length} roles`);
+    res.json(roles);
+  } catch (error: any) {
+    console.error("[GET /roles] Error:", error);
+    res.status(500).json({
+      message: "Error retrieving roles",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export const getTeams = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /teams] Fetching all teams");
@@ -14,6 +31,11 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
             userId: true,
             username: true
           }
+        },
+        teamRoles: {
+          include: {
+            role: true
+          }
         }
       }
     });
@@ -22,7 +44,7 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
     res.json(teams);
   } catch (error: any) {
     console.error("[GET /teams] Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Error retrieving teams",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -30,13 +52,19 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const createTeam = async (req: Request, res: Response): Promise<void> => {
-  const { teamName, isAdmin } = req.body;
-  console.log("[POST /teams] Creating team:", { teamName, isAdmin });
+  const { teamName, roleIds = [] } = req.body;
+  console.log("[POST /teams] Creating team:", { teamName, roleIds });
 
   // Validate input
   if (!teamName || typeof teamName !== 'string' || teamName.trim().length === 0) {
     console.error("[POST /teams] Invalid team name");
     res.status(400).json({ message: "Team name is required" });
+    return;
+  }
+
+  if (!Array.isArray(roleIds)) {
+    console.error("[POST /teams] Invalid roleIds format");
+    res.status(400).json({ message: "roleIds must be an array" });
     return;
   }
 
@@ -52,18 +80,56 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const team = await prisma.team.create({
-      data: {
-        teamName: teamName.trim(),
-        isAdmin: Boolean(isAdmin)
+    // Find admin role (for backward compatibility)
+    const adminRole = await prisma.role.findUnique({
+      where: { name: 'ADMIN' }
+    });
+
+    // Determine if team should have admin flag based on role selection
+    const isAdmin = adminRole ? roleIds.includes(adminRole.id) : false;
+
+    // Create team with roles in a transaction
+    const newTeam = await prisma.$transaction(async (tx) => {
+      // Create the team
+      const team = await tx.team.create({
+        data: {
+          teamName: teamName.trim(),
+          isAdmin: isAdmin
+        }
+      });
+      
+      // Create team role relationships
+      if (roleIds.length > 0) {
+        for (const roleId of roleIds) {
+          await tx.teamRole.create({
+            data: {
+              teamId: team.id,
+              roleId: Number(roleId)
+            }
+          });
+        }
+      }
+      
+      return team;
+    });
+
+    // Fetch the created team with roles for response
+    const teamWithRoles = await prisma.team.findUnique({
+      where: { id: newTeam.id },
+      include: {
+        teamRoles: {
+          include: {
+            role: true
+          }
+        }
       }
     });
 
-    console.log("[POST /teams] Team created:", team);
-    res.status(201).json(team);
+    console.log("[POST /teams] Team created:", teamWithRoles);
+    res.status(201).json(teamWithRoles);
   } catch (error: any) {
     console.error("[POST /teams] Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Error creating team",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -84,7 +150,14 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
   try {
     // Verify team exists
     const team = await prisma.team.findUnique({
-      where: { id: Number(teamId) }
+      where: { id: Number(teamId) },
+      include: {
+        teamRoles: {
+          include: {
+            role: true
+          }
+        }
+      }
     });
 
     if (!team) {
@@ -107,16 +180,154 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
     const updatedUser = await prisma.user.update({
       where: { userId: Number(userId) },
       data: { teamId: Number(teamId) },
-      include: { team: true }
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }
+      }
     });
 
     console.log("[POST /teams/join] User joined team:", updatedUser);
     res.json(updatedUser);
   } catch (error: any) {
     console.error("[POST /teams/join] Error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Error joining team",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+};
+
+export const addRoleToTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamId } = req.params;
+  const { roleId } = req.body;
+  
+  if (!teamId || !roleId) {
+    res.status(400).json({ message: "Team ID and Role ID are required" });
+    return;
+  }
+
+  try {
+    // Check if team exists
+    const team = await prisma.team.findUnique({
+      where: { id: Number(teamId) }
+    });
+
+    if (!team) {
+      res.status(404).json({ message: "Team not found" });
+      return;
+    }
+
+    // Check if role exists
+    const role = await prisma.role.findUnique({
+      where: { id: Number(roleId) }
+    });
+
+    if (!role) {
+      res.status(404).json({ message: "Role not found" });
+      return;
+    }
+
+    // Check if relation already exists
+    const existingTeamRole = await prisma.teamRole.findFirst({
+      where: {
+        teamId: Number(teamId),
+        roleId: Number(roleId)
+      }
+    });
+
+    if (existingTeamRole) {
+      res.status(409).json({ message: "Team already has this role" });
+      return;
+    }
+
+    // Add role to team
+    const teamRole = await prisma.teamRole.create({
+      data: {
+        teamId: Number(teamId),
+        roleId: Number(roleId)
+      }
+    });
+
+    // Update isAdmin flag if adding admin role
+    if (role.name === 'ADMIN') {
+      await prisma.team.update({
+        where: { id: Number(teamId) },
+        data: { isAdmin: true }
+      });
+    }
+
+    res.status(201).json(teamRole);
+  } catch (error: any) {
+    console.error("[POST /teams/:teamId/roles] Error:", error);
+    res.status(500).json({
+      message: "Error adding role to team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+export const removeRoleFromTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamId, roleId } = req.params;
+
+  try {
+    // Check if relation exists
+    const teamRole = await prisma.teamRole.findFirst({
+      where: {
+        teamId: Number(teamId),
+        roleId: Number(roleId)
+      },
+      include: {
+        role: true
+      }
+    });
+
+    if (!teamRole) {
+      res.status(404).json({ message: "Team does not have this role" });
+      return;
+    }
+
+    // Delete the relation
+    await prisma.teamRole.delete({
+      where: { id: teamRole.id }
+    });
+
+    // Update isAdmin flag if removing admin role
+    if (teamRole.role.name === 'ADMIN') {
+      await prisma.team.update({
+        where: { id: Number(teamId) },
+        data: { isAdmin: false }
+      });
+    }
+
+    res.status(200).json({ message: "Role removed from team" });
+  } catch (error: any) {
+    console.error("[DELETE /teams/:teamId/roles/:roleId] Error:", error);
+    res.status(500).json({
+      message: "Error removing role from team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Utility function to check if a team has a specific role
+export const hasRole = async (teamId: number, roleName: string): Promise<boolean> => {
+  if (!teamId) return false;
+  
+  const count = await prisma.teamRole.count({
+    where: {
+      teamId,
+      role: {
+        name: roleName
+      }
+    }
+  });
+  
+  return count > 0;
 };
