@@ -130,12 +130,16 @@ client/
   * Projects: CRUD operations for project management
   * Tasks: Creation, updates, status changes, assignments
   * Users: Profile management and permissions
-  * Teams: Team creation and member management
+  * Teams: Team creation, role management, and member assignments
+  * Roles: List available roles, add/remove roles from teams
   * Search: Global search across all entities
 - `lambdaApi.ts`: Defines Lambda function endpoints and direct DynamoDB interactions.
   * Data processing: Report generation and analysis
   * Locations: DynamoDB integration for location data
 - `index.ts`: Exports store configuration and typed hooks for state access.
+- `lib/accessControl.ts`: Provides role-based permission utilities.
+  * hasRole: Checks if a user's team has a specific role
+  * hasAnyRole: Verifies if a user's team has any of several roles
 
 7. Additional Features:
 - `search/page.tsx`: Global search interface with filters and real-time results.
@@ -144,10 +148,12 @@ client/
   * Current team and team type (admin/regular)
   * User ID and system details
 - `teams/page.tsx`: Enhanced team management with:
-  * Create teams with optional admin privileges
+  * Create teams with role selection (ADMIN, DATA, REPORTING)
   * Join existing teams with real-time status updates
-  * View team type (admin/regular) and current membership
-  * Improved UI with validation and error handling
+  * View team roles and current membership
+  * Add or remove roles from existing teams
+  * Role-based UI elements that adapt to user permissions
+  * Improved validation with role-specific messaging
 - `timeline/page.tsx`: Organization-wide timeline showing all project milestones.
 - `users/page.tsx`: User administration, role management, and team assignments.
 
@@ -157,6 +163,93 @@ client/
 - **View Systems**: Board/Table/Timeline view implementations
 - **Data Flow**: RTK Query endpoints for API interactions
 - **Direct DynamoDB**: API Gateway integration for location data
+- **Role-Based Access Control**: Permission utilities for department access
+
+### Role-Based Access Control System
+The application implements a role-based access control system allowing granular access permissions:
+
+```typescript
+// src/lib/accessControl.ts
+import { Role, TeamRole } from "@/state/api";
+
+// Check if user's team has required role
+export const hasRole = (teamRoles: TeamRole[] | undefined, requiredRole: string): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  
+  return teamRoles.some(tr =>
+    tr.role.name === requiredRole || tr.role.name === 'ADMIN'  // ADMIN always has access
+  );
+};
+
+// Check if user's team has any of the required roles
+export const hasAnyRole = (teamRoles: TeamRole[] | undefined, requiredRoles: string[]): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  
+  return teamRoles.some(tr =>
+    requiredRoles.includes(tr.role.name) || tr.role.name === 'ADMIN'  // ADMIN always has access
+  );
+};
+```
+
+#### Using Access Control in Components
+```typescript
+// Example: Department page with role-based access
+import { hasRole } from "@/lib/accessControl";
+import { useGetAuthUserQuery } from "@/state/api";
+
+export default function DataDepartmentPage() {
+  // Get current user with team and roles
+  const { data: userData, isLoading } = useGetAuthUserQuery();
+  const teamRoles = userData?.userDetails?.team?.teamRoles;
+  
+  // Check if user has DATA role
+  const hasDataAccess = hasRole(teamRoles, 'DATA');
+  
+  if (isLoading) return <LoadingSpinner />;
+  
+  // Conditionally render based on access
+  if (!hasDataAccess) {
+    return (
+      <AccessDeniedMessage
+        message="You need DATA role access to view this content"
+      />
+    );
+  }
+  
+  return (
+    <div>
+      <h1>Data Department</h1>
+      {/* Department content here */}
+    </div>
+  );
+}
+```
+
+#### Role-Based UI Elements
+```typescript
+// Conditional UI element rendering example
+function AdminButton({ onClick, children }) {
+  const { data } = useGetAuthUserQuery();
+  const teamRoles = data?.userDetails?.team?.teamRoles;
+  const isAdmin = hasRole(teamRoles, 'ADMIN');
+  
+  if (!isAdmin) return null;
+  
+  return (
+    <button onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+```
+
+#### Roles and Their Capabilities
+
+| Role      | Access Areas                               | Capabilities                                   |
+|-----------|--------------------------------------------|-------------------------------------------------|
+| ADMIN     | Full system access                         | Can manage teams, roles, and all functionality  |
+| DATA      | Data department                            | Can view and manage data department resources   |
+| REPORTING | Reporting department                       | Can access reporting tools and analytics        |
 
 ### State Management Flow
 ```mermaid

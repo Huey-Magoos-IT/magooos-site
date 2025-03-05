@@ -24,12 +24,26 @@ export enum Status {
   Completed = "Completed",
 }
 
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface TeamRole {
+  id: number;
+  teamId: number;
+  roleId: number;
+  role: Role;
+}
+
 export interface Team {
   id: number;
   teamName: string;
   isAdmin: boolean;
   productOwnerUserId?: number;
   projectManagerUserId?: number;
+  teamRoles?: TeamRole[];
 }
 
 export interface User {
@@ -89,7 +103,7 @@ export const api = createApi({
     },
   }),
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Roles"],
   endpoints: (build) => ({
     getAuthUser: build.query({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
@@ -162,11 +176,30 @@ export const api = createApi({
       query: () => "teams",
       providesTags: ["Teams"],
     }),
-    createTeam: build.mutation<Team, { teamName: string; isAdmin: boolean }>({
+    getRoles: build.query<Role[], void>({
+      query: () => "teams/roles",
+      providesTags: ["Roles"],
+    }),
+    createTeam: build.mutation<Team, { teamName: string; roleIds: number[] }>({
       query: (team) => ({
         url: "teams",
         method: "POST",
         body: team,
+      }),
+      invalidatesTags: ["Teams"],
+    }),
+    addRoleToTeam: build.mutation<void, { teamId: number; roleId: number }>({
+      query: ({ teamId, roleId }) => ({
+        url: `teams/${teamId}/roles`,
+        method: "POST",
+        body: { roleId },
+      }),
+      invalidatesTags: ["Teams"],
+    }),
+    removeRoleFromTeam: build.mutation<void, { teamId: number; roleId: number }>({
+      query: ({ teamId, roleId }) => ({
+        url: `teams/${teamId}/roles/${roleId}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["Teams"],
     }),
@@ -211,7 +244,10 @@ export const {
   useSearchQuery,
   useGetUsersQuery,
   useGetTeamsQuery,
+  useGetRolesQuery,
   useCreateTeamMutation,
+  useAddRoleToTeamMutation,
+  useRemoveRoleFromTeamMutation,
   useJoinTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,

@@ -10,13 +10,14 @@ DO NOT INTRODUCE AWS SDK DEPENDENCIES UNDER ANY CIRCUMSTANCES.
   - App Router: dashboardWrapper.tsx + layout.tsx
   - Dynamic views: /projects/[id]/page.tsx
   - Auth flow: authProvider.tsx → Cognito
-  - Team-based access control: teams/page.tsx
-  - Department pages: Restricted access based on team admin status
+  - Role-based access control: accessControl.ts + teams/page.tsx
+  - Department pages: Restricted access based on user role permissions
 
 [Express API] server/src/
   - Controllers: taskController.ts ↔ Prisma models
   - Routes: JWT validation → API Gateway
-  - Team management: teamController.ts with admin privileges
+  - Team management: teamController.ts with role-based permissions
+  - Role management: Role and TeamRole models for granular access control
 
 [State Management] client/src/state/
   - Redux Toolkit: api.ts handles Cognito token injection
@@ -56,11 +57,13 @@ S3 Buckets:
    - Purpose: Display CSV data for analysis
 
 === CRITICAL CODE PATTERNS ===
-1. Department Access Control:
-   - Department pages require admin team membership
-   - Access verification through team.isAdmin
+1. Role-Based Access Control:
+   - Department pages require specific role permissions
+   - Access verification through accessControl.ts utility functions
+   - Roles include: ADMIN (all access), DATA (data department), REPORTING (reporting department)
+   - Teams can have multiple roles simultaneously
    - Restricted content with proper error handling
-   - Reusable access control components
+   - Reusable access control components and permission checks
 
 2. Priority System (Legacy):
    - client/src/app/priority/[level]/page.tsx
@@ -70,13 +73,16 @@ S3 Buckets:
 3. Component Architecture:
    - Modal system: ModalNewProject ↔ ModalNewTask
    - View components: BoardView ↔ taskController.ts
-   - Team components: Enhanced with admin privileges
+   - Team components: Role-aware UI with conditional rendering based on permissions
+   - Permission utilities: hasRole and hasAnyRole functions for checking access
 
 4. Security Implementation:
-   - server/prisma/schema.prisma: RBAC models with team-based access
+   - server/prisma/schema.prisma: Role and TeamRole models for granular permissions
+   - client/src/lib/accessControl.ts: Permission checking utilities
    - client/.env.local: Amplify config
    - server/ecosystem.config.js: PM2 hardening
-   - Team-based authorization: isAdmin field controls access
+   - Role-based authorization: Multiple roles with specific access levels
+   - Backward compatibility: Legacy isAdmin field maintained alongside new role system
 
 5. Direct DynamoDB Integration:
    - API Gateway to DynamoDB without Lambda or SDK
