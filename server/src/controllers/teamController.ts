@@ -40,6 +40,14 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Log team roles for debugging
+    teams.forEach(team => {
+      console.log(`Team ${team.teamName} (ID: ${team.id}) has ${team.teamRoles?.length || 0} roles:`);
+      team.teamRoles?.forEach(tr => {
+        console.log(`  - ${tr.role.name}`);
+      });
+    });
+
     console.log(`[GET /teams] Found ${teams.length} teams`);
     res.json(teams);
   } catch (error: any) {
