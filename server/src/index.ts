@@ -68,6 +68,28 @@ app.get("/api-roles", async (req, res) => {
   }
 });
 
+// Direct roles endpoint at root to ensure it works with API Gateway
+app.get("/teams/roles", async (req, res) => {
+  try {
+    console.log("[GET /teams/roles] Direct root endpoint called");
+    const prisma = new PrismaClient();
+    const roles = await prisma.role.findMany();
+    
+    // Set explicit no-cache headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
+    console.log(`Found ${roles.length} roles:`, roles.map(r => r.name).join(', '));
+    res.json(roles);
+  } catch (error) {
+    console.error("[GET /teams/roles] Direct endpoint error:", error);
+    res.status(500).json({ message: "Error retrieving roles" });
+  }
+});
+
 /* JSON TRANSFORM MIDDLEWARE */
 app.use((req, res, next) => {
   const originalJson = res.json;

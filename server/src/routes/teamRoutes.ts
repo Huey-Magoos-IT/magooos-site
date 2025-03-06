@@ -18,17 +18,27 @@ router.get("/", getTeams);
 router.post("/", createTeam);
 router.post("/:teamId/join", joinTeam);
 
-// Role routes
+// Role routes - make sure this route is correctly defined for API Gateway
 router.get("/roles", (req, res) => {
   console.log("[Direct GET /teams/roles] Called directly!");
+  console.log("Path:", req.path);
+  console.log("URL:", req.url);
+  console.log("Original URL:", req.originalUrl);
   
   // Set anti-caching headers
+  res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
   
   // Call the actual roles handler
+  return getRoles(req, res);
+});
+
+// Alternate path for roles (in case of API Gateway path mapping issues)
+router.get("/api-roles", (req, res) => {
+  console.log("[GET /teams/api-roles] Alternate roles endpoint called");
   return getRoles(req, res);
 });
 

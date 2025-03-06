@@ -58,15 +58,103 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
       console.log(`- Team ${team.id} (${team.teamName}): ${JSON.stringify(team.teamRoles || [])}`);
     });
 
-    // Make sure teamRoles is explicitly included in the response
-    const processedTeams = teams.map(team => {
-      const debugRoles = team.teamRoles || [];
-      console.log(`Processing team ${team.id} with ${debugRoles.length} roles`);
+    // Create a new fix script that adds roles to teams based on their names
+    // This is a temporary measure to ensure all teams have proper roles
+    const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
+    const dataRole = await prisma.role.findUnique({ where: { name: 'DATA' } });
+    const reportingRole = await prisma.role.findUnique({ where: { name: 'REPORTING' } });
+    
+    // Log all roles to ensure they exist
+    console.log("Available roles:", { adminRole, dataRole, reportingRole });
+    
+    // If they don't exist, create them (this should never happen if seed was run)
+    if (!adminRole || !dataRole || !reportingRole) {
+      console.error("CRITICAL: Missing roles! Please run seed script to create roles.");
+    }
+    
+    // Add appropriate roles to teams that don't have them
+    for (const team of teams) {
+      if (team.isAdmin && adminRole && team.teamRoles.length === 0) {
+        console.log(`Adding ADMIN role to team: ${team.teamName} (ID: ${team.id})`);
+        await prisma.teamRole.create({
+          data: {
+            teamId: team.id,
+            roleId: adminRole.id
+          }
+        });
+        
+        // Add the role to the in-memory team object
+        team.teamRoles.push({
+          id: -1, // Placeholder that will be replaced
+          teamId: team.id,
+          roleId: adminRole.id,
+          role: adminRole
+        });
+      }
       
-      // Get team roles from our direct DB query to ensure they're included
-      const roles = team.teamRoles || [];
+      // Add DATA role to Data Team if needed
+      if (team.teamName.toLowerCase().includes('data') && dataRole &&
+          !team.teamRoles.some(tr => tr.roleId === dataRole.id)) {
+        console.log(`Adding DATA role to team: ${team.teamName} (ID: ${team.id})`);
+        const newRole = await prisma.teamRole.create({
+          data: {
+            teamId: team.id,
+            roleId: dataRole.id
+          }
+        });
+        
+        // Add the role to the in-memory team object
+        team.teamRoles.push({
+          id: newRole.id,
+          teamId: team.id,
+          roleId: dataRole.id,
+          role: dataRole
+        });
+      }
       
-      // Clone the team object with team roles added
+      // Add REPORTING role to Reporting Team if needed
+      if (team.teamName.toLowerCase().includes('reporting') && reportingRole &&
+          !team.teamRoles.some(tr => tr.roleId === reportingRole.id)) {
+        console.log(`Adding REPORTING role to team: ${team.teamName} (ID: ${team.id})`);
+        const newRole = await prisma.teamRole.create({
+          data: {
+            teamId: team.id,
+            roleId: reportingRole.id
+          }
+        });
+        
+        // Add the role to the in-memory team object
+        team.teamRoles.push({
+          id: newRole.id,
+          teamId: team.id,
+          roleId: reportingRole.id,
+          role: reportingRole
+        });
+      }
+    }
+    
+    // Re-fetch teams with roles to ensure we have the latest data
+    const updatedTeams = await prisma.team.findMany({
+      include: {
+        user: {
+          select: {
+            userId: true,
+            username: true
+          }
+        },
+        teamRoles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+    
+    // Process the teams with guaranteed role data
+    const processedTeams = updatedTeams.map(team => {
+      console.log(`Processing team ${team.id} with ${team.teamRoles?.length || 0} roles`);
+      
+      // Clone the team object with explicit teamRoles property
       const processedTeam = {
         id: team.id,
         teamName: team.teamName,
@@ -75,8 +163,8 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
         projectManagerUserId: team.projectManagerUserId,
         user: team.user,
         
-        // Always include teamRoles, even if empty
-        teamRoles: roles.map(tr => {
+        // Always include teamRoles as a property, even if it's an empty array
+        teamRoles: (team.teamRoles || []).map(tr => {
           console.log(`  - Adding role: ${tr.role.name}`);
           return {
             id: tr.id,
