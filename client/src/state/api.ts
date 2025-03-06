@@ -177,7 +177,7 @@ export const api = createApi({
       providesTags: ["Teams"],
     }),
     getRoles: build.query<Role[], void>({
-      query: () => "teams/roles", // Use the original endpoint
+      query: () => "api-roles", // Use the direct endpoint we created to bypass routing issues
       providesTags: ["Roles"],
     }),
     createTeam: build.mutation<Team, { teamName: string; roleIds: number[] }>({
