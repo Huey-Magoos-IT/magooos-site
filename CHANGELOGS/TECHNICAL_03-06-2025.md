@@ -10,8 +10,11 @@
   - Added debug logging to track request paths
 
 - **API Gateway compatibility fix**: Resolved issues with certain HTTP methods:
-  - Added POST-based alternative for DELETE operations (`/teams/:teamId/delete`)
-  - Updated client API to use compatible endpoints with API Gateway
+  - Added multiple POST-based alternatives for DELETE operations:
+    - `POST /teams/:teamId/delete` (path parameter-based)
+    - `POST /teams/delete-team` (body parameter-based)
+  - Updated client API to use the most compatible endpoint format
+  - Implemented comprehensive error handling for all deletion paths
 
 - **Enhanced team response format**:
   - Modified `/teams` response to include both teams and available roles in a single request

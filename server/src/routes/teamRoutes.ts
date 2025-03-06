@@ -9,7 +9,8 @@ import {
   addRoleToTeam,
   removeRoleFromTeam,
   deleteTeam,
-  updateTeam
+  updateTeam,
+  deleteTeamPost
 } from "../controllers/teamController";
 
 const router = Router();
@@ -20,8 +21,9 @@ router.get("/", getTeams);
 router.post("/", createTeam);
 router.delete("/:teamId", deleteTeam);
 router.patch("/:teamId", updateTeam);
-// Alternative endpoint for deleting teams (for API Gateway compatibility)
-router.post("/:teamId/delete", deleteTeam);
+// Alternative endpoints for API Gateway compatibility
+router.post("/:teamId/delete", deleteTeamPost);
+router.post("/delete-team", deleteTeamPost); // Fallback endpoint without path parameter
 router.post("/:teamId/join", joinTeam);
 
 // Role routes - make sure this route is correctly defined for API Gateway

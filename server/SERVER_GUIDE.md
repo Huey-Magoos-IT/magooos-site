@@ -362,6 +362,86 @@ module.exports = {
 
 ### API Gateway Integration
 
+#### API Gateway Role & Team Integration Best Practices
+
+When working with complex data structures and relationships through API Gateway (like team roles), follow these best practices:
+
+1. **Return Combined Data in Single Requests**
+   - Instead of separate endpoints for related data (like teams and roles), return combined data in a single response
+   - Example: `/teams` endpoint returns both teams and available roles in a single JSON object
+   ```typescript
+   // Return combined data structure
+   res.json({
+     teams: processedTeams,
+     availableRoles: allRoles
+   });
+   ```
+
+2. **Provide Multiple Path Options for Critical Resources**
+   - Create multiple equivalent endpoints with different path structures to handle API Gateway mapping variations
+   - Example for roles endpoint:
+   ```typescript
+   // Primary endpoint
+   router.get("/roles", getRoles);
+   
+   // Alternative endpoints if primary isn't mapped correctly
+   router.get("/api-roles", getRoles);
+   router.get("/all-roles", getRoles);
+   ```
+
+3. **Use Explicit Anti-Caching Headers**
+   - API Gateway may cache responses, causing stale data to be returned
+   - Always add explicit anti-caching headers for dynamic data endpoints
+   ```typescript
+   // Set anti-caching headers for dynamic data
+   res.setHeader('Content-Type', 'application/json');
+   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+   res.setHeader('Pragma', 'no-cache');
+   res.setHeader('Expires', '0');
+   res.setHeader('Surrogate-Control', 'no-store');
+   ```
+
+4. **Add Debug Logging for Request Path Analysis**
+   - Include debug logs to identify path mapping issues
+   ```typescript
+   router.get("/roles", (req, res) => {
+     console.log("[GET /teams/roles] Called directly!");
+     console.log("Path:", req.path);
+     console.log("URL:", req.url);
+     console.log("Original URL:", req.originalUrl);
+     
+     // Call the actual handler
+     return getRoles(req, res);
+   });
+   ```
+
+5. **Implement Client-Side Smart Data Extraction**
+   - Design API clients to extract data from related endpoints when direct access fails
+   ```typescript
+   // Example: Extract roles from teams endpoint if roles endpoint fails
+   getRoles: build.query<Role[], void>({
+     queryFn: (_, { dispatch, getState }) => {
+       // Try to get roles from the teams query cache first
+       const teamsResult = (getState() as any).api.queries['getTeams(undefined)']?.data;
+       
+       if (teamsResult?.availableRoles) {
+         // If we already have the data, return it immediately
+         return { data: teamsResult.availableRoles };
+       } else {
+         // Otherwise, force a refresh of the teams data
+         dispatch(api.endpoints.getTeams.initiate(undefined, {
+           subscribe: false,
+           forceRefetch: true
+         }));
+         
+         // Return empty array with pending status
+         return { data: [] };
+       }
+     },
+     providesTags: ["Roles"],
+   }),
+   ```
+
 #### Main API Gateway (Proxy Integration)
 The main Express server is configured to handle API Gateway's `/prod` stage prefix:
 

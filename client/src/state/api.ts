@@ -209,8 +209,9 @@ export const api = createApi({
     }),
     deleteTeam: build.mutation<{ message: string }, number>({
       query: (teamId) => ({
-        url: `teams/${teamId}/delete`,
+        url: `teams/delete-team`,
         method: "POST",  // Using POST instead of DELETE for API Gateway compatibility
+        body: { teamId }
       }),
       invalidatesTags: ["Teams"],
     }),
