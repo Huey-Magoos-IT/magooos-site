@@ -20,6 +20,8 @@ router.get("/", getTeams);
 router.post("/", createTeam);
 router.delete("/:teamId", deleteTeam);
 router.patch("/:teamId", updateTeam);
+// Alternative endpoint for deleting teams (for API Gateway compatibility)
+router.post("/:teamId/delete", deleteTeam);
 router.post("/:teamId/join", joinTeam);
 
 // Role routes - make sure this route is correctly defined for API Gateway
