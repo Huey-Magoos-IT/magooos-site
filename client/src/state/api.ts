@@ -173,25 +173,11 @@ export const api = createApi({
       providesTags: ["Users"],
     }),
     getTeams: build.query<Team[], void>({
-      query: () => ({
-        url: "teams",
-        method: "GET",
-        headers: {
-          'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache'
-        }
-      }),
+      query: () => "teams", // Simplified - no custom headers that cause CORS issues
       providesTags: ["Teams"],
     }),
     getRoles: build.query<Role[], void>({
-      query: () => ({
-        url: "teams/roles", // Use the original endpoint that already exists
-        method: "GET",
-        headers: {
-          'Cache-Control': 'no-cache, no-store, max-age=0',
-          'Pragma': 'no-cache'
-        }
-      }),
+      query: () => "teams/roles", // Use the original endpoint
       providesTags: ["Roles"],
     }),
     createTeam: build.mutation<Team, { teamName: string; roleIds: number[] }>({
