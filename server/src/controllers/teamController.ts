@@ -28,6 +28,10 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /teams] Fetching all teams");
     
+    // Fetch all available roles first
+    const allRoles = await prisma.role.findMany();
+    console.log(`[GET /teams] Found ${allRoles.length} available roles:`, allRoles.map(r => r.name).join(', '));
+    
     const teams = await prisma.team.findMany({
       include: {
         user: {
@@ -203,10 +207,17 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
     res.setHeader('Expires', '0');
     res.setHeader('Surrogate-Control', 'no-store');
     
+    // Create a response that includes both teams and all available roles
+    const responseData = {
+      teams: processedTeams,
+      availableRoles: allRoles
+    };
+
     // Use stringification and parsing to ensure proper JSON structure
-    const finalResponseJson = JSON.stringify(processedTeams);
+    const finalResponseJson = JSON.stringify(responseData);
     console.log("STRING LENGTH:", finalResponseJson.length);
     console.log("CONTAINS teamRoles:", finalResponseJson.includes("teamRoles"));
+    console.log("CONTAINS availableRoles:", finalResponseJson.includes("availableRoles"));
     
     res.send(finalResponseJson);
   } catch (error: any) {

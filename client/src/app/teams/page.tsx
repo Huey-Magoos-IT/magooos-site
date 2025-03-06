@@ -15,9 +15,12 @@ import Modal from "@/components/Modal";
 import { Settings, Trash2, Edit, Plus } from "lucide-react";
 
 const TeamsPage = () => {
-  const { data: teams, isLoading: isTeamsLoading } = useGetTeamsQuery();
+  const { data: teamsData, isLoading: isTeamsLoading } = useGetTeamsQuery();
   const { data: roles, isLoading: isRolesLoading } = useGetRolesQuery();
   const { data: authData } = useGetAuthUserQuery({});
+  
+  // Extract teams and roles from the response
+  const teams = teamsData?.teams || [];
   const [joinTeam] = useJoinTeamMutation();
   const [createTeam] = useCreateTeamMutation();
   const [addRoleToTeam] = useAddRoleToTeamMutation();

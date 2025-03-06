@@ -172,12 +172,31 @@ export const api = createApi({
       query: () => "users",
       providesTags: ["Users"],
     }),
-    getTeams: build.query<Team[], void>({
-      query: () => "teams", // Simplified - no custom headers that cause CORS issues
-      providesTags: ["Teams"],
+    getTeams: build.query<{teams: Team[], availableRoles: Role[]}, void>({
+      query: () => "teams", // This now returns both teams and roles
+      providesTags: ["Teams", "Roles"],
     }),
+    // Keep the original roles endpoint but add a selector to extract roles from teams response
     getRoles: build.query<Role[], void>({
-      query: () => "api-roles", // Use the direct endpoint we created to bypass routing issues
+      // Use the teams endpoint which now includes availableRoles
+      queryFn: (_, { dispatch, getState }) => {
+        // Try to get roles from the teams query cache first
+        const teamsResult = (getState() as any).api.queries['getTeams(undefined)']?.data;
+        
+        if (teamsResult?.availableRoles) {
+          // If we already have the data, return it immediately
+          return { data: teamsResult.availableRoles };
+        } else {
+          // Otherwise, force a refresh of the teams data
+          dispatch(api.endpoints.getTeams.initiate(undefined, {
+            subscribe: false,
+            forceRefetch: true
+          }));
+          
+          // Return empty array with pending status
+          return { data: [] };
+        }
+      },
       providesTags: ["Roles"],
     }),
     createTeam: build.mutation<Team, { teamName: string; roleIds: number[] }>({
