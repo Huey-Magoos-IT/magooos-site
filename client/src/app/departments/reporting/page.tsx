@@ -204,7 +204,12 @@ const ReportingPage = () => {
   }
 
   // Check if user's team has REPORTING role access
+  console.log("REPORTING PAGE - User team:", userTeam);
+  console.log("REPORTING PAGE - Team roles:", userTeam?.teamRoles);
+  console.log("REPORTING PAGE - Is Admin:", userTeam?.isAdmin);
+  
   const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'REPORTING'));
+  console.log("REPORTING PAGE - Has Access:", hasAccess);
 
   if (!hasAccess) {
     return (

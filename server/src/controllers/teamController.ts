@@ -621,47 +621,6 @@ export const deleteTeamPost = async (req: Request, res: Response): Promise<void>
       });
     }
   }
-  
-  if (!teamId) {
-    res.status(400).json({ message: "Team ID is required" });
-    return;
-  }
-
-  try {
-    // Check if team exists
-    const team = await prisma.team.findUnique({
-      where: { id: Number(teamId) }
-    });
-
-    if (!team) {
-      res.status(404).json({ message: "Team not found" });
-      return;
-    }
-
-    // Delete all team roles first (cascade should handle this, but just to be safe)
-    await prisma.teamRole.deleteMany({
-      where: { teamId: Number(teamId) }
-    });
-
-    // Update users to remove their team ID
-    await prisma.user.updateMany({
-      where: { teamId: Number(teamId) },
-      data: { teamId: null }
-    });
-
-    // Delete the team
-    await prisma.team.delete({
-      where: { id: Number(teamId) }
-    });
-
-    res.status(200).json({ message: "Team deleted successfully" });
-  } catch (error: any) {
-    console.error("[DELETE /teams/:teamId] Error:", error);
-    res.status(500).json({
-      message: "Error deleting team",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
 };
 
 export const updateTeam = async (req: Request, res: Response): Promise<void> => {

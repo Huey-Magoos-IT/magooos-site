@@ -10,7 +10,12 @@ const DataPage = () => {
   const userTeam = authData?.userDetails?.team;
   
   // Check if user's team has DATA role access
+  console.log("DATA PAGE - User team:", userTeam);
+  console.log("DATA PAGE - Team roles:", userTeam?.teamRoles);
+  console.log("DATA PAGE - Is Admin:", userTeam?.isAdmin);
+  
   const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA'));
+  console.log("DATA PAGE - Has Access:", hasAccess);
 
   if (isLoading) {
     return <div className="m-5 p-4">Loading...</div>;

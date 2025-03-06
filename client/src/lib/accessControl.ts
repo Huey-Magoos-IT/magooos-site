@@ -20,7 +20,14 @@ export const hasRole = (teamRoles: TeamRole[] | undefined, requiredRole: string)
 export const hasAnyRole = (teamRoles: TeamRole[] | undefined, requiredRoles: string[]): boolean => {
   if (!teamRoles || teamRoles.length === 0) return false;
   
-  return teamRoles.some(tr => 
-    requiredRoles.includes(tr.role.name) || tr.role.name === 'ADMIN'  // ADMIN always has access
-  );
+  console.log("Checking any roles:", teamRoles.map(tr => tr.role.name));
+  console.log("Required roles:", requiredRoles);
+  
+  // Make case-insensitive comparison
+  const normalizedRequiredRoles = requiredRoles.map(role => role.toUpperCase());
+  
+  return teamRoles.some(tr => {
+    const roleName = tr.role.name.toUpperCase();
+    return normalizedRequiredRoles.includes(roleName) || roleName === 'ADMIN';  // ADMIN always has access
+  });
 };
