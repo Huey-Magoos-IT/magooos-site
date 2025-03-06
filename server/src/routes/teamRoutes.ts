@@ -18,7 +18,7 @@ router.get("/", getTeams);
 router.post("/", createTeam);
 router.post("/:teamId/join", joinTeam);
 
-// Role routes - ensure this route handler is properly registered
+// Role routes
 router.get("/roles", (req, res) => {
   console.log("[Direct GET /teams/roles] Called directly!");
   
@@ -34,18 +34,6 @@ router.get("/roles", (req, res) => {
 
 router.post("/:teamId/roles", addRoleToTeam);
 router.delete("/:teamId/roles/:roleId", removeRoleFromTeam);
-
-// Legacy endpoint - directly mounted at /roles
-router.get("/roles", async (req, res) => {
-  try {
-    console.log("[GET /roles] Direct roles endpoint called");
-    const roles = await prisma.role.findMany();
-    res.json(roles);
-  } catch (error) {
-    console.error("[GET /roles] Error:", error);
-    res.status(500).json({ message: "Error retrieving roles" });
-  }
-});
 
 // Direct endpoint for roles on the "teams" route
 router.get("/all-roles", async (req, res) => {

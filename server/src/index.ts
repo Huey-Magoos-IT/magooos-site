@@ -26,7 +26,9 @@ app.use(cors({
     ? 'https://master.d25xr2dg5ij9ce.amplifyapp.com'
     : 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control'],
+  exposedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control'],
+  credentials: true
 }));
 
 /* ERROR HANDLING */
@@ -66,13 +68,6 @@ app.get("/api-roles", async (req, res) => {
   }
 });
 
-// All other routes
-app.use("/projects", projectRoutes);
-app.use("/tasks", taskRoutes);
-app.use("/search", searchRoutes);
-app.use("/users", userRoutes);
-app.use("/teams", teamRoutes);
-
 /* JSON TRANSFORM MIDDLEWARE */
 app.use((req, res, next) => {
   const originalJson = res.json;
@@ -96,6 +91,13 @@ app.use((req, res, next) => {
   };
   next();
 });
+
+// All other routes
+app.use("/projects", projectRoutes);
+app.use("/tasks", taskRoutes);
+app.use("/search", searchRoutes);
+app.use("/users", userRoutes);
+app.use("/teams", teamRoutes);
 
 /* SERVER */
 const port = Number(process.env.PORT) || 80;
