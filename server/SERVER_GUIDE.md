@@ -609,7 +609,27 @@ npx prisma generate
 curl -v -H "Authorization: Bearer $TOKEN" https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod/locations
 ```
 
-5. **DynamoDB Access Issues**
+5. **Headers Already Sent Error**
+```javascript
+// Common error: "Cannot set headers after they are sent to the client"
+// This occurs when multiple response attempts are made to the same request
+// Always check if headers have already been sent before responding:
+
+export const someEndpoint = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Some logic
+    if (!res.headersSent) {
+      res.status(200).json({ success: true });
+    }
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: "An error occurred" });
+    }
+  }
+};
+```
+
+6. **DynamoDB Access Issues**
 ```bash
 # Check IAM permissions for the API Gateway role
 aws iam list-attached-role-policies --role-name ApiGatewayDynamoDBRole
@@ -641,7 +661,14 @@ To deploy a backend change like one to teams or user to production, follow these
    npm install
    ```
 
-3. Run the Prisma migration
+3. Build TypeScript code (CRITICAL STEP)
+   ```bash
+   # IMPORTANT: This step is required for ALL server changes
+   # Compile the TypeScript code to JavaScript
+   npm run build
+   ```
+
+4. Run the Prisma migration (only needed for schema changes)
    ```bash
    # Apply the migration to the production database
    npx prisma migrate deploy
@@ -649,7 +676,7 @@ To deploy a backend change like one to teams or user to production, follow these
    npx prisma generate
    ```
 
-4. Initialize the roles and migrate existing admin teams
+5. Initialize the roles and migrate existing admin teams (if needed)
    ```bash
    # The seed script is already configured in package.json
    # Run the seed script to create roles and migrate admin teams

@@ -60,6 +60,14 @@
   - Added proper role management controls that show available roles
   - Implemented team deletion confirmation workflow
   - Fixed team editing functionality
+  
+### Bug Fixes
+
+- **"Headers already sent" error in team deletion**:
+  - Fixed error where multiple controller functions were attempting to respond to the same request
+  - Added response header checks with `!res.headersSent` guards
+  - Prevented duplicate responses in delete operations
+  - Ensured proper error handling in all response paths
 
 ## Future Work
 

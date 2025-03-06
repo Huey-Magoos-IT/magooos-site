@@ -517,7 +517,9 @@ export const deleteTeam = async (req: Request, res: Response): Promise<void> => 
   const { teamId } = req.params;
   
   if (!teamId) {
-    res.status(400).json({ message: "Team ID is required" });
+    if (!res.headersSent) {
+      res.status(400).json({ message: "Team ID is required" });
+    }
     return;
   }
 
@@ -528,7 +530,9 @@ export const deleteTeam = async (req: Request, res: Response): Promise<void> => 
     });
 
     if (!team) {
-      res.status(404).json({ message: "Team not found" });
+      if (!res.headersSent) {
+        res.status(404).json({ message: "Team not found" });
+      }
       return;
     }
 
@@ -548,13 +552,17 @@ export const deleteTeam = async (req: Request, res: Response): Promise<void> => 
       where: { id: Number(teamId) }
     });
 
-    res.status(200).json({ message: "Team deleted successfully" });
+    if (!res.headersSent) {
+      res.status(200).json({ message: "Team deleted successfully" });
+    }
   } catch (error: any) {
     console.error("[DELETE /teams/:teamId] Error:", error);
-    res.status(500).json({
-      message: "Error deleting team",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        message: "Error deleting team",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
   }
 };
 
@@ -563,10 +571,12 @@ export const deleteTeamPost = async (req: Request, res: Response): Promise<void>
   // Get teamId from either params or body to support multiple access patterns
   const teamId = req.params.teamId || req.body.teamId;
   
-  console.log("[POST /teams/:teamId/delete] Deleting team with ID:", teamId);
+  console.log("[POST /teams/delete-team] Deleting team with ID:", teamId);
   
   if (!teamId) {
-    res.status(400).json({ message: "Team ID is required" });
+    if (!res.headersSent) {
+      res.status(400).json({ message: "Team ID is required" });
+    }
     return;
   }
 
@@ -577,7 +587,9 @@ export const deleteTeamPost = async (req: Request, res: Response): Promise<void>
     });
 
     if (!team) {
-      res.status(404).json({ message: "Team not found" });
+      if (!res.headersSent) {
+        res.status(404).json({ message: "Team not found" });
+      }
       return;
     }
 
@@ -597,13 +609,17 @@ export const deleteTeamPost = async (req: Request, res: Response): Promise<void>
       where: { id: Number(teamId) }
     });
 
-    res.status(200).json({ message: "Team deleted successfully" });
+    if (!res.headersSent) {
+      res.status(200).json({ message: "Team deleted successfully" });
+    }
   } catch (error: any) {
-    console.error("[POST /teams/:teamId/delete] Error:", error);
-    res.status(500).json({
-      message: "Error deleting team",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    console.error("[POST /teams/delete-team] Error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        message: "Error deleting team",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
   }
   
   if (!teamId) {
