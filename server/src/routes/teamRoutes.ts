@@ -7,7 +7,9 @@ import {
   createTeam,
   getRoles,
   addRoleToTeam,
-  removeRoleFromTeam
+  removeRoleFromTeam,
+  deleteTeam,
+  updateTeam
 } from "../controllers/teamController";
 
 const router = Router();
@@ -16,6 +18,8 @@ const prisma = new PrismaClient();
 // Team routes
 router.get("/", getTeams);
 router.post("/", createTeam);
+router.delete("/:teamId", deleteTeam);
+router.patch("/:teamId", updateTeam);
 router.post("/:teamId/join", joinTeam);
 
 // Role routes - make sure this route is correctly defined for API Gateway

@@ -513,6 +513,107 @@ export const removeRoleFromTeam = async (req: Request, res: Response): Promise<v
   }
 };
 
+export const deleteTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamId } = req.params;
+  
+  if (!teamId) {
+    res.status(400).json({ message: "Team ID is required" });
+    return;
+  }
+
+  try {
+    // Check if team exists
+    const team = await prisma.team.findUnique({
+      where: { id: Number(teamId) }
+    });
+
+    if (!team) {
+      res.status(404).json({ message: "Team not found" });
+      return;
+    }
+
+    // Delete all team roles first (cascade should handle this, but just to be safe)
+    await prisma.teamRole.deleteMany({
+      where: { teamId: Number(teamId) }
+    });
+
+    // Update users to remove their team ID
+    await prisma.user.updateMany({
+      where: { teamId: Number(teamId) },
+      data: { teamId: null }
+    });
+
+    // Delete the team
+    await prisma.team.delete({
+      where: { id: Number(teamId) }
+    });
+
+    res.status(200).json({ message: "Team deleted successfully" });
+  } catch (error: any) {
+    console.error("[DELETE /teams/:teamId] Error:", error);
+    res.status(500).json({
+      message: "Error deleting team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+export const updateTeam = async (req: Request, res: Response): Promise<void> => {
+  const { teamId } = req.params;
+  const { teamName } = req.body;
+  
+  if (!teamId || !teamName) {
+    res.status(400).json({ message: "Team ID and Team Name are required" });
+    return;
+  }
+
+  try {
+    // Check if team exists
+    const team = await prisma.team.findUnique({
+      where: { id: Number(teamId) }
+    });
+
+    if (!team) {
+      res.status(404).json({ message: "Team not found" });
+      return;
+    }
+
+    // Check if new name already exists (except for the current team)
+    const existingTeam = await prisma.team.findFirst({
+      where: { 
+        teamName: teamName.trim(),
+        id: { not: Number(teamId) }
+      }
+    });
+
+    if (existingTeam) {
+      res.status(409).json({ message: "Team name already exists" });
+      return;
+    }
+
+    // Update the team
+    const updatedTeam = await prisma.team.update({
+      where: { id: Number(teamId) },
+      data: { teamName: teamName.trim() },
+      include: {
+        teamRoles: {
+          include: {
+            role: true
+          }
+        }
+      }
+    });
+
+    res.status(200).json(updatedTeam);
+  } catch (error: any) {
+    console.error("[PATCH /teams/:teamId] Error:", error);
+    res.status(500).json({
+      message: "Error updating team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // Utility function to check if a team has a specific role
 export const hasRole = async (teamId: number, roleName: string): Promise<boolean> => {
   if (!teamId) return false;

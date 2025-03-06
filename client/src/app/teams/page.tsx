@@ -3,11 +3,12 @@
 import {
   useGetAuthUserQuery,
   useGetTeamsQuery,
-  useGetRolesQuery,
   useJoinTeamMutation,
   useCreateTeamMutation,
   useAddRoleToTeamMutation,
-  useRemoveRoleFromTeamMutation
+  useRemoveRoleFromTeamMutation,
+  useDeleteTeamMutation,
+  useUpdateTeamMutation
 } from "@/state/api";
 import Header from "@/components/Header";
 import { useState } from "react";
@@ -16,15 +17,21 @@ import { Settings, Trash2, Edit, Plus } from "lucide-react";
 
 const TeamsPage = () => {
   const { data: teamsData, isLoading: isTeamsLoading } = useGetTeamsQuery();
-  const { data: roles, isLoading: isRolesLoading } = useGetRolesQuery();
   const { data: authData } = useGetAuthUserQuery({});
   
   // Extract teams and roles from the response
   const teams = teamsData?.teams || [];
+  const availableRoles = teamsData?.availableRoles || [];
+  
+  // We no longer need a separate roles query as it's included in the teams response
+  const isRolesLoading = false;
+  const roles = availableRoles;
   const [joinTeam] = useJoinTeamMutation();
   const [createTeam] = useCreateTeamMutation();
   const [addRoleToTeam] = useAddRoleToTeamMutation();
   const [removeRoleFromTeam] = useRemoveRoleFromTeamMutation();
+  const [deleteTeam] = useDeleteTeamMutation();
+  const [updateTeam] = useUpdateTeamMutation();
   
   // State for team creation modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,17 +98,25 @@ const TeamsPage = () => {
     }
   };
 
-  // TODO: Implement these functions when we add backend support
+  // Team edit and delete functions
   const handleEditTeam = async (teamId: number, newName: string) => {
-    console.log("Edit team", teamId, newName);
-    // Will be implemented when backend supports it
-    setIsEditModalOpen(false);
+    try {
+      console.log("Updating team", teamId, "with new name:", newName);
+      await updateTeam({ teamId, teamName: newName });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating team:', error);
+    }
   };
 
   const handleDeleteTeam = async (teamId: number) => {
-    console.log("Delete team", teamId);
-    // Will be implemented when backend supports it
-    setIsDeleteModalOpen(false);
+    try {
+      console.log("Deleting team", teamId);
+      await deleteTeam(teamId);
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting team:', error);
+    }
   };
 
   const openTeamSettings = (teamId: number) => {
@@ -173,25 +188,31 @@ const TeamsPage = () => {
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2 dark:text-white">Team Access Roles:</h4>
             <div className="grid grid-cols-2 gap-2 border p-3 rounded max-h-40 overflow-y-auto dark:border-gray-700">
-              {roles?.map(role => (
-                <div key={role.id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`modal-role-${role.id}`}
-                    checked={selectedRoleIds.includes(role.id)}
-                    onChange={() => handleRoleToggle(role.id)}
-                    className="h-4 w-4"
-                  />
-                  <label htmlFor={`modal-role-${role.id}`} className="text-sm dark:text-gray-300">
-                    {role.name}
-                    {role.description && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                        ({role.description})
-                      </span>
-                    )}
-                  </label>
+              {availableRoles && availableRoles.length > 0 ? (
+                availableRoles.map(role => (
+                  <div key={role.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`modal-role-${role.id}`}
+                      checked={selectedRoleIds.includes(role.id)}
+                      onChange={() => handleRoleToggle(role.id)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor={`modal-role-${role.id}`} className="text-sm dark:text-gray-300">
+                      {role.name}
+                      {role.description && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                          ({role.description})
+                        </span>
+                      )}
+                    </label>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-center py-2 text-gray-500">
+                  Loading roles...
                 </div>
-              ))}
+              )}
             </div>
           </div>
           
@@ -355,27 +376,33 @@ const TeamsPage = () => {
               <div className="mt-3 pt-3 border-t dark:border-gray-700">
                 <h4 className="text-sm font-medium mb-2 dark:text-white">Manage Roles:</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  {roles?.map(role => {
-                    const hasRole = team.teamRoles?.some(tr => tr.role.id === role.id);
-                    return (
-                      <div key={role.id} className="flex items-center justify-between p-1 border rounded dark:border-gray-700">
-                        <span className="text-sm dark:text-gray-300">{role.name}</span>
-                        <button
-                          onClick={() => hasRole
-                            ? handleRemoveRole(team.id, role.id)
-                            : handleAddRole(team.id, role.id)
-                          }
-                          className={`px-2 py-1 text-xs rounded ${
-                            hasRole
-                              ? 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-100'
-                              : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100'
-                          }`}
-                        >
-                          {hasRole ? 'Remove' : 'Add'}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {availableRoles && availableRoles.length > 0 ? (
+                    availableRoles.map(role => {
+                      const hasRole = team.teamRoles?.some(tr => tr.role.id === role.id);
+                      return (
+                        <div key={role.id} className="flex items-center justify-between p-1 border rounded dark:border-gray-700">
+                          <span className="text-sm dark:text-gray-300">{role.name}</span>
+                          <button
+                            onClick={() => hasRole
+                              ? handleRemoveRole(team.id, role.id)
+                              : handleAddRole(team.id, role.id)
+                            }
+                            className={`px-2 py-1 text-xs rounded ${
+                              hasRole
+                                ? 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-100'
+                                : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100'
+                            }`}
+                          >
+                            {hasRole ? 'Remove' : 'Add'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-3 text-center py-2 text-gray-500">
+                      No roles available to assign
+                    </div>
+                  )}
                 </div>
               </div>
             )}

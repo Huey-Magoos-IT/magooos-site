@@ -207,6 +207,21 @@ export const api = createApi({
       }),
       invalidatesTags: ["Teams"],
     }),
+    deleteTeam: build.mutation<{ message: string }, number>({
+      query: (teamId) => ({
+        url: `teams/${teamId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Teams"],
+    }),
+    updateTeam: build.mutation<Team, { teamId: number; teamName: string }>({
+      query: ({ teamId, teamName }) => ({
+        url: `teams/${teamId}`,
+        method: "PATCH",
+        body: { teamName },
+      }),
+      invalidatesTags: ["Teams"],
+    }),
     addRoleToTeam: build.mutation<void, { teamId: number; roleId: number }>({
       query: ({ teamId, roleId }) => ({
         url: `teams/${teamId}/roles`,
@@ -265,6 +280,8 @@ export const {
   useGetTeamsQuery,
   useGetRolesQuery,
   useCreateTeamMutation,
+  useDeleteTeamMutation,
+  useUpdateTeamMutation,
   useAddRoleToTeamMutation,
   useRemoveRoleFromTeamMutation,
   useJoinTeamMutation,
