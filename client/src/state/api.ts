@@ -185,10 +185,10 @@ export const api = createApi({
     }),
     getRoles: build.query<Role[], void>({
       query: () => ({
-        url: "api-roles", // Updated to match the new endpoint in index.ts
+        url: "teams/roles", // Use the original endpoint that already exists
         method: "GET",
         headers: {
-          'Cache-Control': 'no-cache, no-store',
+          'Cache-Control': 'no-cache, no-store, max-age=0',
           'Pragma': 'no-cache'
         }
       }),

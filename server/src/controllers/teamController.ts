@@ -52,36 +52,75 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
       });
     });
 
+    // DEBUG: Log all raw team roles before processing
+    console.log("RAW TEAM ROLES:");
+    teams.forEach(team => {
+      console.log(`- Team ${team.id} (${team.teamName}): ${JSON.stringify(team.teamRoles || [])}`);
+    });
+
     // Make sure teamRoles is explicitly included in the response
     const processedTeams = teams.map(team => {
-      // Clone the team object to avoid mutation
-      return {
+      const debugRoles = team.teamRoles || [];
+      console.log(`Processing team ${team.id} with ${debugRoles.length} roles`);
+      
+      // Get team roles from our direct DB query to ensure they're included
+      const roles = team.teamRoles || [];
+      
+      // Clone the team object with team roles added
+      const processedTeam = {
         id: team.id,
         teamName: team.teamName,
         isAdmin: team.isAdmin,
         productOwnerUserId: team.productOwnerUserId,
         projectManagerUserId: team.projectManagerUserId,
         user: team.user,
-        // Explicitly map teamRoles to ensure they're included in the response
-        teamRoles: team.teamRoles?.map(tr => ({
-          id: tr.id,
-          teamId: tr.teamId,
-          roleId: tr.roleId,
-          role: {
-            id: tr.role.id,
-            name: tr.role.name,
-            description: tr.role.description
-          }
-        })) || []
+        
+        // Always include teamRoles, even if empty
+        teamRoles: roles.map(tr => {
+          console.log(`  - Adding role: ${tr.role.name}`);
+          return {
+            id: tr.id,
+            teamId: tr.teamId,
+            roleId: tr.roleId,
+            role: {
+              id: tr.role.id,
+              name: tr.role.name,
+              description: tr.role.description
+            }
+          };
+        })
       };
+      
+      return processedTeam;
     });
 
     console.log(`[GET /teams] Found ${teams.length} teams`);
     console.log("Sample team with roles:", JSON.stringify(processedTeams[0], null, 2));
     
-    // Set explicit content type and send the processed teams
+    // FINAL RESPONSE LOG - critical for debugging
+    console.log("FINAL RESPONSE - ALL TEAMS:");
+    processedTeams.forEach(team => {
+      console.log(`- Team ${team.id} (${team.teamName}): Has ${team.teamRoles?.length || 0} roles`);
+      if (team.teamRoles?.length > 0) {
+        team.teamRoles.forEach(role => {
+          console.log(`  * Role: ${role.role?.name || 'Unknown'}`);
+        });
+      }
+    });
+    
+    // Set explicit content type and anti-caching headers
     res.setHeader('Content-Type', 'application/json');
-    res.json(processedTeams);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
+    // Use stringification and parsing to ensure proper JSON structure
+    const finalResponseJson = JSON.stringify(processedTeams);
+    console.log("STRING LENGTH:", finalResponseJson.length);
+    console.log("CONTAINS teamRoles:", finalResponseJson.includes("teamRoles"));
+    
+    res.send(finalResponseJson);
   } catch (error: any) {
     console.error("[GET /teams] Error:", error);
     res.status(500).json({

@@ -18,8 +18,20 @@ router.get("/", getTeams);
 router.post("/", createTeam);
 router.post("/:teamId/join", joinTeam);
 
-// Role routes
-router.get("/roles", getRoles);
+// Role routes - ensure this route handler is properly registered
+router.get("/roles", (req, res) => {
+  console.log("[Direct GET /teams/roles] Called directly!");
+  
+  // Set anti-caching headers
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  
+  // Call the actual roles handler
+  return getRoles(req, res);
+});
+
 router.post("/:teamId/roles", addRoleToTeam);
 router.delete("/:teamId/roles/:roleId", removeRoleFromTeam);
 
