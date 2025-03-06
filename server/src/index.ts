@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import { PrismaClient } from "@prisma/client";
 /* ROUTE IMPORTS */
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -37,6 +38,20 @@ app.use((err: any, req: Request, res: Response, next: any) => {
   });
 });
 
+/* DIRECT ENDPOINTS FOR ROLES */
+app.get("/roles", async (req, res) => {
+  try {
+    console.log("[GET /roles] Direct root roles endpoint called");
+    const prisma = new PrismaClient();
+    const roles = await prisma.role.findMany();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.json(roles);
+  } catch (error) {
+    console.error("[GET /roles] Error:", error);
+    res.status(500).json({ message: "Error retrieving roles" });
+  }
+});
+
 /* ROUTES */
 app.get("/", (req, res) => {
   res.send("This is home route");
@@ -47,6 +62,30 @@ app.use("/tasks", taskRoutes);
 app.use("/search", searchRoutes);
 app.use("/users", userRoutes);
 app.use("/teams", teamRoutes);
+
+/* JSON TRANSFORM MIDDLEWARE */
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(body) {
+    // If this is a teams response
+    if (Array.isArray(body) && body.length > 0 && body[0].teamName) {
+      console.log("Intercepting teams response to ensure teamRoles");
+      // Add teamRoles if not present
+      const teamsWithRoles = body.map(team => {
+        if (!team.teamRoles) {
+          return {
+            ...team,
+            teamRoles: [] // Ensure teamRoles exists even if empty
+          };
+        }
+        return team;
+      });
+      return originalJson.call(this, teamsWithRoles);
+    }
+    return originalJson.call(this, body);
+  };
+  next();
+});
 
 /* SERVER */
 const port = Number(process.env.PORT) || 80;

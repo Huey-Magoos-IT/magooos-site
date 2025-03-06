@@ -185,7 +185,7 @@ export const api = createApi({
     }),
     getRoles: build.query<Role[], void>({
       query: () => ({
-        url: "teams/all-roles",
+        url: "roles", // Direct root endpoint
         method: "GET",
         headers: {
           'Cache-Control': 'no-cache, no-store',
