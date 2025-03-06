@@ -3,6 +3,7 @@
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsSidebarCollapsed } from "@/state";
 import { useGetAuthUserQuery, useGetProjectsQuery } from "@/state/api";
+import { hasRole } from "@/lib/accessControl";
 import { signOut } from "aws-amplify/auth";
 import {
   AlertCircle,
@@ -32,7 +33,9 @@ const Sidebar = () => {
   const [showDepartments, setShowDepartments] = useState(true);
   const { data: currentUser } = useGetAuthUserQuery({});
   const { data: projects } = useGetProjectsQuery();
-  const isAdmin = currentUser?.userDetails?.team?.isAdmin;
+  const userTeam = currentUser?.userDetails?.team;
+  const isAdmin = userTeam?.isAdmin;
+  const teamRoles = userTeam?.teamRoles;
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
@@ -136,19 +139,22 @@ const Sidebar = () => {
         </button>
         {showDepartments && (
           <>
-            {isAdmin && (
-              <>
-                <SidebarLink
-                  icon={Layers3}
-                  label="Data"
-                  href="/departments/data"
-                />
-                <SidebarLink
-                  icon={Layers3}
-                  label="Reporting"
-                  href="/departments/reporting"
-                />
-              </>
+            {/* Show Data department if user has ADMIN or DATA role */}
+            {(isAdmin || hasRole(teamRoles, 'DATA')) && (
+              <SidebarLink
+                icon={Layers3}
+                label="Data"
+                href="/departments/data"
+              />
+            )}
+            
+            {/* Show Reporting department if user has ADMIN or REPORTING role */}
+            {(isAdmin || hasRole(teamRoles, 'REPORTING')) && (
+              <SidebarLink
+                icon={Layers3}
+                label="Reporting"
+                href="/departments/reporting"
+              />
             )}
           </>
         )}
