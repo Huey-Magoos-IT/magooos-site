@@ -41,6 +41,39 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
       }
     });
 
+    // Explicitly format the response to ensure teamRoles are included
+    if (user && user.team) {
+      const formattedUser = {
+        ...user,
+        team: {
+          ...user.team,
+          // Ensure teamRoles are explicitly mapped in the response
+          teamRoles: user.team.teamRoles?.map(tr => ({
+            id: tr.id,
+            teamId: tr.teamId,
+            roleId: tr.roleId,
+            role: {
+              id: tr.role.id,
+              name: tr.role.name,
+              description: tr.role.description
+            }
+          })) || []
+        }
+      };
+      console.log("User with roles:", JSON.stringify({
+        userId: formattedUser.userId,
+        username: formattedUser.username,
+        teamName: formattedUser.team.teamName,
+        roleCount: formattedUser.team.teamRoles.length,
+        roles: formattedUser.team.teamRoles.map(tr => tr.role.name)
+      }));
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.json(formattedUser);
+      return; // Return void, not a value
+    }
+
+    // If no user or no team, return as is
     res.json(user);
   } catch (error: any) {
     res
