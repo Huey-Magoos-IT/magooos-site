@@ -185,7 +185,7 @@ export const api = createApi({
     }),
     getRoles: build.query<Role[], void>({
       query: () => ({
-        url: "roles", // Direct root endpoint
+        url: "api-roles", // Updated to match the new endpoint in index.ts
         method: "GET",
         headers: {
           'Cache-Control': 'no-cache, no-store',

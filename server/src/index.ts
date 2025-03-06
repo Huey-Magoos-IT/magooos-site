@@ -38,25 +38,35 @@ app.use((err: any, req: Request, res: Response, next: any) => {
   });
 });
 
-/* DIRECT ENDPOINTS FOR ROLES */
-app.get("/roles", async (req, res) => {
-  try {
-    console.log("[GET /roles] Direct root roles endpoint called");
-    const prisma = new PrismaClient();
-    const roles = await prisma.role.findMany();
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.json(roles);
-  } catch (error) {
-    console.error("[GET /roles] Error:", error);
-    res.status(500).json({ message: "Error retrieving roles" });
-  }
-});
-
 /* ROUTES */
 app.get("/", (req, res) => {
   res.send("This is home route");
 });
 
+/* DIRECT ENDPOINTS FOR ROLES - Must be BEFORE route registration */
+app.get("/api-roles", async (req, res) => {
+  try {
+    console.log("[GET /api-roles] Direct root roles endpoint called");
+    const prisma = new PrismaClient();
+    const roles = await prisma.role.findMany();
+    
+    // Set explicit no-cache headers
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
+    console.log(`Found ${roles.length} roles:`, roles.map(r => r.name).join(', '));
+    
+    // Send the response
+    res.json(roles);
+  } catch (error) {
+    console.error("[GET /api-roles] Error:", error);
+    res.status(500).json({ message: "Error retrieving roles" });
+  }
+});
+
+// All other routes
 app.use("/projects", projectRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/search", searchRoutes);
