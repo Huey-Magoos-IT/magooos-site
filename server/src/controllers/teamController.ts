@@ -52,15 +52,35 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
       });
     });
 
-    // Make sure teamRoles is properly serialized in the response
-    const processedTeams = teams.map(team => ({
-      ...team,
-      teamRoles: team.teamRoles
-    }));
+    // Make sure teamRoles is explicitly included in the response
+    const processedTeams = teams.map(team => {
+      // Clone the team object to avoid mutation
+      return {
+        id: team.id,
+        teamName: team.teamName,
+        isAdmin: team.isAdmin,
+        productOwnerUserId: team.productOwnerUserId,
+        projectManagerUserId: team.projectManagerUserId,
+        user: team.user,
+        // Explicitly map teamRoles to ensure they're included in the response
+        teamRoles: team.teamRoles?.map(tr => ({
+          id: tr.id,
+          teamId: tr.teamId,
+          roleId: tr.roleId,
+          role: {
+            id: tr.role.id,
+            name: tr.role.name,
+            description: tr.role.description
+          }
+        })) || []
+      };
+    });
 
     console.log(`[GET /teams] Found ${teams.length} teams`);
     console.log("Sample team with roles:", JSON.stringify(processedTeams[0], null, 2));
     
+    // Set explicit content type and send the processed teams
+    res.setHeader('Content-Type', 'application/json');
     res.json(processedTeams);
   } catch (error: any) {
     console.error("[GET /teams] Error:", error);
@@ -214,7 +234,26 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
     });
 
     console.log("[POST /teams/join] User joined team:", updatedUser);
-    res.json(updatedUser);
+    
+    // Make sure the response includes all necessary team role data
+    const processedUser = {
+      ...updatedUser,
+      team: updatedUser.team ? {
+        ...updatedUser.team,
+        teamRoles: updatedUser.team.teamRoles?.map(tr => ({
+          id: tr.id,
+          teamId: tr.teamId,
+          roleId: tr.roleId,
+          role: {
+            id: tr.role.id,
+            name: tr.role.name,
+            description: tr.role.description
+          }
+        })) || []
+      } : null
+    };
+    
+    res.json(processedUser);
   } catch (error: any) {
     console.error("[POST /teams/join] Error:", error);
     res.status(500).json({

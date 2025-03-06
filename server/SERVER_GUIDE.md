@@ -533,3 +533,61 @@ curl -v -H "Authorization: Bearer $TOKEN" https://sutpql04fb.execute-api.us-east
 ```bash
 # Check IAM permissions for the API Gateway role
 aws iam list-attached-role-policies --role-name ApiGatewayDynamoDBRole
+
+
+### Production Deployment Steps
+
+To deploy a backend change like one to teams or user to production, follow these steps:
+
+1. Connect to the EC2 instance using EC2 Instance Connect
+   ```bash
+   # Use EC2 Instance Connect to SSH into the production server
+   # Instance IP: 3.15.240.21
+   
+   # Switch to root user
+   sudo su -
+   ```
+
+2. Update the codebase from the repository
+   ```bash
+   # Navigate to the repository directory (in root home directory)
+   cd magooos-site
+   
+   # Pull the latest changes from the master branch
+   git pull origin master
+   
+   # Navigate to the server directory and install dependencies
+   cd server
+   npm install
+   ```
+
+3. Run the Prisma migration
+   ```bash
+   # Apply the migration to the production database
+   npx prisma migrate deploy
+   # Generate the Prisma client
+   npx prisma generate
+   ```
+
+4. Initialize the roles and migrate existing admin teams
+   ```bash
+   # The seed script is already configured in package.json
+   # Run the seed script to create roles and migrate admin teams
+   npm run seed
+   ```
+
+5. Restart the server
+   ```bash
+   # Restart the PM2 processes
+   pm2 restart all
+   ```
+
+6. Verify the deployment
+   ```bash
+   # Check the server logs for any errors
+   pm2 logs
+   
+   # Test the new roles endpoint
+   curl -v https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod/teams/roles \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN"
+   ```
