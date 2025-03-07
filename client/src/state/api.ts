@@ -267,6 +267,15 @@ export const api = createApi({
         body: data,
       }),
     }),
+    // Add updateUserTeam mutation
+    updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
+      query: ({ userId, teamId }) => ({
+        url: `users/${userId}/team`,
+        method: "PATCH",
+        body: { teamId },
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -289,4 +298,5 @@ export const {
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
   useProcessDataMutation,
+  useUpdateUserTeamMutation,
 } = api;

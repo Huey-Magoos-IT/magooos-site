@@ -68,6 +68,14 @@
   - Added response header checks with `!res.headersSent` guards
   - Prevented duplicate responses in delete operations
   - Ensured proper error handling in all response paths
+  - Removed duplicate code block in `deleteTeamPost` function causing multiple responses
+
+- **Fixed role-based sidebar navigation**:
+  - Updated Sidebar component to check for specific roles when displaying department links
+  - Implemented proper role-based visibility for Data and Reporting department links
+  - Data department now appears for teams with DATA role (not just admin teams)
+  - Reporting department now appears for teams with REPORTING role (not just admin teams)
+  - Fixed case-insensitive comparison in `hasAnyRole` utility function
 
 ## Future Work
 

@@ -325,17 +325,26 @@ const TeamsPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleJoinTeam(team.id)}
-                  className={`px-4 py-2 rounded ${
-                    authData?.userDetails?.teamId === team.id
-                      ? 'bg-green-500 text-white'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                  disabled={authData?.userDetails?.teamId === team.id}
-                >
-                  {authData?.userDetails?.teamId === team.id ? 'Current Team' : 'Join Team'}
-                </button>
+                {/* Join button - only visible to admins or for user with username "admin" */}
+                {(isUserAdmin || authData?.userDetails?.username === 'admin') ? (
+                  <button
+                    onClick={() => handleJoinTeam(team.id)}
+                    className={`px-4 py-2 rounded ${
+                      authData?.userDetails?.teamId === team.id
+                        ? 'bg-green-500 text-white'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                    disabled={authData?.userDetails?.teamId === team.id}
+                  >
+                    {authData?.userDetails?.teamId === team.id ? 'Current Team' : 'Join Team'}
+                  </button>
+                ) : (
+                  <span className="text-sm text-gray-500 italic dark:text-gray-400">
+                    {authData?.userDetails?.teamId === team.id
+                      ? 'Current Team'
+                      : 'Admin assignment only'}
+                  </span>
+                )}
                 
                 {/* Settings menu for admins */}
                 {isUserAdmin && (

@@ -344,14 +344,47 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Verify user exists
+    // Verify user exists and get their current team info to check permissions
     const user = await prisma.user.findUnique({
-      where: { userId: Number(userId) }
+      where: { userId: Number(userId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!user) {
       console.error("[POST /teams/join] User not found:", userId);
       res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // Check if the user is an admin or has username "admin" (special exception)
+    const isAdmin = user.team?.teamRoles?.some(tr => tr.role.name.toUpperCase() === 'ADMIN') || user.team?.isAdmin || false;
+    const isAdminUsername = user.username === 'admin';
+    
+    // Only let admins or the user with username "admin" join teams
+    if (!isAdmin && !isAdminUsername) {
+      console.error("[POST /teams/join] Access denied: User is not an admin:", userId);
+      res.status(403).json({ message: "Access denied: Only administrators can change teams" });
+      return;
+    }
+
+    // Special override: if user is "admin" and joining an admin team, always allow
+    const isJoiningAdminTeam = team.isAdmin || team.teamRoles?.some(tr => tr.role.name.toUpperCase() === 'ADMIN');
+    
+    if (isAdminUsername && isJoiningAdminTeam) {
+      console.log("[POST /teams/join] Admin user joining admin team - special override granted");
+    } else if (!isAdmin) {
+      console.log("[POST /teams/join] Non-admin access denied");
+      res.status(403).json({ message: "Access denied: Only administrators can change teams" });
       return;
     }
 
