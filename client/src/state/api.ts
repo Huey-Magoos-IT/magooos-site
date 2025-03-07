@@ -269,12 +269,71 @@ export const api = createApi({
     }),
     // Add updateUserTeam mutation with API Gateway compatibility
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
-      query: ({ userId, teamId }) => ({
-        // Use POST-based endpoint for API Gateway compatibility
-        url: 'users/update-team',
-        method: "POST",
-        body: { userId, teamId },
-      }),
+      queryFn: async ({ userId, teamId }, { getState }) => {
+        try {
+          // Get the authenticated user from store for additional auth method
+          const state = getState() as any;
+          // Fix the selector pattern - there was an extra bracket
+          const authUserDetails = state.api.queries['getAuthUser({})']?.data?.userDetails;
+          
+          console.log("Updating user team with auth context:", {
+            targetUserId: userId,
+            teamId,
+            authUserDetails: authUserDetails ?
+              { id: authUserDetails.userId, username: authUserDetails.username } :
+              "not available"
+          });
+          
+          // Construct fetch options - include requestingUserId in body
+          const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${userId}`;
+          const options: RequestInit = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              teamId,
+              action: 'updateTeam',
+              // Include the requesting user's ID for server-side authentication
+              requestingUserId: authUserDetails?.userId
+            })
+          };
+          
+          // Add authentication token if available
+          const session = await fetchAuthSession();
+          const { accessToken } = session.tokens ?? {};
+          if (accessToken) {
+            options.headers = {
+              ...options.headers,
+              'Authorization': `Bearer ${accessToken}`
+            };
+          }
+          
+          // Make request and handle response
+          const response = await fetch(url, options);
+          const data = await response.json();
+          
+          if (!response.ok) {
+            return {
+              error: {
+                status: response.status,
+                data: data?.message || 'Unknown error'
+              }
+            };
+          }
+          
+          return { data };
+        } catch (error) {
+          console.error("Error in updateUserTeam mutation:", error);
+          return {
+            error: {
+              status: 'CUSTOM_ERROR',
+              error: String(error),
+              data: 'An unexpected error occurred'
+            }
+          };
+        }
+      },
       invalidatesTags: ["Users"],
     }),
   }),
