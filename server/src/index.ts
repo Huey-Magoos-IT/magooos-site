@@ -25,8 +25,8 @@ app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? 'https://master.d25xr2dg5ij9ce.amplifyapp.com'
     : 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control', 'X-User-Cognito-Id'],
   exposedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control'],
   credentials: true
 }));

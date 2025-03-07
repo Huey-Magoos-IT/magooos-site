@@ -267,12 +267,13 @@ export const api = createApi({
         body: data,
       }),
     }),
-    // Add updateUserTeam mutation
+    // Add updateUserTeam mutation with API Gateway compatibility
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
       query: ({ userId, teamId }) => ({
-        url: `users/${userId}/team`,
-        method: "PATCH",
-        body: { teamId },
+        // Use POST-based endpoint for API Gateway compatibility
+        url: 'users/update-team',
+        method: "POST",
+        body: { userId, teamId },
       }),
       invalidatesTags: ["Users"],
     }),
