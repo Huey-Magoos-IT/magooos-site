@@ -38,6 +38,27 @@ Client Request -> API Gateway -> HTTP Integration -> AWS Service
 3. HTTP requests must include proper authentication
 4. Error handling must be robust for all AWS interactions
 
+## API Gateway Routing Constraints
+
+### Implementation
+```
+Client Request -> API Gateway Routes -> Express Routes -> Controllers
+```
+
+### Key Components
+- Fixed URL patterns configured in API Gateway
+- Route patterns must match between Gateway and Express
+- Proxy integration limitations
+- Error handling for 404 and routing mismatches
+
+### Pattern Rules
+1. **Always use existing base routes**: Custom endpoints often fail with 404 errors
+2. **Favor /teams and /projects routes**: These routes are properly configured in API Gateway
+3. **Avoid /users/* custom URLs**: These endpoints are more likely to fail
+4. **Use POST over PATCH/PUT**: For better compatibility with the API Gateway configuration
+5. **Leverage teams/join endpoint**: Use for team assignments instead of custom user endpoints
+6. **Consider API Gateway limitations**: When designing new endpoints
+
 ## Authentication Pattern
 
 ### Implementation

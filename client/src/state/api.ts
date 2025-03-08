@@ -267,90 +267,43 @@ export const api = createApi({
         body: data,
       }),
     }),
-    // Add updateUserTeam mutation with API Gateway compatibility using fixed URL endpoint
+    // Use the existing joinTeam functionality for team assignment
+    // This is guaranteed to work with API Gateway as it's an existing endpoint
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
-      queryFn: async ({ userId, teamId }, { getState }) => {
+      query: ({ userId, teamId }) => ({
+        url: `teams/${teamId}/join`,
+        method: 'POST',
+        body: { userId }
+      }),
+      // Add extensive debugging
+      onQueryStarted: async (arg, { dispatch, queryFulfilled, getState }) => {
         try {
-          // Get the authenticated user from store for additional auth method
+          // Get auth user for logging
           const state = getState() as any;
-          const authUserDetails = state.api.queries['getAuthUser({})']?.data?.userDetails;
+          const authUserDetails = state?.api?.queries['getAuthUser({})']?.data?.userDetails;
           
-          console.log("Updating user team with auth context:", {
-            targetUserId: userId,
-            teamId,
-            authUserDetails: authUserDetails ?
-              { id: authUserDetails.userId, username: authUserDetails.username } :
-              "not available"
+          console.log("Starting team assignment via teams/join:", {
+            userId: arg.userId,
+            teamId: arg.teamId,
+            byUser: authUserDetails?.username || 'unknown'
           });
           
-          // Use the fixed URL endpoint that's compatible with API Gateway
-          const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/team-assignment`;
+          // Wait for the query to complete
+          const { data } = await queryFulfilled;
           
-          const options: RequestInit = {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId,
-              teamId,
-              // Include the requesting user's ID for server-side authentication
-              requestingUserId: authUserDetails?.userId
-            })
-          };
+          console.log("Team assignment completed successfully:", {
+            userId: data.userId,
+            username: data.username,
+            newTeamId: data.teamId
+          });
           
-          // Add authentication token if available
-          const session = await fetchAuthSession();
-          const { accessToken } = session.tokens ?? {};
-          if (accessToken) {
-            options.headers = {
-              ...options.headers,
-              'Authorization': `Bearer ${accessToken}`
-            };
-          }
-          
-          // Make request and handle response
-          console.log("Making API request to:", url);
-          const response = await fetch(url, options);
-          
-          // Special handling for non-JSON responses (HTML error pages)
-          let data;
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-          } else {
-            const text = await response.text();
-            console.error("Non-JSON response from server:", text.substring(0, 200) + "...");
-            return {
-              error: {
-                status: response.status,
-                data: "Server returned a non-JSON response, possibly an error page"
-              }
-            };
-          }
-          
-          if (!response.ok) {
-            return {
-              error: {
-                status: response.status,
-                data: data?.message || 'Unknown error'
-              }
-            };
-          }
-          
-          return { data };
+          // Force refresh users data after successful update
+          dispatch(api.util.invalidateTags(['Users']));
         } catch (error) {
-          console.error("Error in updateUserTeam mutation:", error);
-          return {
-            error: {
-              status: 'CUSTOM_ERROR',
-              error: String(error),
-              data: 'An unexpected error occurred'
-            }
-          };
+          console.error("Team assignment failed:", error);
         }
       },
-      invalidatesTags: ["Users"],
+      invalidatesTags: ["Users", "Teams"],
     }),
   }),
 });
