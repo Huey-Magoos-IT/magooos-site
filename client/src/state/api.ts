@@ -270,11 +270,26 @@ export const api = createApi({
     // Use the existing joinTeam functionality for team assignment
     // This is guaranteed to work with API Gateway as it's an existing endpoint
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
-      query: ({ userId, teamId }) => ({
-        url: `teams/${teamId}/join`,
-        method: 'POST',
-        body: { userId }
-      }),
+      // The simpler approach is just to select the appropriate endpoint based on the teamId
+      query: ({ userId, teamId }) => {
+        // Special case for "no team" option (teamId === 0)
+        if (teamId === 0) {
+          console.log("Team ID 0 detected - using remove-user-from-team endpoint");
+          return {
+            url: 'teams/remove-user-from-team',
+            method: 'POST',
+            body: { userId }
+          };
+        } else {
+          // For all valid team IDs, use the join team endpoint
+          console.log(`Joining team ${teamId}`);
+          return {
+            url: `teams/${teamId}/join`,
+            method: 'POST',
+            body: { userId }
+          };
+        }
+      },
       // Add extensive debugging
       onQueryStarted: async (arg, { dispatch, queryFulfilled, getState }) => {
         try {
@@ -282,7 +297,8 @@ export const api = createApi({
           const state = getState() as any;
           const authUserDetails = state?.api?.queries['getAuthUser({})']?.data?.userDetails;
           
-          console.log("Starting team assignment via teams/join:", {
+          const operationType = arg.teamId === 0 ? "removing from team" : "adding to team";
+          console.log(`Starting team assignment operation (${operationType}):`, {
             userId: arg.userId,
             teamId: arg.teamId,
             byUser: authUserDetails?.username || 'unknown'
@@ -294,7 +310,7 @@ export const api = createApi({
           console.log("Team assignment completed successfully:", {
             userId: data.userId,
             username: data.username,
-            newTeamId: data.teamId
+            teamId: data.teamId || "No Team"
           });
           
           // Force refresh users data after successful update

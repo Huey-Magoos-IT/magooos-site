@@ -26,6 +26,42 @@ router.post("/:teamId/delete", deleteTeamPost);
 router.post("/delete-team", deleteTeamPost); // Fallback endpoint without path parameter
 router.post("/:teamId/join", joinTeam);
 
+// Special endpoint for removing a user from any team (the "no team" option)
+router.post("/remove-user-from-team", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+    
+    console.log("[POST /teams/remove-user-from-team] Removing user from team:", { userId });
+    
+    // Update the user to set teamId to null
+    const updatedUser = await prisma.user.update({
+      where: { userId: Number(userId) },
+      data: { teamId: null },
+      include: {
+        team: true // Include null team info for consistency with other endpoints
+      }
+    });
+    
+    console.log("[POST /teams/remove-user-from-team] User removed from team:", {
+      userId: updatedUser.userId,
+      username: updatedUser.username,
+      previousTeamId: updatedUser.teamId
+    });
+    
+    res.json(updatedUser);
+  } catch (error: any) {
+    console.error("[POST /teams/remove-user-from-team] Error:", error);
+    res.status(500).json({
+      message: "Error removing user from team",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // Role routes - make sure this route is correctly defined for API Gateway
 router.get("/roles", (req, res) => {
   console.log("[Direct GET /teams/roles] Called directly!");
