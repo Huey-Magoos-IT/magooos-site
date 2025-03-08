@@ -167,3 +167,30 @@ The application uses AWS Cognito for user authentication with the following flow
    - AWS best practices
    - No AWS SDK dependencies (HTTP/API Gateway only)
    - Proper error handling and logging
+
+## Architecture & Development Principles
+
+### API Gateway Integration Patterns
+1. **Route Pattern Constraints**
+   - Use established route patterns: `/teams/*` and `/projects/*`
+   - Avoid custom route patterns that aren't configured in API Gateway
+   - Follow consistent URL structure across all endpoints
+
+2. **API Design Guidelines**
+   - Use POST for most operations (even updates) for API Gateway compatibility
+   - Create dedicated endpoints for edge cases (e.g., "no team" option)
+   - Handle special values (null, 0, undefined) with specific endpoints
+   - Maintain consistent response formats across all endpoints
+
+3. **Simplicity First**
+   - Use standard RTK Query patterns over custom implementations
+   - Keep conditional logic simple and explicit
+   - Prefer tried and tested library features over custom overrides
+   - Implement minimal viable solutions first, then add complexity if needed
+
+4. **Debugging Best Practices**
+   - Add comprehensive logging at every stage of request processing
+   - Include context details in all error messages
+   - Test edge cases explicitly before deploying
+   - Document known limitations and workarounds
+   - Consider correlation IDs for cross-service request tracking

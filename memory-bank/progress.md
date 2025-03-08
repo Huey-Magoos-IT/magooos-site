@@ -1,71 +1,49 @@
-# Development Progress
+# Project Progress
 
-## Completed Milestones
+## API Integration Issues - 2025-03-07
 
-### Core Infrastructure
-- [x] Next.js 14 frontend setup with TypeScript
-- [x] Express.js backend with Prisma ORM
-- [x] AWS infrastructure deployment (EC2, RDS, Cognito, etc.)
-- [x] Role-based access control foundation
-- [x] Team management system
+### Completed Tasks
 
-### Frontend Features
-- [x] Project and task management interface
-- [x] Multiple project views (Board, List, Table, Timeline)
-- [x] Team management UI
-- [x] Sidebar navigation with role-based visibility
-- [x] User profile components
 
-### Backend Features
-- [x] User authentication with Cognito
-- [x] Team CRUD operations
-- [x] Project and task API endpoints
-- [x] Role management system
-- [x] Direct DynamoDB integration for locations
 
-## In Progress
+#### Documentation Updates
+- ✅ Updated systemPatterns.md with API Gateway constraints
+- ✅ Added Simplicity-First Development Pattern to systemPatterns.md
+- ✅ Added Debugging and Troubleshooting Pattern to systemPatterns.md
+- ✅ Updated decisionLog.md with Team Assignment API fix decisions
+- ✅ Updated activeContext.md with current focus and next steps
 
-### Team and Role Enhancements
-- [x] Fix roles endpoint issue for `/teams/roles`
-- [x] API Gateway compatibility fixes for team operations
-- [x] Enhanced team response format
-- [x] Complete team CRUD operations
-- [x] Role auto-assignment system
-- [x] Improved error handling for team operations
-- [ ] Server-side role validation for sensitive operations
+### In Progress
+- 🔄 Review other API endpoints for similar routing issues
+- 🔄 Consider refactoring similar custom endpoints to use existing routes
+- 🔄 Improve error handling for edge cases across the application
 
-### Department Features
-- [x] Basic department page structure
-- [x] Role-based department access
-- [ ] Data department analysis tools
-- [x] Reporting department features
-  - [x] Date range filtering
-  - [x] Location selection via LocationTable component
-  - [x] S3 integration for file storage/retrieval
-  - [x] Report generation through Lambda API Gateway
-- [ ] Department-specific permissions
+### Pending Tasks
+- ⏳ Establish consistent pattern for all API endpoint designs
+- ⏳ Create API endpoint testing script to validate routes through API Gateway
+- ⏳ Review and consolidate error handling approaches
+- ⏳ Consider adding correlation IDs to track requests across services
+- ⏳ Document API Gateway configuration constraints for future development
 
-### User Experience
-- [x] Team management UI fixes
-- [x] Role display in team cards
-- [x] Role management controls
-- [ ] Dedicated user roles management interface
-- [ ] Enhanced notification system
+### Insights and Patterns
+1. **Route Constraints**
+   - API Gateway only handles certain route patterns reliably
+   - Base on routes on `/teams/*` and `/projects/*` patterns
+   - Avoid custom routes that might not be properly configured
 
-## Upcoming Tasks
+2. **Edge Case Handling**
+   - Special cases need dedicated endpoints (e.g., "no team" option)
+   - Null/special values require explicit handling
+   - Edge conditions should be tested separately from main flows
 
-### Security Enhancements
-- [ ] Implement more granular permission checks
-- [ ] Add audit logging for sensitive operations
-- [ ] Enhanced error handling across all endpoints
+3. **Implementation Approach**
+   - Use standard library patterns over custom implementations
+   - Keep conditional logic simple and explicit
+   - Leverage existing endpoints with different parameters
+   - Separate special case handling with dedicated endpoints
 
-### Feature Expansion
-- [ ] Advanced data visualization for Data department
-- [ ] Report generation tools for Reporting department
-- [ ] Task dependency tracking
-- [ ] Enhanced search functionality
-
-### Infrastructure
-- [ ] Optimize API Gateway configurations
-- [ ] Implement more CloudWatch monitoring
-- [ ] Enhance error logging and tracking
+### Next Key Tasks
+1. Review users API for similar routing issues
+2. Examine project assignment functionality for edge cases
+3. Consider creating a testing utility for API Gateway routing
+4. Document patterns and constraints for future development

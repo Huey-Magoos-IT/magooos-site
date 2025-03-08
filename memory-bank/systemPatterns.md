@@ -58,6 +58,54 @@ Client Request -> API Gateway Routes -> Express Routes -> Controllers
 4. **Use POST over PATCH/PUT**: For better compatibility with the API Gateway configuration
 5. **Leverage teams/join endpoint**: Use for team assignments instead of custom user endpoints
 6. **Consider API Gateway limitations**: When designing new endpoints
+7. **Explicitly handle edge cases**: Create specific endpoints for special cases (e.g., "no team" option)
+8. **Use special endpoints for null values**: Null or special values need dedicated server endpoints
+
+## Simplicity-First Development Pattern
+
+### Implementation
+```
+Standard Library Approach -> Simple Conditional Logic -> Minimal Custom Code
+```
+
+### Key Components
+- RTK Query standard patterns
+- Simple conditional routing
+- Leveraging existing endpoints with different parameters
+- Clear error handling and logging
+
+### Pattern Rules
+1. **Use standard RTK Query patterns**: Prefer `query` over complex `queryFn` implementations
+2. **Keep conditional logic simple**: Use if/else in query functions rather than complex overrides
+3. **Reuse existing endpoints**: Modify parameters instead of creating new endpoints
+4. **Separate special case handling**: Create dedicated endpoints for edge cases
+5. **Add comprehensive logging**: Include details for every stage of the request lifecycle
+6. **Handle errors explicitly**: Each error condition should have clear handling code
+7. **Validate user inputs client-side**: Prevent invalid requests before they reach the API
+8. **Prefer explicit over implicit**: Be clear about what each endpoint does
+
+## Debugging and Troubleshooting Pattern
+
+### Implementation
+```
+Client Errors -> Server Logs -> API Gateway Logs -> Root Cause Analysis
+```
+
+### Key Components
+- Client-side error capture
+- Detailed server-side logging
+- API Gateway routing analysis
+- Error payload inspection
+
+### Pattern Rules
+1. **Log every stage of request processing**: Both client and server sides
+2. **Add context to error messages**: Include user IDs, parameters, and request context
+3. **Trace request paths through all services**: Follow from client -> API Gateway -> Server
+4. **Test edge cases explicitly**: Zero values, null values, and boundary conditions
+5. **Use fallback approaches**: Have alternatives when primary approach fails
+6. **Document known limitations**: Update system patterns when constraints are discovered
+7. **Isolate testing in simple environments**: Test API endpoints directly before full integration
+8. **Add correlation IDs**: Use unique identifiers to track requests across systems
 
 ## Authentication Pattern
 

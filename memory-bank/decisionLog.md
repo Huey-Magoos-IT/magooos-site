@@ -1,85 +1,64 @@
-# Architectural Decision Log
+# Decision Log
 
-## Role-Based Access Control Implementation
-- **Date**: Prior to March 2025
-- **Decision**: Implement a granular role-based access control system with specific roles (ADMIN, DATA, REPORTING).
-- **Context**: Need for department-specific access control and team-based permissions.
-- **Alternatives Considered**:
-  - Simple admin/non-admin dichotomy
-  - Permission-based system instead of role-based
-  - User-level permissions instead of team-level
-- **Decision Rationale**: Team-based role system provides better scalability and management while allowing for department-specific access.
-- **Consequences**: 
-  - Increased complexity in permission checks
-  - Need for role management UI
-  - More flexible access control system
+## 2025-03-07: Team Assignment API Fix
 
-## AWS SDK Prohibition
-- **Date**: Project inception
-- **Decision**: Strictly prohibit AWS SDK usage in codebase; use direct HTTP/HTTPS requests only.
-- **Context**: Need for AWS service integration while maintaining flexibility and avoiding SDK lock-in.
-- **Alternatives Considered**:
-  - Limited AWS SDK usage
-  - Third-party AWS libraries
-  - Custom SDK wrapper
-- **Decision Rationale**: Direct HTTP requests provide more control, reduce dependencies, and avoid SDK versioning issues.
-- **Consequences**:
-  - More complex integration code
-  - Need for detailed AWS API knowledge
-  - More error-prone without SDK validations
+### Problem
+Team assignment functionality was failing with 404 errors in two scenarios:
+1. When using a custom `/users/team-assignment` endpoint
+2. When attempting to set a user to "no team" (teamId = 0)
 
-## API Gateway Direct Integration
-- **Date**: Prior to March 2025
-- **Decision**: Use API Gateway direct integration for DynamoDB location data.
-- **Context**: Need for efficient, serverless access to location data without Lambda overhead.
-- **Alternatives Considered**:
-  - Lambda functions as intermediaries
-  - EC2-based API for all data access
-  - Client-side DynamoDB queries
-- **Decision Rationale**: Direct integration provides fastest path to data with minimal infrastructure.
-- **Consequences**:
-  - Less flexibility for complex transformations
-  - Mapping templates required in API Gateway
-  - Reduced processing capabilities compared to Lambda
+### Investigation
+1. Examined client-side error logs showing 404 errors for API requests
+2. Reviewed server logs to understand the request path through API Gateway
+3. Compared working endpoints (teams/join) with non-working endpoints
+4. Identified pattern that only certain route formats work with API Gateway
 
-## Team Role Management Architecture
-- **Date**: March 2025
-- **Decision**: Implement team-level role assignments with auto-assignment based on team properties.
-- **Context**: Need for simplified role management while maintaining granular access control.
-- **Alternatives Considered**:
-  - User-level role assignments
-  - Fixed team types with predefined roles
-  - Role inheritance hierarchy
-- **Decision Rationale**: Team-level roles with auto-assignment simplifies management while providing necessary flexibility.
-- **Consequences**:
-  - Role checks must consider team membership
-  - UI must display team roles clearly
-  - Auto-assignment logic needs maintenance
+### Root Causes
+1. **API Gateway Route Configuration**: Only specific route patterns are properly configured
+   - `/teams/*` and `/projects/*` work reliably
+   - Custom routes like `/users/team-assignment` are not recognized
+2. **Missing Handling for "No Team"**: The system had no specific endpoint to handle null team assignment
 
-## Multiple View Components for Projects
-- **Date**: Prior to March 2025
-- **Decision**: Implement multiple view components (Board, List, Table, Timeline) for project management.
-- **Context**: Different users have different preferences for visualizing project data.
-- **Alternatives Considered**:
-  - Single canonical view
-  - Configurable single view
-  - Third-party visualization libraries
-- **Decision Rationale**: Multiple specialized views provide better user experience for different use cases.
-- **Consequences**:
-  - More components to maintain
-  - Need for consistent data handling across views
-  - Increased frontend complexity
+### Decision Points
 
-## Department-Based Structure
-- **Date**: Prior to March 2025
-- **Decision**: Organize application sections by department with role-based restrictions.
-- **Context**: Organization has department-specific workflows and access requirements.
+#### Decision 1: Use Existing Endpoints Instead of Custom Routes
+- **Choice**: Use the existing `/teams/:teamId/join` endpoint instead of creating custom user endpoints
+- **Rationale**: The existing endpoint is already configured in API Gateway and works reliably
+- **Alternatives Considered**: 
+  - Adding a new API Gateway route for custom endpoints (rejected due to complexity and deployment risks)
+  - Creating a workaround using Lambda direct access (rejected due to consistency concerns)
+- **Consequences**: Simplified approach but requires client-side logic to handle different team scenarios
+
+#### Decision 2: Create Special Endpoint for "No Team" Option
+- **Choice**: Create a dedicated `/teams/remove-user-from-team` endpoint 
+- **Rationale**: Special case needs explicit server-side handling since "teamId=0" is not a valid team ID
 - **Alternatives Considered**:
-  - Feature-based organization
-  - User-specific customization
-  - Single interface with conditional elements
-- **Decision Rationale**: Department-based structure aligns with organizational structure and simplifies access control.
-- **Consequences**:
-  - Need for department-specific roles
-  - Potential duplication of similar features
-  - Clearer organizational alignment
+  - Using null in URL path (rejected due to routing issues)
+  - Adding query parameter flag (rejected due to API Gateway limitations)
+- **Consequences**: More explicit handling of special cases, at the cost of more endpoints to maintain
+
+#### Decision 3: Use Standard RTK Query Patterns
+- **Choice**: Use standard query function with conditional routing rather than complex queryFn override
+- **Rationale**: Simpler approach is more maintainable and less error-prone
+- **Alternatives Considered**:
+  - Custom queryFn implementation (rejected due to TypeScript errors and complexity)
+  - Separate mutation for "no team" (rejected for UX consistency reasons)
+- **Consequences**: Cleaner code, better TypeScript support, more maintainable solution
+
+### Implementation
+1. Created a special server endpoint `/teams/remove-user-from-team` to handle "no team" case
+2. Updated client code to conditionally route requests based on teamId
+3. Added comprehensive logging for debugging
+4. Documented API Gateway constraints in system patterns
+
+### Lessons Learned
+1. **Simplicity First**: Standard patterns are more reliable than custom implementations
+2. **API Gateway Constraints**: Need to understand and work within the limitations of API Gateway
+3. **Edge Case Handling**: Special cases need explicit handling with dedicated endpoints
+4. **Documentation Importance**: System patterns need to reflect architectural constraints
+
+### Impact
+- Fixed team assignment functionality for all scenarios
+- Established pattern for handling similar API issues
+- Improved understanding of API Gateway constraints
+- Updated documentation to prevent similar issues
