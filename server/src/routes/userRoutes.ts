@@ -9,24 +9,27 @@ router.post("/", postUser);
 router.get("/:cognitoId", getUser);
 router.patch("/:userId/team", updateUserTeam);
 
-// Alternative POST endpoint using existing API Gateway patterns
-router.post("/:userId", (req, res) => {
-  const { userId } = req.params;
-  const { teamId, action } = req.body;
+// Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
+router.post("/team-assignment", (req, res) => {
+  const { userId, teamId } = req.body;
   
-  // Only process team update actions
-  if (action === 'updateTeam' && teamId) {
-    console.log("[POST /users/:userId] Team update action:", { userId, teamId });
-    // Set userId as a parameter for updateUserTeam
-    // Forward to the PATCH implementation
-    return updateUserTeam(req, res);
+  console.log("[POST /users/team-assignment] Team update request:", { userId, teamId });
+  
+  if (!userId || !teamId) {
+    return res.status(400).json({
+      message: "Invalid parameters",
+      details: "Both userId and teamId are required"
+    });
   }
+
+  // Set the userId in params for compatibility with the updateUserTeam function
+  req.params = {
+    ...req.params,
+    userId: userId.toString()
+  };
   
-  // For non-team actions or no action specified, return error
-  return res.status(400).json({
-    message: "Invalid action or missing parameters",
-    details: "For team updates, 'action' must be 'updateTeam' and 'teamId' must be provided"
-  });
+  // Forward to the PATCH implementation
+  return updateUserTeam(req, res);
 });
 
 export default router;

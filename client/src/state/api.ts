@@ -267,13 +267,12 @@ export const api = createApi({
         body: data,
       }),
     }),
-    // Add updateUserTeam mutation with API Gateway compatibility
+    // Add updateUserTeam mutation with API Gateway compatibility using fixed URL endpoint
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
       queryFn: async ({ userId, teamId }, { getState }) => {
         try {
           // Get the authenticated user from store for additional auth method
           const state = getState() as any;
-          // Fix the selector pattern - there was an extra bracket
           const authUserDetails = state.api.queries['getAuthUser({})']?.data?.userDetails;
           
           console.log("Updating user team with auth context:", {
@@ -284,16 +283,17 @@ export const api = createApi({
               "not available"
           });
           
-          // Construct fetch options - include requestingUserId in body
-          const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${userId}`;
+          // Use the fixed URL endpoint that's compatible with API Gateway
+          const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/team-assignment`;
+          
           const options: RequestInit = {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              userId,
               teamId,
-              action: 'updateTeam',
               // Include the requesting user's ID for server-side authentication
               requestingUserId: authUserDetails?.userId
             })
@@ -310,8 +310,24 @@ export const api = createApi({
           }
           
           // Make request and handle response
+          console.log("Making API request to:", url);
           const response = await fetch(url, options);
-          const data = await response.json();
+          
+          // Special handling for non-JSON responses (HTML error pages)
+          let data;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            console.error("Non-JSON response from server:", text.substring(0, 200) + "...");
+            return {
+              error: {
+                status: response.status,
+                data: "Server returned a non-JSON response, possibly an error page"
+              }
+            };
+          }
           
           if (!response.ok) {
             return {
