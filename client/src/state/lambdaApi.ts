@@ -71,8 +71,6 @@ export const lambdaApi = createApi({
         url: "process-data", // Matches the resource path in your new API Gateway
         method: "POST",
         body: data,
-        // Add a longer timeout for this specific operation
-        timeout: 60000, // 60 seconds timeout
       }),
       // Add error transformation specific to the processData endpoint
       transformErrorResponse: (response, meta, arg) => {
@@ -83,7 +81,7 @@ export const lambdaApi = createApi({
           return {
             status: response.status,
             data: {
-              message: "Report generation timed out. The request is taking too long to process, possibly due to large data volume. Try with fewer locations or a smaller date range."
+              message: "Report generation exceeded API Gateway's 29-second timeout limit. Reports with all locations or large date ranges cannot complete within this constraint."
             }
           };
         }

@@ -354,13 +354,7 @@ const ReportingPage = () => {
                 </div>
 
                 <div className="mt-4">
-                  {/* Warning banner when no specific locations are selected */}
-                  {selectedLocations.length === 0 && !isGenerating && (
-                    <div className="mb-3 p-2 border border-amber-300 bg-amber-50 text-amber-800 rounded text-sm">
-                      <p className="font-medium">⚠️ Performance Warning:</p>
-                      <p>Generating a report with all {DEFAULT_LOCATION_IDS.length} locations may cause a long wait.</p>
-                    </div>
-                  )}
+                  
                   
                   <Button
                     variant="contained"
@@ -397,12 +391,13 @@ const ReportingPage = () => {
                       {/* Add recommendations for Gateway Timeout errors */}
                       {lambdaError.includes("Gateway Timeout") || lambdaError.includes("timeout") && (
                         <div className="mt-3 p-2 bg-blue-50 text-blue-700 rounded text-sm">
-                          <p className="font-semibold">Recommendations:</p>
+                          <p className="font-semibold">API Gateway Timeout Limit:</p>
+                          <p className="mb-2">The API Gateway has a hard limit of 29 seconds for request processing. Reports with all locations or large date ranges cannot complete within this constraint.</p>
+                          <p className="font-semibold mt-2">Recommendations:</p>
                           <ul className="list-disc pl-5 mt-1 space-y-1">
                             <li>Reduce the number of selected locations (try 5-10 instead of all 78)</li>
                             <li>Select a smaller date range (1-3 days instead of weeks)</li>
-                            <li>Try generating reports during off-peak hours</li>
-                            <li>Break your request into multiple smaller reports</li>
+                            <li>Break your request into multiple smaller reports (e.g., generate one day at a time)</li>
                           </ul>
                         </div>
                       )}
