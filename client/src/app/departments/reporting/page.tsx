@@ -276,11 +276,14 @@ const ReportingPage = () => {
                   onChange={(newValue) => setStartDate(newValue)}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
+                  minDate={new Date('2025-01-14')}
+                  maxDate={new Date('2025-02-28')}
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-white dark:bg-dark-tertiary",
+                      helperText: "Range: Jan 14, 2025 - Feb 28, 2025"
                     }
                   }}
                 />
@@ -291,11 +294,14 @@ const ReportingPage = () => {
                   onChange={(newValue) => setEndDate(newValue)}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
+                  minDate={new Date('2025-01-14')}
+                  maxDate={new Date('2025-02-28')}
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-white dark:bg-dark-tertiary",
+                      helperText: "Range: Jan 14, 2025 - Feb 28, 2025"
                     }
                   }}
                 />
