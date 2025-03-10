@@ -71,7 +71,35 @@ export const lambdaApi = createApi({
         url: "process-data", // Matches the resource path in your new API Gateway
         method: "POST",
         body: data,
+        // Add a longer timeout for this specific operation
+        timeout: 60000, // 60 seconds timeout
       }),
+      // Add error transformation specific to the processData endpoint
+      transformErrorResponse: (response, meta, arg) => {
+        console.error("Process Data API error:", response);
+        
+        // Check for timeout error
+        if (response.status === 504) {
+          return {
+            status: response.status,
+            data: {
+              message: "Report generation timed out. The request is taking too long to process, possibly due to large data volume. Try with fewer locations or a smaller date range."
+            }
+          };
+        }
+        
+        // Check for unauthorized access
+        if (response.status === 403) {
+          return {
+            status: response.status,
+            data: {
+              message: "Authentication failed. Make sure your API Gateway endpoint has the proper authentication and role permissions."
+            }
+          };
+        }
+        
+        return response;
+      },
     }),
     
     // Locations endpoint - direct DynamoDB integration

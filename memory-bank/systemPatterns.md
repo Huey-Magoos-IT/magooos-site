@@ -18,6 +18,33 @@ User -> Team Membership -> Team Roles -> Permission Checks -> Protected Resource
 2. Role names must be handled case-insensitively
 3. Teams can have multiple roles
 4. Department pages must check for specific roles
+5. **Check authenticated user permissions, not target entity**: Permission logic should focus on the user making the request, not the entity being modified
+6. **Avoid circular dependencies**: Don't create permission checks that depend on the outcome of the operation
+7. **Provide special administrative overrides**: Include specific handling for admin users
+8. **Handle "no team" case explicitly**: Users without teams need special handling in permission models
+
+## Permission Model Design Pattern
+
+### Implementation
+```
+Request -> Authentication -> Permission Check (requesting user) -> Business Logic -> Response
+```
+
+### Key Components
+- JWT token validation and user identification
+- Team-based role assignment
+- Permission checking middleware or controller logic
+- Special case handling for administrative users
+
+### Pattern Rules
+1. **Check the right user**: Always validate permissions based on the authenticated user making the request
+2. **Provide administrative overrides**: Include special handling for admin users or usernames
+3. **Avoid circular dependencies**: Permission checks should never depend on the state being modified
+4. **Handle edge cases explicitly**: Users with no team, system transitions, and special states need explicit handling
+5. **Keep permission logic simple**: Prefer simple boolean checks over complex conditional chains
+6. **Add robust logging**: Log permission decisions for auditing and debugging
+7. **Test all pathways**: Ensure all possible state transitions are tested, including edge cases
+8. **Document permission patterns**: Make permission models explicit in documentation
 
 ## AWS Integration Pattern (No SDK)
 
@@ -144,6 +171,9 @@ User Interface -> API Endpoint -> Controller -> Prisma Model -> Database
 2. Auto-assignment based on team properties
 3. Cascading deletions must clean up relationships
 4. Team updates must validate name uniqueness
+5. Permission checks must focus on authenticated user, not target user
+6. Special handling required for "no team" assignments
+7. Maintain administrative override capabilities
 
 ## Frontend Component Organization
 

@@ -64,6 +64,10 @@ server/
    - Role assignment endpoints:
      - Get available roles
      - Add/remove roles from teams
+   - Team assignment permission model:
+     - Focus on authenticated user's permissions, not target user's permissions
+     - Special handling for admin users
+     - Dedicated endpoint for "no team" assignments
    - Permission checking utility functions
 
 4. **User Controller** (`controllers/userController.ts`)
@@ -633,7 +637,33 @@ export const someEndpoint = async (req: Request, res: Response): Promise<void> =
 ```bash
 # Check IAM permissions for the API Gateway role
 aws iam list-attached-role-policies --role-name ApiGatewayDynamoDBRole
+```
 
+7. **Team Assignment Permission Issues**
+```javascript
+// Common issue: "Access denied: Only administrators can change teams"
+// This can occur when the permission model checks the wrong user's permissions
+
+// Bad pattern (creates catch-22 for users not in teams):
+if (!targetUser.team?.teamRoles?.some(tr => tr.role.name === 'ADMIN')) {
+  return res.status(403).json({ message: "Access denied: Not an admin" });
+}
+
+// Good pattern (focuses on authenticated user):
+// 1. Check if special admin user
+const isSpecialAdminUser = user.username === 'admin';
+
+// 2. Check authenticated user's permissions (from JWT token)
+// In a real implementation, this would come from JWT middleware
+const isAuthenticatedUserAdmin = true; // simplified for example
+
+// 3. Allow operation if either condition is true
+if (isSpecialAdminUser || isAuthenticatedUserAdmin) {
+  // Proceed with team assignment
+} else {
+  return res.status(403).json({ message: "Access denied: Only admins can change teams" });
+}
+```
 
 ### Production Deployment Steps
 

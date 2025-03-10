@@ -107,9 +107,15 @@ const ReportingPage = () => {
     console.log("Generating report with data:", formData);
     
     try {
+      // Add timing for diagnostic purposes
+      const startTime = performance.now();
+      
       // Call the Lambda function via API Gateway
       const result = await processData(formData).unwrap();
-      console.log("Lambda function result:", result);
+      
+      // Calculate request duration for diagnostic purposes
+      const duration = Math.round(performance.now() - startTime);
+      console.log(`Lambda function result (took ${duration}ms):`, result);
       
       // Set success message
       setReportStatus("Report generation initiated successfully! Check the file list below for your report once it's ready.");
@@ -125,8 +131,20 @@ const ReportingPage = () => {
       }, 5000); // Wait 5 seconds before refreshing
     } catch (error: any) {
       console.error("Error calling Lambda function:", error);
-      setLambdaError(typeof error === 'object' && error !== null ? error.toString() : String(error));
-      setReportStatus(`Error: Failed to process data. Please check the console for details.`);
+      
+      // Improved error handling with special case for timeout errors
+      if (error?.status === 504 || (error?.toString && error.toString().includes("timeout"))) {
+        setLambdaError("Gateway Timeout (504): The report generation request took too long to complete and timed out.");
+        setReportStatus(`Error: Request timed out. The report may involve too much data. Try the suggestions below.`);
+      } else if (error?.data?.message) {
+        // Use the formatted error message from our API
+        setLambdaError(error.data.message);
+        setReportStatus(`Error: Failed to process data. See details below.`);
+      } else {
+        // Fallback for general errors
+        setLambdaError(typeof error === 'object' && error !== null ? error.toString() : String(error));
+        setReportStatus(`Error: Failed to process data. Please check the console for details.`);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -336,6 +354,14 @@ const ReportingPage = () => {
                 </div>
 
                 <div className="mt-4">
+                  {/* Warning banner when no specific locations are selected */}
+                  {selectedLocations.length === 0 && !isGenerating && (
+                    <div className="mb-3 p-2 border border-amber-300 bg-amber-50 text-amber-800 rounded text-sm">
+                      <p className="font-medium">⚠️ Performance Warning:</p>
+                      <p>Generating a report with all {DEFAULT_LOCATION_IDS.length} locations may cause a long wait.</p>
+                    </div>
+                  )}
+                  
                   <Button
                     variant="contained"
                     onClick={handleGenerateReport}
@@ -367,6 +393,19 @@ const ReportingPage = () => {
                     <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
                       <p className="font-semibold">Error Details:</p>
                       <p className="text-sm overflow-auto max-h-24">{lambdaError}</p>
+                      
+                      {/* Add recommendations for Gateway Timeout errors */}
+                      {lambdaError.includes("Gateway Timeout") || lambdaError.includes("timeout") && (
+                        <div className="mt-3 p-2 bg-blue-50 text-blue-700 rounded text-sm">
+                          <p className="font-semibold">Recommendations:</p>
+                          <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li>Reduce the number of selected locations (try 5-10 instead of all 78)</li>
+                            <li>Select a smaller date range (1-3 days instead of weeks)</li>
+                            <li>Try generating reports during off-peak hours</li>
+                            <li>Break your request into multiple smaller reports</li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
