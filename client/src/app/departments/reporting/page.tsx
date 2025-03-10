@@ -12,7 +12,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 import LocationTable, { Location } from "@/components/LocationTable";
 
-const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://huey-site-summary-data.s3.us-east-2.amazonaws.com";
+const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_REPORTING_BUCKET_URL || "https://redflag-reporting.s3.us-east-2.amazonaws.com";
 const ITEMS_PER_PAGE = 15;
 
 // Default values from DynamoDB - all 78 locations
@@ -99,7 +99,7 @@ const ReportingPage = () => {
     const formData = {
       start_date: formatDateForApi(startDate),
       end_date: formatDateForApi(endDate),
-      output_bucket: "huey-site-summary-data",
+      output_bucket: "redflag-reporting",
       location_id: locationIds,
       discount_ids: discountIds
     };
