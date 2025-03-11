@@ -231,22 +231,12 @@ const ReportingPage = () => {
       setFilesLoading(false);
     }
   };
-// New client-side processing approach
+// Client-side CSV data processing approach
 const processCSVData = async () => {
   if (!startDate || !endDate) {
     alert("Please select both start and end dates");
     return;
   }
-
-  // DIAGNOSTIC: Log initial state for debugging
-  console.log("DIAGNOSTIC - Initial state:", {
-    startDate: startDate?.toISOString(),
-    endDate: endDate?.toISOString(),
-    selectedLocations,
-    selectedLocationIds,
-    discountIds,
-    reportType
-  });
 
   setCSVLoading(true);
   setCSVError(null);
@@ -262,8 +252,6 @@ const processCSVData = async () => {
       reportType
     );
 
-    console.log(`Found ${matchingFiles.length} matching files for processing`, matchingFiles);
-
     if (matchingFiles.length === 0) {
       setCSVError("No files found matching the selected date range and report type");
       setCSVLoading(false);
@@ -277,37 +265,13 @@ const processCSVData = async () => {
 
     // Process all files (fetch and parse)
     const combinedData = await processMultipleCSVs(fileUrls);
-    console.log("Combined data:", combinedData);
-
-    // DIAGNOSTIC: Check for Winter Garden records before filtering
-    const winterGardenRecords = combinedData.filter(row =>
-      row['Store'] && String(row['Store']).includes('Winter Garden')
-    );
-    console.log(`DIAGNOSTIC - Found ${winterGardenRecords.length} Winter Garden records in raw data`);
-    if (winterGardenRecords.length > 0) {
-      console.log("DIAGNOSTIC - Winter Garden record example:", winterGardenRecords[0]);
-    }
-
+    
     // Apply filters if selected
     let filteredData = combinedData;
-    console.log("DIAGNOSTIC - Before filtering:", {
-      selectedLocationIds,
-      selectedLocations,
-      discountIds,
-      dataLength: combinedData.length
-    });
-    
-    // DIAGNOSTIC: Hard-code Winter Garden for testing if selected
-    const isWinterGardenSelected = selectedLocations.some(loc => loc.id === "4046");
-    const filterLocationIds = isWinterGardenSelected
-      ? (selectedLocationIds.length > 0 ? selectedLocationIds : ["4046"])
-      : selectedLocationIds;
-      
-    if (filterLocationIds.length > 0 || discountIds.length > 0) {
+    if (selectedLocationIds.length > 0 || discountIds.length > 0) {
       setProcessingProgress("Applying filters...");
       // Pass the full locations array for mapping IDs to names
-      filteredData = filterData(combinedData, filterLocationIds, discountIds, selectedLocations);
-      console.log(`DIAGNOSTIC - After filtering: ${filteredData.length} records`);
+      filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
     }
 
     setCSVData(filteredData);

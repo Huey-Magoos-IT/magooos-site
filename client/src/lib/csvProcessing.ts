@@ -207,17 +207,6 @@ export const filterData = (
   discountIds: number[] = [],
   locations: { id: string; name: string }[] = []
 ): any[] => {
-  // DIAGNOSTIC: Log all inputs for debugging
-  console.log("FilterData called with:", {
-    dataLength: data.length,
-    locationIds,
-    discountIds,
-    locations
-  });
-  
-  // Check if filter specifically includes Winter Garden (locationId 4046)
-  const isLookingForWinterGarden = locationIds.includes('4046');
-  
   // If no filters applied, return all data
   if (locationIds.length === 0 && discountIds.length === 0) {
     return data;
@@ -233,27 +222,8 @@ export const filterData = (
   const locationNames = locationIds
     .map(id => locationNameMap[id])
     .filter(Boolean);
-    
-  console.log("Filtering with location IDs:", locationIds);
-  console.log("Mapped to location names:", locationNames);
-  
-  // Debug list of Winter Garden records
-  const winterGardenRecords = data.filter(row =>
-    row['Store'] && row['Store'].includes('Winter Garden')
-  );
-  console.log(`Found ${winterGardenRecords.length} Winter Garden records in data`);
-  
-  // DIAGNOSTIC: If specifically looking for Winter Garden, show records
-  if (isLookingForWinterGarden && winterGardenRecords.length > 0) {
-    console.log("Winter Garden Sample:", winterGardenRecords[0]);
-  }
   
   return data.filter(row => {
-    // DIAGNOSTIC OVERRIDE: If looking for Winter Garden with no results
-    if (isLookingForWinterGarden && locationNames.length === 0) {
-      // Directly check for Winter Garden in the Store field
-      return row['Store'] && row['Store'].includes('Winter Garden');
-    }
     
     // Apply location filter if needed
     if (locationIds.length > 0 && locationNames.length > 0) {
@@ -271,9 +241,20 @@ export const filterData = (
       if (!locationMatches) return false;
     }
     
-    // Apply discount filter if needed
+    /**
+     * Apply discount ID filtering if needed
+     *
+     * IMPORTANT: We handle default discount IDs as a special case:
+     * When a user has the default discount IDs selected (which is the initial state),
+     * we assume they want to see ALL records regardless of discount.
+     *
+     * This approach was chosen because:
+     * 1. It's more intuitive for users - selecting defaults = show everything
+     * 2. It handles the mismatch between discount IDs and percentage strings in the data
+     * 3. It preserves backward compatibility with existing reports
+     */
     if (discountIds.length > 0) {
-      // Check if we're using the default discount IDs
+      // Detect if we're using the default set of discount IDs
       const usingDefaultDiscounts = discountIds.length === 7 &&
         discountIds.includes(77406) &&
         discountIds.includes(135733) &&
@@ -283,13 +264,9 @@ export const filterData = (
         discountIds.includes(135739) &&
         discountIds.includes(135910);
       
-      // If using default discount IDs, skip discount filtering
-      // This assumes that when user doesn't change discount IDs, they want all discounts
-      if (usingDefaultDiscounts) {
-        console.log("Using default discount IDs - skipping discount filtering");
-      } else {
-        // For custom discount IDs, apply filtering
-        // The column name depends on the report type
+      // Only apply discount filtering if the user has changed the defaults
+      if (!usingDefaultDiscounts) {
+        // Look for exact discount ID matches in relevant columns
         const discountIdMatches =
           (row['Discount ID'] && discountIds.includes(Number(row['Discount ID']))) ||
           (row['DiscountId'] && discountIds.includes(Number(row['DiscountId'])));
