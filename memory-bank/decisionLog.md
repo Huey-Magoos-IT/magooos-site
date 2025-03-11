@@ -1,5 +1,72 @@
 # Decision Log
 
+## 2025-03-11: Client-Side CSV Processing Implementation
+
+### Problem
+The existing Lambda-based report generation system had several limitations:
+1. API Gateway's 29-second timeout prevented processing of large datasets
+2. Users had to wait for the entire report to process before seeing any results
+3. Each report generation required a full Lambda execution, increasing costs
+4. Error handling was limited by the Lambda execution environment
+
+### Investigation
+1. Analyzed existing report processing flow in Lambda
+2. Reviewed S3 data storage structure and file format conventions
+3. Evaluated client-side processing capabilities in modern browsers
+4. Tested PapaParse library for CSV parsing performance
+
+### Root Causes
+1. **Architecture Limitation**: Lambda functions have execution time limits
+2. **User Experience Issue**: Full report processing before display causes delays
+3. **Cost Concern**: Each report generation requires Lambda resources
+4. **Flexibility Limitation**: Server-side processing limits filter customization
+
+### Decision Points
+
+#### Decision 1: Implement Dual Processing Approach
+- **Choice**: Create a client-side processing system while maintaining Lambda capability
+- **Rationale**: Provides flexibility based on report size and complexity
+- **Alternatives Considered**:
+  - Migrating entirely to client-side (rejected as some reports are too large)
+  - Enhancing Lambda only (rejected due to timeout limitations)
+- **Consequences**: More complex codebase but greater flexibility and performance
+
+#### Decision 2: Direct S3 Access from Browser
+- **Choice**: Allow browser to directly fetch CSV files from S3
+- **Rationale**: Eliminates Lambda middleman for file retrieval
+- **Alternatives Considered**:
+  - Creating a proxy API (rejected due to added complexity)
+  - Pre-processing files for smaller downloads (rejected due to maintenance overhead)
+- **Consequences**: Better performance but requires proper S3 CORS configuration
+
+#### Decision 3: Special Handling for Default Filters
+- **Choice**: Skip discount filtering when default discount IDs are selected
+- **Rationale**: Better matches user expectations and prevents confusing empty results
+- **Alternatives Considered**:
+  - Complex percentage-to-ID conversion logic (rejected as too brittle)
+  - Requiring explicit filter selection (rejected for poor UX)
+- **Consequences**: More intuitive filtering behavior at the cost of some technical "purity"
+
+### Implementation
+1. Created new csvProcessing.ts utility library
+2. Implemented client-side file fetching, parsing, and filtering
+3. Added UI toggle to switch between processing methods
+4. Fixed location filtering to work with discount filters
+5. Added special handling for default discount values
+
+### Lessons Learned
+1. **Testing Edge Cases**: Filter logic needs explicit testing with percentage values
+2. **User Expectation Modeling**: Default filter selections should show "everything"
+3. **Hybrid Architecture Benefits**: Client/server hybrid approach provides flexibility
+4. **Performance Trade-offs**: Moving processing to the client improves perceived performance
+
+### Impact
+- Improved performance for report generation
+- Enhanced user experience with immediate data display
+- Reduced Lambda execution costs
+- Fixed filtering issues for better data exploration
+- Established pattern for future client-side processing features
+
 ## 2025-03-07: Team Assignment Permission Model Fix
 
 ### Problem

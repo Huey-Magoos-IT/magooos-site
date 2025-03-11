@@ -288,3 +288,30 @@ Project Context -> View Type Selection -> Specialized View Components
 2. Shared interaction patterns
 3. View-specific optimizations
 4. Common state management
+
+## Client-Side CSV Processing Pattern
+
+### Implementation
+```
+S3 Data Files -> Client-Side Fetch -> In-Browser Processing -> Filtered Results -> UI Display
+```
+
+### Key Components
+- `csvProcessing.ts` utility library for all CSV operations
+- S3 file listing and filtering functions
+- PapaParse integration for CSV parsing
+- Client-side filtering logic for location and discount filtering
+- `CSVDataTable` component for displaying results
+- Hybrid approach (client-side or Lambda) with user toggle
+
+### Pattern Rules
+1. **Use feature detection**: Allow users to choose between client-side and Lambda processing
+2. **Prioritize browser capability over server resources**: Leverage client processing power when available
+3. **Handle default values gracefully**: Skip restrictive filtering when default values are selected
+4. **Provide intuitive filtering behavior**: Filter matching should work as users expect
+5. **Process files sequentially**: Avoid overwhelming browser with parallel requests
+6. **Support mixed filtering approaches**: Allow location and discount filtering together
+7. **Maintain format consistency**: Ensure client-side results look like Lambda results
+8. **Special handling for percentage values**: Don't directly convert percentage strings to numbers
+9. **Include graceful error handling**: Detect and report issues during any processing stage
+10. **Document filtering edge cases**: Clearly explain special handling for filter defaults

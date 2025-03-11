@@ -17,12 +17,29 @@
 - ✅ Admin role special handling implemented
 - ✅ UI integration for role management
 
+### Reporting Features
+- ✅ Lambda-based report generation system
+- ✅ Client-side CSV processing implementation
+- ✅ Direct S3 data access for reporting
+- ✅ Location and discount filtering
+- ✅ Report export functionality
+- ✅ Dual processing approach (Lambda + client-side)
+
 ### Pending Items
 - Role deletion functionality
 - More detailed role permissions (beyond departments)
 - User-specific roles (currently tied to teams only)
+- Charts and data visualization for reports
+- Advanced filtering options for reports
 
 ## Recent Fixes
+
+### March 11, 2025
+- Implemented client-side CSV processing system for reports
+- Fixed location filtering issue in reporting page
+- Added direct S3 data access for improved performance
+- Implemented discount filtering with special handling for defaults
+- Added comprehensive CSV utilities and data table components
 
 ### March 7, 2025
 - Fixed team assignment permission model

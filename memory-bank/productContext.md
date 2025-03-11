@@ -90,11 +90,18 @@ The application uses AWS Cognito for user authentication with the following flow
   - Restricted to DATA role
   
 - **Reporting Department**:
-  - Report generation (implemented)
-  - Date range filtering
-  - Location selection via LocationTable component
-  - S3 file storage and retrieval
+  - Report generation with dual processing approach:
+    - Lambda-based processing for large reports
+    - Client-side processing for immediate results
+  - Date range filtering with file name pattern matching
+  - Location filtering with store name matching
+  - Discount ID filtering with special handling for defaults
+  - Direct S3 data access for CSV files
+  - CSV data parsing and manipulation in browser
+  - Data export to CSV format
+  - Sortable data tables with pagination
   - Analytics dashboards (planned)
+  - Data visualization (planned)
   - Restricted to REPORTING role
 
 ### User Management
@@ -182,13 +189,22 @@ The application uses AWS Cognito for user authentication with the following flow
    - Handle special values (null, 0, undefined) with specific endpoints
    - Maintain consistent response formats across all endpoints
 
-3. **Simplicity First**
+3. **Client-Side Processing Pattern**
+   - Implement dual processing approaches where appropriate (client-side and server-side)
+   - Allow users to choose between processing methods based on dataset size
+   - Access S3 data directly from the browser when possible
+   - Process data incrementally to maintain UI responsiveness
+   - Handle special cases in filter logic to match user expectations
+   - Skip restrictive filtering for default values (show all data)
+   - Provide clear progress indicators for multi-stage processing
+
+4. **Simplicity First**
    - Use standard RTK Query patterns over custom implementations
    - Keep conditional logic simple and explicit
    - Prefer tried and tested library features over custom overrides
    - Implement minimal viable solutions first, then add complexity if needed
 
-4. **Debugging Best Practices**
+5. **Debugging Best Practices**
    - Add comprehensive logging at every stage of request processing
    - Include context details in all error messages
    - Test edge cases explicitly before deploying

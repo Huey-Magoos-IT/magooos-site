@@ -1,30 +1,32 @@
-# Active Context - API Routing and Integration Patterns
+# Active Context - Reporting System and Data Processing
 
-## Current Focus: Team Assignment Permission Model
+## Current Focus: Client-Side CSV Processing System
 
-We've identified and fixed critical patterns for team management permissions:
+We've implemented a new client-side processing system for reports with these key components:
 
-1. **Permission Model Design Flaw**
-   - Previous implementation checked if the *target user* had admin privileges
-   - This created a catch-22: Users removed from teams couldn't be added back (no team = no admin role)
-   - Fixed by simplifying permission logic to focus on the requesting user's permissions
-   - Special handling for the 'admin' user maintained as a system override
+1. **Dual Processing Architecture**
+   - New client-side processing for immediate results and smaller datasets
+   - Existing Lambda processing maintained for large reports
+   - UI toggle to switch between processing methods
+   - Shared filtering logic to ensure consistent results
 
-2. **API Gateway Route Pattern Constraints**
-   - Only certain base route patterns work reliably through API Gateway
-   - `/teams/*` and `/projects/*` paths are properly configured 
-   - Custom endpoints like `/users/team-assignment` fail with 404 errors
-   - The API Gateway mapping doesn't always pass all Express routes correctly
+2. **Direct S3 Data Access**
+   - Browser directly fetches CSV files from the S3 data bucket
+   - File date filtering based on standardized file naming conventions
+   - Sequential processing to avoid overwhelming the browser
+   - Combined data from multiple files with consistent structure
 
-3. **Special Cases and Edge Conditions**
-   - Team ID 0 ("no team" option) requires special handling with a dedicated endpoint
-   - Null/undefined value handling requires explicit server-side support
-   - API Gateway has limits on how it maps paths with special characters or formats
+3. **Filtering Implementation**
+   - Location filtering using store name matching
+   - Special handling for default discount IDs to show all data
+   - Proper handling for percentage values in discount fields
+   - Intuitive filtering that matches user expectations
 
-4. **Simplicity Requirements**
-   - Standard RTK Query patterns work more reliably than custom implementations
-   - Simple conditional routing in query functions is preferable to complex queryFn overrides
-   - Using existing endpoints with different parameters is better than creating new endpoints
+4. **Performance Optimizations**
+   - Client-side processing eliminates Lambda execution time
+   - Direct S3 access reduces server load
+   - Immediate data display improves perceived performance
+   - Pagination to handle large result sets efficiently
 
 ## Current AWS Architecture
 - Cognito User Pools for authentication
@@ -32,35 +34,42 @@ We've identified and fixed critical patterns for team management permissions:
 - Separate Lambda API Gateway for direct Lambda/DynamoDB access
 - EC2 running Express.js with PM2
 - RDS PostgreSQL database
-- S3 buckets for profile pictures and data storage
+- S3 buckets for profile pictures and CSV data storage
 - DynamoDB for location data
+- Direct S3 data access from browser for client-side processing
 
-## Most Recent Issue: Team Assignment Permission Model Flaw
+## Most Recent Issue: Location Filtering in Reports
 
-Problem: Team assignment API failing with access denied errors when:
-- Trying to assign a user who has no current team
-- Creating a catch-22 situation where users removed from teams can never be added back
+Problem: Location filtering in the reporting page was failing with these symptoms:
+- When selecting "Winter Garden, FL" (ID: 4046), no data was displayed
+- Data was confirmed to exist for this location in the CSV files
+- Filter showed "No data available" despite matching records
 
 Root cause:
-- The joinTeam controller was checking if the target user had admin privileges
-- Users without a team can't have admin privileges (roles are tied to teams)
-- This created an impossible situation for reassigning previously removed users
+- Location filtering was working correctly
+- But the discount filtering was blocking all results because:
+  - CSV data contained discount values formatted as percentage strings (e.g., "62.15%")
+  - Converting these strings with `Number("62.15%")` resulted in `NaN`
+  - `NaN` didn't match any discount IDs, causing all records to be filtered out
+  - Since both location AND discount filters needed to pass, no records were displayed
 
 Solution implemented:
-1. Simplified permission model to focus on the authenticated user's permissions
-2. Special handling for the 'admin' user to ensure administrative access
-3. Enhanced error handling and logging for permission-related operations
-4. Maintained backward compatibility with existing team assignment flows
+1. Modified the discount ID filtering logic to skip filtering when default IDs are selected
+2. Added special handling for percentage strings in discount fields
+3. Enhanced logging and error handling for filter operations
+4. Implemented a more intuitive filter model matching user expectations
 
 ## Current Status
 
-✅ Fixed: Team assignment works for all users regardless of their current team status
-✅ Fixed: "No team" option works using dedicated endpoint
-✅ Fixed: Users can be removed from teams and later reassigned without permission errors
-✅ Documented: Permission model best practices in SERVER_GUIDE.md
+✅ Implemented: New client-side CSV processing system for reports
+✅ Fixed: Location filtering now works correctly with all discount filters
+✅ Added: Direct S3 data access for improved performance
+✅ Added: Comprehensive CSV utilities and data table components
+✅ Documented: New client-side processing approach in technical changelog
 
 ## Next Steps
-- Implement comprehensive JWT-based permission system for authenticated user validation
-- Refactor remaining permission checks to follow the same pattern
-- Add unit tests for permission-related edge cases
-- Create a more detailed user and team management guide
+- Add data visualization and charts to reports
+- Implement more advanced filtering options (date range, value ranges)
+- Create unit tests for CSV processing utilities
+- Optimize for large datasets with progressive loading
+- Add export options for various file formats
