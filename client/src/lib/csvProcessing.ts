@@ -198,27 +198,47 @@ export const filterFilesByDateAndType = (
  * @param data Array of data objects
  * @param locationIds Array of location IDs to filter by
  * @param discountIds Array of discount IDs to filter by
+ * @param locations Array of location objects with id and name properties for mapping IDs to names
  * @returns Filtered data
  */
 export const filterData = (
   data: any[],
   locationIds: string[] = [],
-  discountIds: number[] = []
+  discountIds: number[] = [],
+  locations: { id: string; name: string }[] = []
 ): any[] => {
   // If no filters applied, return all data
   if (locationIds.length === 0 && discountIds.length === 0) {
     return data;
   }
+
+  // Create a mapping of location IDs to location names
+  const locationNameMap: Record<string, string> = {};
+  locations.forEach(loc => {
+    locationNameMap[loc.id] = loc.name;
+  });
+  
+  // Get location names that correspond to the selected location IDs
+  const locationNames = locationIds
+    .map(id => locationNameMap[id])
+    .filter(Boolean);
+    
+  console.log("Filtering with location IDs:", locationIds);
+  console.log("Mapped to location names:", locationNames);
   
   return data.filter(row => {
     // Apply location filter if needed
-    if (locationIds.length > 0) {
-      // The column name depends on the report type
-      // Looking at different possibilities based on the CSV samples
-      const locationMatches = 
-        (row['Store'] && locationIds.includes(String(row['Store']))) ||
-        (row['Location'] && locationIds.includes(String(row['Location']))) ||
-        (row['LocationId'] && locationIds.includes(String(row['LocationId'])));
+    if (locationIds.length > 0 && locationNames.length > 0) {
+      // Check if the 'Store' field in CSV matches any of our location names
+      const storeValue = row['Store'];
+      if (!storeValue) return false;
+      
+      // Do a partial match since CSV data might have additional formatting
+      const locationMatches = locationNames.some(name =>
+        storeValue.includes(name) ||
+        // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
+        (name.includes(',') ? storeValue.includes(name.split(',')[0].trim()) : false)
+      );
       
       if (!locationMatches) return false;
     }
@@ -226,9 +246,11 @@ export const filterData = (
     // Apply discount filter if needed
     if (discountIds.length > 0) {
       // The column name depends on the report type
-      const discountIdMatches = 
+      const discountIdMatches =
         (row['Discount ID'] && discountIds.includes(Number(row['Discount ID']))) ||
-        (row['DiscountId'] && discountIds.includes(Number(row['DiscountId'])));
+        (row['DiscountId'] && discountIds.includes(Number(row['DiscountId']))) ||
+        // Also check "Discount Percentage" field which might contain the discount ID
+        (row['Discount Percentage'] && discountIds.includes(Number(row['Discount Percentage'])));
       
       if (!discountIdMatches) return false;
     }

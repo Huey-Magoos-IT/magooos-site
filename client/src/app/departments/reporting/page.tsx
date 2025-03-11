@@ -274,7 +274,8 @@ const ReportingPage = () => {
       let filteredData = combinedData;
       if (selectedLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
-        filteredData = filterData(combinedData, selectedLocationIds, discountIds);
+        // Pass the full locations array for mapping IDs to names
+        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
         console.log("Filtered data:", filteredData);
       }
 
