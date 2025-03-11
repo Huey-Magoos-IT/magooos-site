@@ -23,6 +23,11 @@ client/
 │   │   ├── authProvider.tsx
 │   │   ├── dashboardWrapper.tsx
 │   │   ├── redux.tsx
+│   │   ├── departments/
+│   │   │   ├── data/
+│   │   │   │   └── page.tsx
+│   │   │   └── reporting/
+│   │   │       └── page.tsx
 │   │   ├── home/
 │   │   │   └── page.tsx
 │   │   ├── priority/
@@ -62,6 +67,8 @@ client/
 │   │   └── users/
 │   │       └── page.tsx
 │   ├── components/
+│   │   ├── CSVDataTable/
+│   │   │   └── index.tsx
 │   │   ├── Header/
 │   │   │   └── index.tsx
 │   │   ├── LocationTable/
@@ -80,6 +87,10 @@ client/
 │   │   │   └── index.tsx
 │   │   └── UserCard/
 │   │       └── index.tsx
+│   ├── lib/
+│   │   ├── accessControl.ts
+│   │   ├── csvProcessing.ts
+│   │   └── utils.ts
 │   └── state/
 │       ├── api.ts
 │       ├── lambdaApi.ts
@@ -115,6 +126,7 @@ client/
 - `projects/ModalNewProject/index.tsx`: Form modal for creating new projects with validation.
 
 5. Core Components:
+- `CSVDataTable/index.tsx`: Displays CSV data with sorting, pagination, search capabilities, and export functionality.
 - `Header/index.tsx`: Page header with breadcrumbs, actions, and contextual navigation.
 - `LocationTable/index.tsx`: Interactive table displaying locations from DynamoDB with sorting capabilities.
 - `Modal/index.tsx`: Reusable modal dialog with backdrop and animation support.
@@ -125,7 +137,26 @@ client/
 - `TaskCard/index.tsx`: Rich task card with priority indicators, assignees, and comments.
 - `UserCard/index.tsx`: Displays user information with avatar, role, and team details.
 
-6. State Management:
+6. Libraries and Utilities:
+- `lib/accessControl.ts`: Provides role-based permission utilities.
+  * hasRole: Checks if a user's team has a specific role
+  * hasAnyRole: Verifies if a user's team has any of several roles
+- `lib/csvProcessing.ts`: Comprehensive utility library for CSV operations:
+  * S3 File Management:
+    * fetchFiles: Lists files available in the S3 bucket
+    * filterFilesByDateAndType: Filters files by date range and report type
+    * extractDateFromFilename: Parses dates from standardized filename format
+  * CSV Data Processing:
+    * fetchCSV: Retrieves CSV content from a URL
+    * parseCSV: Converts CSV text to structured data using PapaParse
+    * processMultipleCSVs: Combines data from multiple CSV files
+    * filterData: Applies location and discount filters to data with special handling for defaults
+  * Export Functionality:
+    * convertToCSV: Converts processed data back to CSV format
+    * downloadCSV: Enables client-side export of filtered data
+- `lib/utils.ts`: General utility functions for the application
+
+7. State Management:
 - `api.ts`: Defines all API endpoints using RTK Query, handles authentication, caching, and real-time updates.
   * Projects: CRUD operations for project management
   * Tasks: Creation, updates, status changes, assignments
@@ -137,11 +168,23 @@ client/
   * Data processing: Report generation and analysis
   * Locations: DynamoDB integration for location data
 - `index.ts`: Exports store configuration and typed hooks for state access.
-- `lib/accessControl.ts`: Provides role-based permission utilities.
-  * hasRole: Checks if a user's team has a specific role
-  * hasAnyRole: Verifies if a user's team has any of several roles
 
-7. Additional Features:
+8. Department Pages:
+- `departments/data/page.tsx`: Data department page with data analysis tools and visualization (role-restricted to DATA).
+- `departments/reporting/page.tsx`: Reporting department page with enhanced capabilities:
+  * Dual processing approach:
+    * Lambda-based processing for large datasets
+    * Client-side processing for immediate results without API Gateway timeout limitations
+  * Toggle switch to choose between processing methods
+  * Date range filtering with filename pattern matching
+  * Location filtering with store name matching
+  * Discount ID filtering with special handling for defaults
+  * Progress indicators for multi-stage processing
+  * CSV data visualization with sortable columns and pagination
+  * Export functionality for processed data
+  * Direct S3 access for CSV processing in the browser
+
+9. Additional Features:
 - `search/page.tsx`: Global search interface with filters and real-time results.
 - `settings/page.tsx`: Displays user profile, team membership, and Cognito details. Shows real-time user data including:
   * Username and Cognito ID

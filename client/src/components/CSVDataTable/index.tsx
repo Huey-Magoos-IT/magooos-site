@@ -14,9 +14,10 @@ import {
   CircularProgress,
   Button,
   Box,
-  Typography
+  Typography,
+  Tooltip
 } from '@mui/material';
-import { Download, ArrowUpDown } from 'lucide-react';
+import { Download, ArrowUpDown, Maximize2, Minimize2 } from 'lucide-react';
 import { downloadCSV } from '@/lib/csvProcessing';
 
 interface CSVDataTableProps {
@@ -43,6 +44,7 @@ const CSVDataTable = ({
   const [orderBy, setOrderBy] = useState<string | null>(null);
   const [orderDirection, setOrderDirection] = useState<OrderDirection>('asc');
   const [columns, setColumns] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     // Reset to first page when data changes
@@ -156,17 +158,37 @@ const CSVDataTable = ({
             {getFilterInfoText()}
           </Typography>
         </div>
-        <Button
-          variant="contained"
-          startIcon={<Download className="h-4 w-4" />}
-          onClick={handleDownload}
-          className="bg-blue-500 hover:bg-blue-600"
-        >
-          Download CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outlined"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="border-blue-400 hover:border-blue-500 dark:border-blue-600 dark:hover:border-blue-500"
+            size="small"
+            startIcon={isExpanded ? (
+              <Minimize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <Maximize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            )}
+          >
+            {isExpanded ? "Collapse" : "Expand"}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Download className="h-4 w-4" />}
+            onClick={handleDownload}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            Download CSV
+          </Button>
+        </div>
       </Box>
 
-      <TableContainer style={{ maxHeight: 440 }}>
+      <TableContainer
+        style={{
+          maxHeight: isExpanded ? 'calc(100vh - 300px)' : 440,
+          transition: 'max-height 0.3s ease-in-out'
+        }}
+      >
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -206,16 +228,25 @@ const CSVDataTable = ({
         </Table>
       </TableContainer>
 
-      <TablePagination
-        rowsPerPageOptions={[10, 25, 50, 100]}
-        component="div"
-        count={data.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        className="border-t dark:bg-dark-secondary dark:text-neutral-300 dark:border-stroke-dark"
-      />
+      <div className="border-t dark:border-stroke-dark">
+        <div className="flex items-center justify-between px-2">
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            component="div"
+            count={data.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            className="dark:bg-dark-secondary dark:text-neutral-300"
+          />
+          {isExpanded && (
+            <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center">
+              <Maximize2 className="h-3 w-3 mr-1" /> Expanded view
+            </Typography>
+          )}
+        </div>
+      </div>
     </Paper>
   );
 };

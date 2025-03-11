@@ -50,11 +50,13 @@ S3 Buckets:
    - Used in UserCard component with Next.js Image
    - Default profile picture: p1.jpeg
 
-2. Data Department (Planned):
-   - New bucket for CSV data storage
-   - Will be Restricted access for admin teams (first implemented as a public bucket)
-   - Will be integrated with data department page
-   - Purpose: Display CSV data for analysis
+2. Data Department:
+   - CSV data storage bucket
+   - Restricted access for admin teams and users with DATA role
+   - Integrated with data department page
+   - Purpose: Display and analyze CSV data
+   - Client-side CSV processing capabilities for immediate results
+   - Direct browser access for S3 files without server-side processing
 
 === CRITICAL CODE PATTERNS ===
 1. Role-Based Access Control:
@@ -95,6 +97,39 @@ S3 Buckets:
    - All AWS services must be accessed via HTTP requests, API Gateway, or other SDK-less methods
    - Direct HTTP requests are preferred for AWS service interactions
    - Use mapping templates in API Gateway for service integration
+
+7. Department Features:
+   - **Data Department**:
+     - Data analysis tools (planned)
+     - CSV data visualization (planned)
+     - S3 integration for data storage
+     - Restricted to DATA role
+   
+   - **Reporting Department**:
+     - Comprehensive report generation with dual processing approach:
+       - Lambda-based processing for large reports (handles datasets exceeding client capabilities)
+       - Client-side processing for immediate results (bypasses API Gateway 29-second timeout)
+       - Toggle switch to select preferred processing method
+     - CSV File Management:
+       - Direct S3 data access for CSV files
+       - File listing and filtering by date range and report type
+       - Filename date extraction for temporal organization
+     - Advanced Data Processing:
+       - Multi-file CSV combining and aggregation
+       - Location filtering with store name matching
+       - Discount ID filtering with intelligent default handling (skips filtering for default selections)
+       - CSV data parsing and manipulation in browser using PapaParse
+     - Visualization and Export:
+       - Data export to CSV format with client-side generation
+       - Sortable data tables with pagination using CSVDataTable component
+       - Search capabilities within processed data
+       - Progress indicators for multi-stage processing
+     - Planned Features:
+       - Analytics dashboards
+       - Data visualization with charts and graphs
+     - Access Control:
+       - Restricted to REPORTING role
+       - Comprehensive error handling for permission boundaries
 
 AWS Infrastructure:
 - EC2 auto-scaling groups for backend API (port 80)
@@ -171,11 +206,14 @@ S3 Configuration:
    - Used by UserCard component
    - Default profile images stored at root level
 
-2. Data Department Bucket (Planned):
+2. Data Department Bucket:
    - Private access with IAM roles
    - CORS rules for frontend access
-   - Bucket policies restricting access to admin teams
-   - Will store CSV data for analysis
+   - Bucket policies restricting access to admin teams and users with REPORTING/DATA roles
+   - Stores CSV data for analysis and reporting
+   - Direct client-side access for browser-based CSV processing
+   - Configured with appropriate cache-control headers for performance
+   - Supports the dual processing approach (Lambda and client-side)
 
 IAM Policies:
 - EC2: S3 write access, Cognito admin privileges
