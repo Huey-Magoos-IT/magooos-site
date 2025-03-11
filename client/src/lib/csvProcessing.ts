@@ -273,14 +273,29 @@ export const filterData = (
     
     // Apply discount filter if needed
     if (discountIds.length > 0) {
-      // The column name depends on the report type
-      const discountIdMatches =
-        (row['Discount ID'] && discountIds.includes(Number(row['Discount ID']))) ||
-        (row['DiscountId'] && discountIds.includes(Number(row['DiscountId']))) ||
-        // Also check "Discount Percentage" field which might contain the discount ID
-        (row['Discount Percentage'] && discountIds.includes(Number(row['Discount Percentage'])));
+      // Check if we're using the default discount IDs
+      const usingDefaultDiscounts = discountIds.length === 7 &&
+        discountIds.includes(77406) &&
+        discountIds.includes(135733) &&
+        discountIds.includes(135736) &&
+        discountIds.includes(135737) &&
+        discountIds.includes(135738) &&
+        discountIds.includes(135739) &&
+        discountIds.includes(135910);
       
-      if (!discountIdMatches) return false;
+      // If using default discount IDs, skip discount filtering
+      // This assumes that when user doesn't change discount IDs, they want all discounts
+      if (usingDefaultDiscounts) {
+        console.log("Using default discount IDs - skipping discount filtering");
+      } else {
+        // For custom discount IDs, apply filtering
+        // The column name depends on the report type
+        const discountIdMatches =
+          (row['Discount ID'] && discountIds.includes(Number(row['Discount ID']))) ||
+          (row['DiscountId'] && discountIds.includes(Number(row['DiscountId'])));
+        
+        if (!discountIdMatches) return false;
+      }
     }
     
     return true;
