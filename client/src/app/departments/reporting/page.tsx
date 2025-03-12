@@ -2,13 +2,11 @@
 
 import { useGetAuthUserQuery } from "@/state/api";
 import { hasRole } from "@/lib/accessControl";
-import { useProcessDataMutation } from "@/state/lambdaApi";
 import Header from "@/components/Header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronLeft, ChevronRight, CheckCircle, X, Download } from "lucide-react";
+import { X } from "lucide-react";
 import { 
-  Autocomplete, 
   TextField, 
   Chip, 
   Button, 
@@ -16,8 +14,6 @@ import {
   Grid, 
   Box, 
   Typography,
-  FormControlLabel,
-  Switch,
   MenuItem,
   Select,
   FormControl,
@@ -25,7 +21,6 @@ import {
   FormHelperText
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { format } from "date-fns";
 import LocationTable, { Location } from "@/components/LocationTable";
 import CSVDataTable from "@/components/CSVDataTable";
 import {
@@ -34,22 +29,12 @@ import {
   processMultipleCSVs,
   filterData
 } from "@/lib/csvProcessing";
+import { 
+  DEFAULT_DISCOUNT_IDS, 
+  DEFAULT_LOCATION_IDS 
+} from "@/lib/legacyLambdaProcessing";
 
 const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_REPORTING_BUCKET_URL || "https://redflag-reporting.s3.us-east-2.amazonaws.com";
-const ITEMS_PER_PAGE = 15;
-
-// Default values from DynamoDB - all 78 locations
-const DEFAULT_LOCATION_IDS = [
-  "4145","4849","5561","9905","4167","4249","4885","7025","4255","4878","4045",
-  "4872","4166","4868","4887","7027","4245","5563","6785","10533","4258","4046",
-  "5765","4148","4886","4243","4814","4884","4261","4120","10477","4147","4260",
-  "4242","5805","4350","6809","5559","4252","4146","10448","4165","10534","6705",
-  "5691","4238","10497","4867","9559","4256","10150","10093","4250","4150","4259",
-  "4253","4225","5359","4254","10476","5346","9591","9999","4078","4251","5865",
-  "1825","4799","4077","4247","4241","6658","4244","4248","6778","4237","4149","4246"
-];
-
-const DEFAULT_DISCOUNT_IDS = [77406, 135733, 135736, 135737, 135738, 135739, 135910];
 
 // Report types
 const REPORT_TYPES = [
@@ -62,29 +47,14 @@ const ReportingPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
   const userTeam = authData?.userDetails?.team;
 
-  // Original Lambda approach state
-  const [files, setFiles] = useState<string[]>([]);
-  const [filesLoading, setFilesLoading] = useState(true);
-  const [filesError, setFilesError] = useState<string|null>(null);
-  const [lambdaError, setLambdaError] = useState<string|null>(null);
-  const [reportStatus, setReportStatus] = useState<string|null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [newFilePattern, setNewFilePattern] = useState<string|null>(null);
-  const [highlightedFile, setHighlightedFile] = useState<string|null>(null);
-  
-  // Initialize the Lambda function mutation hook
-  const [processData, { isLoading: isProcessing }] = useProcessDataMutation();
-
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   
-  // New client-side processing state
-  const [useClientProcessing, setUseClientProcessing] = useState(false);
+  // Client-side processing state
   const [reportType, setReportType] = useState<string>(REPORT_TYPES[0].value);
   const [allS3Files, setAllS3Files] = useState<string[]>([]);
   const [csvData, setCSVData] = useState<any[]>([]);
@@ -115,167 +85,62 @@ const ReportingPage = () => {
     setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
   };
 
-  const formatDateForApi = (date: Date | null) => {
-    return date ? format(date, "MMddyyyy") : "";
+  // Fetch S3 files for client-side processing
+  const fetchFiles = async () => {
+    try {
+      // Use the fetchS3Files utility from csvProcessing
+      const fileList = await fetchS3Files(S3_DATA_BUCKET);
+      setAllS3Files(fileList);
+    } catch (err) {
+      console.error("File fetch failed:", err);
+      setCSVError("Failed to load data files from S3 bucket");
+    }
   };
 
-  // Original Lambda approach
-  const handleGenerateReport = async () => {
+  // Client-side CSV data processing
+  const processCSVData = async () => {
     if (!startDate || !endDate) {
       alert("Please select both start and end dates");
       return;
     }
 
-    setIsGenerating(true);
-    setLambdaError(null);
-    setReportStatus(null);
-    
-    // If no locations are selected, use all default locations
-    const locationIds = selectedLocations.length > 0
-      ? selectedLocations.map(loc => loc.id).join(",")
-      : DEFAULT_LOCATION_IDS.join(",");
-    
-    const formData = {
-      start_date: formatDateForApi(startDate),
-      end_date: formatDateForApi(endDate),
-      output_bucket: "redflag-reporting",
-      location_id: locationIds,
-      discount_ids: discountIds
-    };
+    setCSVLoading(true);
+    setCSVError(null);
+    setProcessingProgress("Filtering files by date and type...");
+    setCSVData([]);
 
-    console.log("Generating report with data:", formData);
-    
     try {
-      // Add timing for diagnostic purposes
-      const startTime = performance.now();
-      
-      // Call the Lambda function via API Gateway
-      const result = await processData(formData).unwrap();
-      
-      // Calculate request duration for diagnostic purposes
-      const duration = Math.round(performance.now() - startTime);
-      console.log(`Lambda function result (took ${duration}ms):`, result);
-      
-      // Set success message
-      setReportStatus("Report generation initiated successfully! Check the file list below for your report once it's ready.");
-      
-      // Create a pattern to identify the new file based on the date range
-      const filePattern = `${formatDateForApi(startDate)}${formatDateForApi(endDate)}`;
-      setNewFilePattern(filePattern);
-      setHighlightedFile(null);
-      
-      // Refresh the file list after a short delay to show the new file
-      setTimeout(() => {
-        fetchFiles();
-      }, 5000); // Wait 5 seconds before refreshing
-    } catch (error: any) {
-      console.error("Error calling Lambda function:", error);
-      
-      // Improved error handling with special case for timeout errors
-      if (error?.status === 504 || (error?.toString && error.toString().includes("timeout"))) {
-        setLambdaError("Gateway Timeout (504): The report generation request took too long to complete and timed out.");
-        setReportStatus(`Error: Request timed out. The report may involve too much data. Try the suggestions below.`);
-      } else if (error?.data?.message) {
-        // Use the formatted error message from our API
-        setLambdaError(error.data.message);
-        setReportStatus(`Error: Failed to process data. See details below.`);
-      } else {
-        // Fallback for general errors
-        setLambdaError(typeof error === 'object' && error !== null ? error.toString() : String(error));
-        setReportStatus(`Error: Failed to process data. Please check the console for details.`);
+      // Filter files by date range and report type
+      const matchingFiles = filterFilesByDateAndType(
+        allS3Files,
+        startDate,
+        endDate,
+        reportType
+      );
+
+      if (matchingFiles.length === 0) {
+        setCSVError("No files found matching the selected date range and report type");
+        setCSVLoading(false);
+        return;
       }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
-  // Original S3 files listing approach
-  const fetchFiles = async () => {
-    setFilesLoading(true);
-    try {
-      // Use the renamed fetchS3Files utility from csvProcessing
-      const fileList = await fetchS3Files(S3_DATA_BUCKET);
+      setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
+
+      // Create full URLs for the files
+      const fileUrls = matchingFiles.map(filename => `${S3_DATA_BUCKET}/${filename}`);
+
+      // Process all files (fetch and parse)
+      const combinedData = await processMultipleCSVs(fileUrls);
       
-      // If we have a pattern to look for, find any files that match it
-      if (newFilePattern) {
-        const potentialNewFile = fileList.find((file: string) => file.includes(newFilePattern || ''));
-        
-        if (potentialNewFile && potentialNewFile !== highlightedFile) {
-          // Found a potential new file
-          setHighlightedFile(potentialNewFile);
-          
-          // Find which page the new file is on
-          const fileIndex = fileList.indexOf(potentialNewFile);
-          const filePage = Math.floor(fileIndex / ITEMS_PER_PAGE) + 1;
-          
-          // Set current page to show the new file
-          setCurrentPage(filePage);
-          
-          // Scroll to the file after a short delay
-          setTimeout(() => {
-            const fileRow = document.getElementById(`file-row-${potentialNewFile}`);
-            if (fileRow) {
-              fileRow.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }, 500);
-        }
+      // Apply filters if selected
+      let filteredData = combinedData;
+      if (selectedLocationIds.length > 0 || discountIds.length > 0) {
+        setProcessingProgress("Applying filters...");
+        // Pass the full locations array for mapping IDs to names
+        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
       }
-      
-      setFiles(fileList);
-      setAllS3Files(fileList); // Also store for client-side processing
-      setFilesError(null);
-    } catch (err) {
-      console.error("File fetch failed:", err);
-      setFilesError("Failed to load data files");
-    } finally {
-      setFilesLoading(false);
-    }
-  };
-// Client-side CSV data processing approach
-const processCSVData = async () => {
-  if (!startDate || !endDate) {
-    alert("Please select both start and end dates");
-    return;
-  }
 
-  setCSVLoading(true);
-  setCSVError(null);
-  setProcessingProgress("Filtering files by date and type...");
-  setCSVData([]);
-
-  try {
-    // Filter files by date range and report type
-    const matchingFiles = filterFilesByDateAndType(
-      allS3Files,
-      startDate,
-      endDate,
-      reportType
-    );
-
-    if (matchingFiles.length === 0) {
-      setCSVError("No files found matching the selected date range and report type");
-      setCSVLoading(false);
-      return;
-    }
-
-    setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
-
-    // Create full URLs for the files
-    const fileUrls = matchingFiles.map(filename => `${S3_DATA_BUCKET}/${filename}`);
-
-    // Process all files (fetch and parse)
-    const combinedData = await processMultipleCSVs(fileUrls);
-    
-    // Apply filters if selected
-    let filteredData = combinedData;
-    if (selectedLocationIds.length > 0 || discountIds.length > 0) {
-      setProcessingProgress("Applying filters...");
-      // Pass the full locations array for mapping IDs to names
-      filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
-    }
-
-    setCSVData(filteredData);
-    setProcessingProgress("");
+      setCSVData(filteredData);
       setProcessingProgress("");
     } catch (error) {
       console.error("Error processing CSV files:", error);
@@ -286,14 +151,9 @@ const processCSVData = async () => {
   };
 
   useEffect(() => {
-    // Fetch available files only, don't set default dates
+    // Fetch available files on component mount
     fetchFiles();
   }, []);
-
-  const totalPages = Math.ceil(files.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentFiles = files.slice(startIndex, endIndex);
 
   if (isLoading) {
     return <div className="m-5 p-4">Loading...</div>;
@@ -344,31 +204,6 @@ const processCSVData = async () => {
           </div>
         </div>
 
-        {/* Processing mode toggle */}
-        <div className="my-4 px-1">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={useClientProcessing}
-                onChange={(e) => setUseClientProcessing(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={
-              <div>
-                <span className="font-medium">
-                  {useClientProcessing ? "Client-side Processing (New)" : "Lambda Processing (Legacy)"}
-                </span>
-                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                  {useClientProcessing 
-                    ? "Process data in browser (faster for small reports)" 
-                    : "Process data on server (for large reports)"}
-                </span>
-              </div>
-            }
-          />
-        </div>
-
         {/* Data Generation Form */}
         <div className="mt-4 mb-8 p-4 border rounded dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 dark:text-white">Generate Data Report</h3>
@@ -377,24 +212,22 @@ const processCSVData = async () => {
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
               <div className="space-y-4">
-                {/* Report Type Selector - only shown in client-side mode */}
-                {useClientProcessing && (
-                  <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary">
-                    <InputLabel>Report Type</InputLabel>
-                    <Select
-                      value={reportType}
-                      onChange={(e) => setReportType(e.target.value)}
-                      label="Report Type"
-                    >
-                      {REPORT_TYPES.map((type) => (
-                        <MenuItem key={type.value} value={type.value}>
-                          {type.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    <FormHelperText>Select the type of report to generate</FormHelperText>
-                  </FormControl>
-                )}
+                {/* Report Type Selector */}
+                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary">
+                  <InputLabel>Report Type</InputLabel>
+                  <Select
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value as string)}
+                    label="Report Type"
+                  >
+                    {REPORT_TYPES.map((type) => (
+                      <MenuItem key={type.value} value={type.value}>
+                        {type.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>Select the type of report to generate</FormHelperText>
+                </FormControl>
 
                 <DatePicker
                   label="Start Date"
@@ -430,7 +263,7 @@ const processCSVData = async () => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
                     return yesterday;
-                  })()} // Yesterday's date for both processing methods
+                  })()}
                   slotProps={{
                     textField: {
                       variant: "outlined",
@@ -496,64 +329,28 @@ const processCSVData = async () => {
                 <div className="mt-4">
                   <Button
                     variant="contained"
-                    onClick={useClientProcessing ? processCSVData : handleGenerateReport}
-                    disabled={(useClientProcessing ? csvLoading : isGenerating) || !startDate || !endDate}
+                    onClick={processCSVData}
+                    disabled={csvLoading || !startDate || !endDate}
                     fullWidth
                     className="bg-blue-500 hover:bg-blue-600 text-white py-3"
                   >
-                    {(useClientProcessing ? csvLoading : isGenerating) ? (
+                    {csvLoading ? (
                       <div className="flex items-center justify-center">
                         <CircularProgress size={20} className="text-white mr-2" />
-                        <span>{useClientProcessing ? "Processing..." : "Generating..."}</span>
+                        <span>Processing...</span>
                       </div>
-                    ) : useClientProcessing ? "Process Data" : "Generate Report"}
+                    ) : "Process Data"}
                   </Button>
                   
-                  {/* Progress message for client-side processing */}
-                  {useClientProcessing && processingProgress && (
+                  {/* Progress message for processing */}
+                  {processingProgress && (
                     <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded text-sm">
                       {processingProgress}
                     </div>
                   )}
                   
-                  {/* Status message for Lambda approach */}
-                  {!useClientProcessing && reportStatus && (
-                    <div className={`mt-4 p-3 rounded flex items-start ${reportStatus.includes("Error") ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                      {!reportStatus.includes("Error") && <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />}
-                      <div>
-                        {reportStatus}
-                        {!reportStatus.includes("Error") && (
-                          <p className="text-sm mt-1">The file will appear in the list below once processing is complete.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Lambda error details */}
-                  {!useClientProcessing && lambdaError && (
-                    <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
-                      <p className="font-semibold">Error Details:</p>
-                      <p className="text-sm overflow-auto max-h-24">{lambdaError}</p>
-                      
-                      {/* Add recommendations for Gateway Timeout errors */}
-                      {lambdaError.includes("Gateway Timeout") || lambdaError.includes("timeout") && (
-                        <div className="mt-3 p-2 bg-blue-50 text-blue-700 rounded text-sm">
-                          <p className="font-semibold">API Gateway Timeout Limit:</p>
-                          <p className="mb-2">The API Gateway has a hard limit of 29 seconds for request processing. Reports with all locations or large date ranges cannot complete within this constraint.</p>
-                          <p className="font-semibold mt-2">Recommendations:</p>
-                          <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li>Reduce the number of selected locations (try 5-10 instead of all 78)</li>
-                            <li>Select a smaller date range (1-3 days instead of weeks)</li>
-                            <li>Break your request into multiple smaller reports (e.g., generate one day at a time)</li>
-                            <li>Switch to client-side processing mode for immediate data viewing</li>
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Client-side processing errors */}
-                  {useClientProcessing && csvError && (
+                  {/* Processing errors */}
+                  {csvError && (
                     <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
                       <p className="font-semibold">Error Processing CSV Data:</p>
                       <p className="text-sm overflow-auto max-h-24">{csvError}</p>
@@ -573,134 +370,17 @@ const processCSVData = async () => {
           </Grid>
         </div>
 
-        {/* Client-side data table (only shown when in client-side mode and has data) */}
-        {useClientProcessing && (
-          <div className="mt-8 mb-8">
-            <CSVDataTable
-              data={csvData}
-              isLoading={csvLoading}
-              error={csvError}
-              selectedLocationIds={selectedLocationIds}
-              selectedDiscountIds={discountIds}
-              reportType={reportType}
-            />
-          </div>
-        )}
-        
-        {/* File List (only shown in Lambda mode) */}
-        {!useClientProcessing && (
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold dark:text-white">Available Data Files</h3>
-              <button
-                onClick={fetchFiles}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
-                disabled={filesLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${filesLoading ? 'animate-spin' : ''}`} />
-                Refresh Files
-              </button>
-            </div>
-
-            {filesLoading && (
-              <div className="text-gray-500 text-center py-4 dark:text-neutral-400">
-                <div className="flex justify-center items-center">
-                  <CircularProgress size={24} className="mr-2" />
-                  <span>Loading files...</span>
-                </div>
-              </div>
-            )}
-
-            {filesError && (
-              <div className="text-red-500 text-center py-4">{filesError}</div>
-            )}
-
-            {!filesLoading && !filesError && (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white border rounded-lg dark:bg-dark-secondary">
-                    <thead className="bg-gray-50 dark:bg-dark-tertiary">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-neutral-400">
-                          File Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-neutral-400">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-stroke-dark">
-                      {currentFiles.map((file, index) => {
-                        const isHighlighted = file === highlightedFile;
-                        return (
-                          <tr
-                            id={`file-row-${file}`}
-                            key={index}
-                            className={`transition-colors duration-300 ${
-                              isHighlighted
-                                ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                : "hover:bg-gray-50 dark:hover:bg-dark-tertiary"
-                            }`}
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-neutral-300">
-                              {file}
-                              {isHighlighted && (
-                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full dark:bg-green-900 dark:text-green-300">
-                                  New
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <a
-                                href={`${S3_DATA_BUCKET}/${file}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                              >
-                                Download
-                              </a>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {currentFiles.length === 0 && (
-                        <tr>
-                          <td colSpan={2} className="text-center py-4 text-gray-500 dark:text-neutral-400">
-                            No data files available
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="mt-4 flex justify-between items-center">
-                    <div className="text-sm text-gray-700 dark:text-neutral-400">
-                      Showing {startIndex + 1} to {Math.min(endIndex, files.length)} of {files.length} files
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-stroke-dark dark:hover:bg-dark-tertiary"
-                      >
-                        <ChevronLeft className="h-5 w-5 dark:text-neutral-400" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-stroke-dark dark:hover:bg-dark-tertiary"
-                      >
-                        <ChevronRight className="h-5 w-5 dark:text-neutral-400" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        {/* Data Table */}
+        <div className="mt-8 mb-8">
+          <CSVDataTable
+            data={csvData}
+            isLoading={csvLoading}
+            error={csvError}
+            selectedLocationIds={selectedLocationIds}
+            selectedDiscountIds={discountIds}
+            reportType={reportType}
+          />
+        </div>
       </div>
     </div>
   );
