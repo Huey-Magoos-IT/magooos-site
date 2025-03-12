@@ -39,8 +39,9 @@
 ### March 12, 2025
 - Expanded reporting date range to include January 13th, 2025 (previously started from January 14th)
 - Restricted end date selection to yesterday's date for more consistent reporting
-- Added default date value initialization on component load for better user experience
-- Updated date picker helper text to reflect new date ranges
+- Removed automatic date initialization to allow empty date fields by default
+- Fixed calendar navigation to allow viewing months beyond February
+- Updated date picker helper text to reflect expanded date ranges
 
 ### March 11, 2025
 - Implemented client-side CSV processing system for reports

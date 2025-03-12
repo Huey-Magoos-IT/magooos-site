@@ -27,16 +27,25 @@ The reporting functionality needed an update to:
   - Keeping the original behavior (rejected to ensure data completeness)
 - **Consequences**: More consistent reporting with complete daily data
 
-#### Decision 3: Set Default Date Values on Component Load
-- **Choice**: Initialize default values for start and end dates when the component loads
-- **Rationale**: Improves usability by pre-setting reasonable default date ranges
-- **Consequences**: Better user experience with ready-to-use form
+#### Decision 3: Allow Empty Date Fields Initially
+- **Choice**: Remove automatic date initialization, allowing date fields to be empty by default
+- **Rationale**: Provides users full control over date selection rather than pre-selecting dates
+- **Alternatives Considered**:
+  - Pre-populating with default dates (rejected based on user preference)
+  - Setting only start date automatically (rejected for consistency)
+- **Consequences**: Users must explicitly select dates before generating reports
+
+#### Decision 4: Expand Date Navigation Beyond February
+- **Choice**: Update date range to allow navigation to March and beyond (up to yesterday)
+- **Rationale**: Removes artificial restriction that prevented calendar navigation to March
+- **Consequences**: More flexible date selection while still maintaining the "yesterday" limit
 
 ### Implementation
 1. Updated the DatePicker minDate for start date from January 14th to January 13th, 2025
-2. Modified the end date's maxDate to dynamically calculate yesterday's date
-3. Added date initialization in the useEffect hook to set default values on component load
-4. Updated helper text to reflect the new date ranges
+2. Modified both date pickers to use dynamically calculated yesterday's date as the maxDate
+3. Removed automatic date initialization in the useEffect hook, allowing fields to remain empty
+4. Updated helper text to reflect the expanded date ranges
+5. Fixed calendar navigation to allow viewing months beyond February
 
 ### Impact
 - Expanded data access to include January 13th, 2025

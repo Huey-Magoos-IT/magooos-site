@@ -286,15 +286,7 @@ const processCSVData = async () => {
   };
 
   useEffect(() => {
-    // Set default start date to January 13th, 2025
-    setStartDate(new Date(2025, 0, 13, 12, 0, 0));
-    
-    // Set default end date to yesterday
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    setEndDate(yesterday);
-    
-    // Fetch available files
+    // Fetch available files only, don't set default dates
     fetchFiles();
   }, []);
 
@@ -411,13 +403,18 @@ const processCSVData = async () => {
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
                   minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  maxDate={new Date(2025, 1, 28, 23, 59, 59)} // Feb 28, 2025 end of day
+                  // Allow selection up to yesterday
+                  maxDate={(() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return yesterday;
+                  })()}
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
                       className: "bg-white dark:bg-dark-tertiary",
-                      helperText: "Range: Jan 13, 2025 - Feb 28, 2025"
+                      helperText: "Range: Jan 13, 2025 - Yesterday"
                     }
                   }}
                 />
