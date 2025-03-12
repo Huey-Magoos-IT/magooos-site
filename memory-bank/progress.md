@@ -24,6 +24,8 @@
 - ✅ Location and discount filtering
 - ✅ Report export functionality
 - ✅ Dual processing approach (Lambda + client-side)
+- ✅ CSV table with expandable view for better data visualization
+- ✅ Extended date range selection (up to current day) for client-side processing
 
 ### Pending Items
 - Role deletion functionality
@@ -34,12 +36,21 @@
 
 ## Recent Fixes
 
+### March 12, 2025
+- Expanded reporting date range to include January 13th, 2025 (previously started from January 14th)
+- Restricted end date selection to yesterday's date for more consistent reporting
+- Added default date value initialization on component load for better user experience
+- Updated date picker helper text to reflect new date ranges
+
 ### March 11, 2025
 - Implemented client-side CSV processing system for reports
 - Fixed location filtering issue in reporting page
 - Added direct S3 data access for improved performance
 - Implemented discount filtering with special handling for defaults
 - Added comprehensive CSV utilities and data table components
+- Enhanced CSV data table with expandable view functionality
+- Extended date range selection for client-side processing up to current day
+- Updated technical changelog with latest improvements
 
 ### March 7, 2025
 - Fixed team assignment permission model

@@ -286,6 +286,15 @@ const processCSVData = async () => {
   };
 
   useEffect(() => {
+    // Set default start date to January 13th, 2025
+    setStartDate(new Date(2025, 0, 13, 12, 0, 0));
+    
+    // Set default end date to yesterday
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    setEndDate(yesterday);
+    
+    // Fetch available files
     fetchFiles();
   }, []);
 
@@ -401,14 +410,14 @@ const processCSVData = async () => {
                   onChange={(newValue) => setStartDate(newValue)}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
-                  minDate={new Date(2025, 0, 14, 12, 0, 0)} // Jan 14, 2025 at noon
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
                   maxDate={new Date(2025, 1, 28, 23, 59, 59)} // Feb 28, 2025 end of day
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
                       className: "bg-white dark:bg-dark-tertiary",
-                      helperText: "Range: Jan 14, 2025 - Feb 28, 2025"
+                      helperText: "Range: Jan 13, 2025 - Feb 28, 2025"
                     }
                   }}
                 />
@@ -419,16 +428,19 @@ const processCSVData = async () => {
                   onChange={(newValue) => setEndDate(newValue)}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
-                  minDate={new Date(2025, 0, 14, 12, 0, 0)} // Jan 14, 2025 at noon
-                  maxDate={useClientProcessing ? new Date() : new Date(2025, 1, 28, 23, 59, 59)} // Today for client-side, Feb 28, 2025 for Lambda
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
+                  // Calculate yesterday by creating a new date and setting it to yesterday
+                  maxDate={(() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return yesterday;
+                  })()} // Yesterday's date for both processing methods
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
                       className: "bg-white dark:bg-dark-tertiary",
-                      helperText: useClientProcessing
-                        ? "Range: Jan 14, 2025 - Today"
-                        : "Range: Jan 14, 2025 - Feb 28, 2025"
+                      helperText: "Range: Jan 13, 2025 - Yesterday"
                     }
                   }}
                 />

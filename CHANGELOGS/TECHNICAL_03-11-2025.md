@@ -119,3 +119,52 @@ The system now correctly displays all 31 records for Winter Garden, FL within th
 1. Consider adding unit tests for filtering logic with special focus on edge cases like percentage string handling
 2. Implement a more robust data type conversion system for CSV data to handle various string formats
 3. Evaluate whether the current approach to filtering (skipping for defaults) aligns with expected behavior in other parts of the application
+
+## CSV Data Table Enhancements
+
+### Overview
+We've enhanced the CSV data table component with expandable view capability to improve data visualization and user experience when working with large datasets. Additionally, we've modified the date range selection to allow more flexibility for client-side processing.
+
+### Implementation Details
+
+#### 1. Expand/Collapse Functionality
+We've implemented a toggle system in the CSVDataTable component that allows users to view all rows at once:
+
+- **Toggle Button**: Added a "Show All Rows"/"Collapse Table" button in the data table header
+- **Dynamic Height**: Removed the fixed height constraint when expanded to show all rows without scrolling
+- **Visual Indicator**: Added a clear indicator in the table footer when in expanded view
+- **Smooth Transitions**: Incorporated CSS transitions for a polished user experience
+
+This enhancement addresses the limitation of only seeing a few rows at a time in the previous fixed-height scrollable container.
+
+#### 2. Extended Date Range for Client-Side Processing
+
+We've enhanced the date picker functionality to allow more flexibility based on the processing mode:
+
+- **Client-Side Processing**:
+  - End date can now be selected up to the current day
+  - Helper text updated to indicate "Range: Jan 14, 2025 - Today"
+  - Supports more current data analysis without artificial date constraints
+
+- **Lambda Processing**:
+  - Maintained original date constraints (Jan 14 - Feb 28, 2025)
+  - Preserves backward compatibility with the existing Lambda setup
+
+### Code Changes
+
+#### 1. Modified `client/src/components/CSVDataTable/index.tsx`:
+- Added state variable `isExpanded` to track view mode
+- Implemented toggle button with clear visual indicators
+- Modified TableContainer to use dynamic maxHeight based on expanded state
+- Added footer indicator showing when expanded view is active
+
+#### 2. Updated `client/src/app/departments/reporting/page.tsx`:
+- Modified DatePicker component to conditionally set maxDate based on processing mode
+- Updated helper text to reflect the appropriate date range options
+- Maintained separate logic for Lambda vs. client-side processing
+
+### Benefits
+1. **Improved Data Visibility**: Users can now see all report data without scrolling constraints
+2. **More Current Data**: Access to data up to the current day for client-side processing
+3. **Consistent Experience**: Maintains appropriate constraints for server-side processing
+4. **Better User Control**: Gives users flexibility to choose their preferred view mode

@@ -1,5 +1,49 @@
 # Decision Log
 
+## 2025-03-12: Reporting Date Range Update
+
+### Problem
+The reporting functionality needed an update to:
+1. Expand the reporting pool to include January 13th, 2025 (previously started from January 14th)
+2. Restrict the end date selection to yesterday's date instead of allowing current day selection
+
+### Investigation
+1. Reviewed current date restrictions in the reporting page
+2. Identified code locations for both start and end date restrictions
+3. Determined that the change affects both client-side and Lambda processing modes
+
+### Decision Points
+
+#### Decision 1: Expand Start Date to January 13th
+- **Choice**: Change the minDate for start date from January 14th to January 13th, 2025
+- **Rationale**: Allow access to additional historical data from January 13th
+- **Consequences**: Increased data availability for reporting
+
+#### Decision 2: Restrict End Date to Yesterday
+- **Choice**: Calculate yesterday's date dynamically rather than allowing current day selection
+- **Rationale**: Ensures reports only include complete days of data (current day is still in progress)
+- **Alternatives Considered**:
+  - Using a fixed cutoff time on current day (rejected for simplicity and consistency)
+  - Keeping the original behavior (rejected to ensure data completeness)
+- **Consequences**: More consistent reporting with complete daily data
+
+#### Decision 3: Set Default Date Values on Component Load
+- **Choice**: Initialize default values for start and end dates when the component loads
+- **Rationale**: Improves usability by pre-setting reasonable default date ranges
+- **Consequences**: Better user experience with ready-to-use form
+
+### Implementation
+1. Updated the DatePicker minDate for start date from January 14th to January 13th, 2025
+2. Modified the end date's maxDate to dynamically calculate yesterday's date
+3. Added date initialization in the useEffect hook to set default values on component load
+4. Updated helper text to reflect the new date ranges
+
+### Impact
+- Expanded data access to include January 13th, 2025
+- Improved data consistency by excluding current day data
+- Enhanced user experience with sensible default date values
+- Maintained consistent behavior across both processing modes
+
 ## 2025-03-11: Client-Side CSV Processing Implementation
 
 ### Problem
@@ -46,6 +90,23 @@ The existing Lambda-based report generation system had several limitations:
   - Complex percentage-to-ID conversion logic (rejected as too brittle)
   - Requiring explicit filter selection (rejected for poor UX)
 - **Consequences**: More intuitive filtering behavior at the cost of some technical "purity"
+
+#### Decision 4: Expandable CSV Data Table View
+- **Choice**: Implement a toggle for expanding CSV table to show all rows without scrolling
+- **Rationale**: Improves data visibility and analysis capabilities while maintaining compact default view
+- **Alternatives Considered**:
+  - Permanently expanding the table (rejected for space efficiency)
+  - Adding a separate "full view" mode (rejected for simplicity)
+  - Complex windowing with virtual scrolling (rejected as overly complex for the use case)
+- **Consequences**: Better data visualization while keeping the UI clean with user control over the view
+
+#### Decision 5: Extended Date Range for Client-Side Processing
+- **Choice**: Allow date selection up to the current day for client-side processing while maintaining original limits for Lambda
+- **Rationale**: Client-side processing can handle more current data without the same limitations as Lambda processing
+- **Alternatives Considered**:
+  - Using the same date limits for both methods (rejected as unnecessarily restrictive)
+  - Removing date limits entirely (rejected for performance reasons with very large datasets)
+- **Consequences**: More flexibility for users while maintaining appropriate constraints based on processing method
 
 ### Implementation
 1. Created new csvProcessing.ts utility library
