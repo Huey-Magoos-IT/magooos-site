@@ -170,7 +170,7 @@ const CSVDataTable = ({
               <Maximize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             )}
           >
-            {isExpanded ? "Collapse" : "Expand"}
+            {isExpanded ? "Collapse Table" : "Show All Rows"}
           </Button>
           <Button
             variant="contained"
@@ -185,7 +185,7 @@ const CSVDataTable = ({
 
       <TableContainer
         style={{
-          maxHeight: isExpanded ? 'calc(100vh - 300px)' : 440,
+          maxHeight: isExpanded ? 'none' : 440,
           transition: 'max-height 0.3s ease-in-out'
         }}
       >
@@ -242,7 +242,7 @@ const CSVDataTable = ({
           />
           {isExpanded && (
             <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center">
-              <Maximize2 className="h-3 w-3 mr-1" /> Expanded view
+              <Maximize2 className="h-3 w-3 mr-1" /> Showing all rows
             </Typography>
           )}
         </div>
