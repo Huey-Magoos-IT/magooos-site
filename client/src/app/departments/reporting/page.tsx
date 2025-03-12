@@ -413,8 +413,7 @@ const processCSVData = async () => {
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary",
-                      helperText: "Range: Jan 13, 2025 - Yesterday"
+                      className: "bg-white dark:bg-dark-tertiary"
                     }
                   }}
                 />
@@ -436,8 +435,7 @@ const processCSVData = async () => {
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary",
-                      helperText: "Range: Jan 13, 2025 - Yesterday"
+                      className: "bg-white dark:bg-dark-tertiary"
                     }
                   }}
                 />

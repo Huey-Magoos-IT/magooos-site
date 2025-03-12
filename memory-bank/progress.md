@@ -41,7 +41,7 @@
 - Restricted end date selection to yesterday's date for more consistent reporting
 - Removed automatic date initialization to allow empty date fields by default
 - Fixed calendar navigation to allow viewing months beyond February
-- Updated date picker helper text to reflect expanded date ranges
+- Removed date picker helper text for cleaner interface
 
 ### March 11, 2025
 - Implemented client-side CSV processing system for reports

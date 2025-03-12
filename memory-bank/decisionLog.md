@@ -44,7 +44,7 @@ The reporting functionality needed an update to:
 1. Updated the DatePicker minDate for start date from January 14th to January 13th, 2025
 2. Modified both date pickers to use dynamically calculated yesterday's date as the maxDate
 3. Removed automatic date initialization in the useEffect hook, allowing fields to remain empty
-4. Updated helper text to reflect the expanded date ranges
+4. Removed helper text from date pickers for a cleaner interface
 5. Fixed calendar navigation to allow viewing months beyond February
 
 ### Impact
