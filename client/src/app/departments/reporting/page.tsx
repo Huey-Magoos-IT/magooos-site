@@ -420,13 +420,15 @@ const processCSVData = async () => {
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full"
                   minDate={new Date(2025, 0, 14, 12, 0, 0)} // Jan 14, 2025 at noon
-                  maxDate={new Date(2025, 1, 28, 23, 59, 59)} // Feb 28, 2025 end of day
+                  maxDate={useClientProcessing ? new Date() : new Date(2025, 1, 28, 23, 59, 59)} // Today for client-side, Feb 28, 2025 for Lambda
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
                       className: "bg-white dark:bg-dark-tertiary",
-                      helperText: "Range: Jan 14, 2025 - Feb 28, 2025"
+                      helperText: useClientProcessing
+                        ? "Range: Jan 14, 2025 - Today"
+                        : "Range: Jan 14, 2025 - Feb 28, 2025"
                     }
                   }}
                 />
