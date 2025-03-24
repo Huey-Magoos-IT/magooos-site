@@ -278,16 +278,26 @@ export const filterData = (
     
     // Apply location filter if needed
     if (locationIds.length > 0 && locationNames.length > 0) {
-      // Check if the 'Store' field in CSV matches any of our location names
-      const storeValue = row['Store'];
-      if (!storeValue) return false;
+      // Check if the 'Store' or 'Location' field in CSV matches any of our location names
+      const storeValue = row['Store'] || row['Location'] || '';
+      
+      // Ensure storeValue is a string before using string methods
+      const storeValueStr = String(storeValue);
+      if (!storeValueStr) return false;
       
       // Do a partial match since CSV data might have additional formatting
-      const locationMatches = locationNames.some(name =>
-        storeValue.includes(name) ||
-        // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
-        (name.includes(',') ? storeValue.includes(name.split(',')[0].trim()) : false)
-      );
+      const locationMatches = locationNames.some(name => {
+        if (!name) return false;
+        
+        // Convert name to string to ensure it has string methods
+        const nameStr = String(name);
+        
+        return (
+          storeValueStr.includes(nameStr) ||
+          // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
+          (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false)
+        );
+      });
       
       if (!locationMatches) return false;
     }
@@ -318,9 +328,23 @@ export const filterData = (
       // Only apply discount filtering if the user has changed the defaults
       if (!usingDefaultDiscounts) {
         // Look for exact discount ID matches in relevant columns
-        const discountIdMatches =
-          (row['Discount ID'] && discountIds.includes(Number(row['Discount ID']))) ||
-          (row['DiscountId'] && discountIds.includes(Number(row['DiscountId'])));
+        // Safely convert discount IDs to numbers for comparison
+        const discountIdMatches = (() => {
+          try {
+            const discountId1 = row['Discount ID'] ? Number(row['Discount ID']) : null;
+            const discountId2 = row['DiscountId'] ? Number(row['DiscountId']) : null;
+            const discountId3 = row['DISCL ID'] ? Number(row['DISCL ID']) : null;
+            
+            return (
+              (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
+              (discountId2 !== null && !isNaN(discountId2) && discountIds.includes(discountId2)) ||
+              (discountId3 !== null && !isNaN(discountId3) && discountIds.includes(discountId3))
+            );
+          } catch (e) {
+            console.warn('Error comparing discount IDs:', e);
+            return false;
+          }
+        })();
         
         if (!discountIdMatches) return false;
       }
