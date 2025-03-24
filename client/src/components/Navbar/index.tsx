@@ -27,20 +27,21 @@ const Navbar = () => {
   const currentUserDetails = currentUser?.userDetails;
 
   return (
-    <div className="flex items-center justify-between bg-white px-4 py-3 dark:bg-black">
+    <div className="flex items-center justify-between bg-white px-4 py-3 shadow-sm border-b border-gray-100 dark:bg-black dark:border-stroke-dark">
       {/* Search Bar */}
       <div className="flex items-center gap-8">
         {!isSidebarCollapsed ? null : (
           <button
             onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
+            className="rounded p-2 hover:bg-blue-50 transition-colors dark:hover:bg-blue-900/10"
           >
-            <Menu className="h-8 w-8 dark:text-white" />
+            <Menu className="h-8 w-8 text-gray-800 dark:text-white" />
           </button>
         )}
         <div className="relative flex h-min w-[200px]">
-          <Search className="absolute left-[4px] top-1/2 mr-2 h-5 w-5 -translate-y-1/2 transform cursor-pointer dark:text-white" />
+          <Search className="absolute left-[4px] top-1/2 mr-2 h-5 w-5 -translate-y-1/2 transform cursor-pointer text-blue-500 dark:text-blue-400" />
           <input
-            className="w-full rounded border-none bg-gray-100 p-2 pl-8 placeholder-gray-500 focus:border-transparent focus:outline-none dark:bg-gray-700 dark:text-white dark:placeholder-white"
+            className="w-full rounded-md border border-gray-200 bg-gray-50 p-2 pl-8 placeholder-gray-500 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:bg-gray-700 dark:border-stroke-dark dark:text-white dark:placeholder-gray-300 dark:focus:border-blue-700 dark:focus:ring-blue-900/20"
             type="search"
             placeholder="Search..."
           />
@@ -53,27 +54,27 @@ const Navbar = () => {
           onClick={() => dispatch(setIsDarkMode(!isDarkMode))}
           className={
             isDarkMode
-              ? `rounded p-2 dark:hover:bg-gray-700`
-              : `rounded p-2 hover:bg-gray-100`
+              ? `rounded p-2 transition-colors dark:hover:bg-blue-900/10`
+              : `rounded p-2 transition-colors hover:bg-blue-50`
           }
         >
           {isDarkMode ? (
-            <Sun className="h-6 w-6 cursor-pointer dark:text-white" />
+            <Sun className="h-6 w-6 cursor-pointer text-blue-500 dark:text-blue-400" />
           ) : (
-            <Moon className="h-6 w-6 cursor-pointer dark:text-white" />
+            <Moon className="h-6 w-6 cursor-pointer text-blue-500" />
           )}
         </button>
         <Link
           href="/settings"
           className={
             isDarkMode
-              ? `h-min w-min rounded p-2 dark:hover:bg-gray-700`
-              : `h-min w-min rounded p-2 hover:bg-gray-100`
+              ? `h-min w-min rounded p-2 transition-colors dark:hover:bg-blue-900/10`
+              : `h-min w-min rounded p-2 transition-colors hover:bg-blue-50`
           }
         >
-          <Settings className="h-6 w-6 cursor-pointer dark:text-white" />
+          <Settings className="h-6 w-6 cursor-pointer text-blue-500 dark:text-blue-400" />
         </Link>
-        <div className="ml-2 mr-5 hidden min-h-[2em] w-[0.1rem] bg-gray-200 md:inline-block"></div>
+        <div className="ml-2 mr-5 hidden min-h-[2em] w-[0.1rem] bg-gray-200 dark:bg-gray-700 md:inline-block"></div>
         <div className="hidden items-center justify-between md:flex">
           <div className="align-center flex h-9 w-9 justify-center">
             {!!currentUserDetails?.profilePictureUrl ? (
@@ -82,17 +83,17 @@ const Navbar = () => {
                 alt={currentUserDetails?.username || "User Profile Picture"}
                 width={100}
                 height={50}
-                className="h-full rounded-full object-cover"
+                className="h-full rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
               />
             ) : (
-              <User className="h-6 w-6 cursor-pointer self-center rounded-full dark:text-white" />
+              <User className="h-6 w-6 cursor-pointer self-center rounded-full text-blue-500 dark:text-blue-400" />
             )}
           </div>
-          <span className="mx-3 text-gray-800 dark:text-white">
+          <span className="mx-3 font-medium text-gray-800 dark:text-white">
             {currentUserDetails?.username}
           </span>
           <button
-            className="hidden rounded bg-blue-400 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 md:block"
+            className="hidden rounded-md bg-blue-500 px-4 py-2 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-sm hover:shadow md:block"
             onClick={handleSignOut}
           >
             Sign out
