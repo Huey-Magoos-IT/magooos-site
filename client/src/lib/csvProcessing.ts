@@ -243,6 +243,40 @@ export const filterFilesByDateAndType = (
     return fileDate >= start && fileDate <= end;
   });
 };
+/**
+ * Enhance CSV data with location names
+ * Maps numeric location IDs to actual location names in the data
+ * @param data Array of data objects
+ * @param locations Array of location objects with id and name properties
+ * @returns Enhanced data with location names
+ */
+export const enhanceCSVWithLocationNames = (
+  data: any[],
+  locations: { id: string; name: string }[] = []
+): any[] => {
+  if (!data.length || !locations.length) return data;
+  
+  // Create a mapping of location IDs to location names
+  const locationMap: Record<string, string> = {};
+  locations.forEach(loc => {
+    locationMap[loc.id] = loc.name;
+  });
+  
+  return data.map(row => {
+    const newRow = { ...row };
+    
+    // Check if row has numeric location ID but no location name
+    const storeId = row['LocationID'] || row['Location ID'] || row['Store'];
+    if (storeId && !isNaN(String(storeId)) && locationMap[String(storeId)]) {
+      // Add a new column with the proper location name
+      newRow['Location Name'] = locationMap[String(storeId)];
+      // Keep the original ID for reference
+      newRow['LocationID'] = storeId;
+    }
+    
+    return newRow;
+  });
+};
 
 /**
  * Filter data by location and discount IDs
@@ -251,6 +285,7 @@ export const filterFilesByDateAndType = (
  * @param discountIds Array of discount IDs to filter by
  * @param locations Array of location objects with id and name properties for mapping IDs to names
  * @returns Filtered data
+ */
  */
 export const filterData = (
   data: any[],
@@ -277,29 +312,43 @@ export const filterData = (
   return data.filter(row => {
     
     // Apply location filter if needed
-    if (locationIds.length > 0 && locationNames.length > 0) {
-      // Check if the 'Store' or 'Location' field in CSV matches any of our location names
-      const storeValue = row['Store'] || row['Location'] || '';
+    if (locationIds.length > 0) {
+      // Get the store value from the CSV row (might be a name or an ID)
+      const storeValue = row['Store'] || row['Location'] || row['LocationID'] || row['Location ID'] || '';
+      const storeValueStr = String(storeValue).trim();
       
-      // Ensure storeValue is a string before using string methods
-      const storeValueStr = String(storeValue);
       if (!storeValueStr) return false;
       
-      // Do a partial match since CSV data might have additional formatting
-      const locationMatches = locationNames.some(name => {
-        if (!name) return false;
-        
-        // Convert name to string to ensure it has string methods
-        const nameStr = String(name);
-        
-        return (
-          storeValueStr.includes(nameStr) ||
-          // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
-          (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false)
-        );
-      });
+      // Check for match using multiple strategies
+      let locationMatch = false;
       
-      if (!locationMatches) return false;
+      // Strategy 1: Direct ID match (CSV record has a location ID as a string)
+      if (!locationMatch) {
+        locationMatch = locationIds.some(id => storeValueStr === id);
+      }
+      
+      // Strategy 2: Name match (CSV record has a location name)
+      if (!locationMatch && locationNames.length > 0) {
+        locationMatch = locationNames.some(name => {
+          if (!name) return false;
+          const nameStr = String(name);
+          
+          return (
+            storeValueStr.includes(nameStr) ||
+            // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
+            (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false)
+          );
+        });
+      }
+      
+      // Strategy 3: Numeric location code match (CSV has numeric codes like "1825")
+      if (!locationMatch) {
+        // In case the CSV has numeric location codes (IDs without leading/trailing text)
+        // that match our locationIds
+        locationMatch = locationIds.includes(storeValueStr);
+      }
+      
+      if (!locationMatch) return false;
     }
     
     /**

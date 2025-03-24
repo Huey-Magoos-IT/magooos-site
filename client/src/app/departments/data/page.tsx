@@ -27,7 +27,8 @@ import {
   fetchFiles as fetchS3Files,
   filterFilesByDateAndType,
   processMultipleCSVs,
-  filterData
+  filterData,
+  enhanceCSVWithLocationNames
 } from "@/lib/csvProcessing";
 import {
   DEFAULT_DISCOUNT_IDS,
@@ -129,21 +130,32 @@ const DataPage = () => {
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
       
       // Process all files using the updated processMultipleCSVs function
-      // which now accepts bucket URL and folder path
       const combinedData = await processMultipleCSVs(
         matchingFiles,
         S3_DATA_LAKE,
         LOYALTY_DATA_FOLDER
       );
       
+      // Log sample data for debugging
+      if (combinedData.length > 0) {
+        console.log("DATA PAGE - Sample CSV Data:", combinedData[0]);
+      }
+      
+      // Enhance the CSV data with location names
+      setProcessingProgress("Enhancing data with location information...");
+      const enhancedData = enhanceCSVWithLocationNames(combinedData, selectedLocations);
+      
       // Apply filters if selected
-      let filteredData = combinedData;
+      let filteredData = enhancedData;
       if (selectedLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
         // Pass the full locations array for mapping IDs to names
-        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
+        filteredData = filterData(enhancedData, selectedLocationIds, discountIds, selectedLocations);
       }
 
+      // Additional debugging
+      console.log(`DATA PAGE - Processing complete: ${filteredData.length} rows after filtering`);
+      
       setCSVData(filteredData);
       setProcessingProgress("");
     } catch (error) {
