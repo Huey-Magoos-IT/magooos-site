@@ -1,5 +1,61 @@
 # Decision Log
 
+## 2025-03-17: Data Department CSV Processing Enhancement
+
+### Problem
+The Data Department page needed enhanced functionality to:
+1. Process CSV data from the "qu-location-ids" S3 bucket
+2. Provide similar filtering and visualization capabilities as the Reporting page
+3. Support location and discount ID filtering for data analysis
+
+### Investigation
+1. Examined the existing Reporting page implementation
+2. Reviewed the CSV processing utilities and components
+3. Analyzed the Data Department's current simple file listing functionality
+4. Identified reusable components and patterns from the Reporting page
+
+### Decision Points
+
+#### Decision 1: Replicate Reporting Page Functionality
+- **Choice**: Replicate the Reporting page's client-side CSV processing for the Data Department
+- **Rationale**: Leverage existing, proven code to quickly implement similar functionality
+- **Alternatives Considered**:
+  - Creating a completely new implementation (rejected for efficiency and consistency)
+  - Modifying the Reporting page to handle both types of data (rejected for separation of concerns)
+- **Consequences**: Consistent user experience across departments with minimal development effort
+
+#### Decision 2: Use "qu-location-ids" S3 Bucket
+- **Choice**: Configure the Data Department to use the "qu-location-ids" S3 bucket
+- **Rationale**: This bucket contains the specific data needed for the Data Department
+- **Consequences**: Data Department has access to its own dedicated data source
+
+#### Decision 3: Implement Placeholder Data Types
+- **Choice**: Add placeholder data types until actual CSV format is provided
+- **Rationale**: Allow for immediate implementation while maintaining flexibility for future updates
+- **Alternatives Considered**:
+  - Waiting for final CSV format (rejected to avoid implementation delays)
+  - Using generic data types (rejected for lack of clarity)
+- **Consequences**: Implementation can proceed with placeholders that can be easily updated later
+
+#### Decision 4: Maintain Date Range Restrictions
+- **Choice**: Keep the same date range restrictions (Jan 13, 2025 to yesterday)
+- **Rationale**: Maintain consistency with the Reporting page and ensure data completeness
+- **Consequences**: Consistent date handling across both department pages
+
+### Implementation
+1. Replicated the Reporting page structure for the Data Department
+2. Updated S3 bucket reference to "qu-location-ids"
+3. Added placeholder data types with clear documentation
+4. Maintained the same date range restrictions
+5. Reused existing CSV processing utilities and components
+6. Updated Memory Bank documentation with implementation details
+
+### Impact
+- Enhanced Data Department with advanced CSV processing capabilities
+- Maintained consistent user experience across departments
+- Established a pattern for future data processing features
+- Improved data analysis capabilities for the Data Department
+
 ## 2025-03-12: Reporting Date Range Update
 
 ### Problem

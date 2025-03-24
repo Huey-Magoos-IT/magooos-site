@@ -1,69 +1,163 @@
 "use client";
 
 import { useGetAuthUserQuery } from "@/state/api";
+import { hasRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import Link from "next/link";
-import { hasRole } from "@/lib/accessControl";
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
-import { CircularProgress } from "@mui/material";
+import { X } from "lucide-react";
+import {
+  TextField,
+  Chip,
+  Button,
+  CircularProgress,
+  Grid,
+  Box,
+  Typography,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  FormHelperText
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import LocationTable, { Location } from "@/components/LocationTable";
+import CSVDataTable from "@/components/CSVDataTable";
+import {
+  fetchFiles as fetchS3Files,
+  filterFilesByDateAndType,
+  processMultipleCSVs,
+  filterData
+} from "@/lib/csvProcessing";
+import {
+  DEFAULT_DISCOUNT_IDS,
+  DEFAULT_LOCATION_IDS
+} from "@/lib/legacyLambdaProcessing";
 
-const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://huey-site-summary-data.s3.us-east-2.amazonaws.com";
-const ITEMS_PER_PAGE = 15;
+const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://qu-location-ids.s3.us-east-2.amazonaws.com";
+
+// PLACEHOLDER: Data file types - to be updated when actual CSV format is provided
+// These will need to match the actual filename patterns in the S3 bucket
+const DATA_TYPES = [
+  { value: 'location-data', label: 'Location Data' },
+  { value: 'transaction-data', label: 'Transaction Data' },
+  { value: 'summary-data', label: 'Summary Data' }
+];
+
+// NOTE: The current implementation assumes filenames follow the pattern: type-MMDDYYYY.csv
+// This may need adjustment based on actual file naming conventions in the qu-location-ids bucket
 
 const DataPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
   const userTeam = authData?.userDetails?.team;
-  const [files, setFiles] = useState<string[]>([]);
-  const [filesLoading, setFilesLoading] = useState(true);
-  const [filesError, setFilesError] = useState<string|null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  // Check if user's team has DATA role access
-  console.log("DATA PAGE - User team:", userTeam);
-  console.log("DATA PAGE - Team roles:", userTeam?.teamRoles);
-  console.log("DATA PAGE - Is Admin:", userTeam?.isAdmin);
-  
-  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA'));
-  console.log("DATA PAGE - Has Access:", hasAccess);
 
+  // Form state
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
+  const [newDiscountId, setNewDiscountId] = useState("");
+  
+  // Client-side processing state
+  const [dataType, setDataType] = useState<string>(DATA_TYPES[0].value);
+  const [allS3Files, setAllS3Files] = useState<string[]>([]);
+  const [csvData, setCSVData] = useState<any[]>([]);
+  const [csvLoading, setCSVLoading] = useState(false);
+  const [csvError, setCSVError] = useState<string|null>(null);
+  const [processingProgress, setProcessingProgress] = useState<string>("");
+  
+  // Derived state for just the location IDs
+  const selectedLocationIds = selectedLocations.map(loc => loc.id);
+
+  const handleAddDiscountId = () => {
+    const id = parseInt(newDiscountId);
+    if (!isNaN(id) && !discountIds.includes(id)) {
+      setDiscountIds([...discountIds, id]);
+      setNewDiscountId("");
+    }
+  };
+
+  const handleRemoveDiscountId = (id: number) => {
+    setDiscountIds(discountIds.filter(x => x !== id));
+  };
+
+  const handleAddLocation = (location: Location) => {
+    setSelectedLocations(prev => [...prev, location]);
+  };
+
+  const handleRemoveLocation = (locationId: string) => {
+    setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
+  };
+
+  // Fetch S3 files for client-side processing
   const fetchFiles = async () => {
-    setFilesLoading(true);
     try {
-      const response = await fetch(S3_DATA_BUCKET);
-      const str = await response.text();
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(str, "text/xml");
-      
-      if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
-        throw new Error("Invalid XML response from S3");
-      }
-
-      const keys = xmlDoc.getElementsByTagName("Key");
-      // Get files and reverse the order so newest files appear first
-      const fileList = Array.from(keys)
-        .map(key => key.textContent || "")
-        .filter(Boolean)
-        .reverse(); // Reverse to show newest files first
-      
-      setFiles(fileList);
-      setFilesError(null);
+      // Use the fetchS3Files utility from csvProcessing
+      const fileList = await fetchS3Files(S3_DATA_BUCKET);
+      setAllS3Files(fileList);
     } catch (err) {
       console.error("File fetch failed:", err);
-      setFilesError("Failed to load data files");
+      setCSVError("Failed to load data files from S3 bucket");
+    }
+  };
+
+  // Client-side CSV data processing
+  const processCSVData = async () => {
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates");
+      return;
+    }
+
+    setCSVLoading(true);
+    setCSVError(null);
+    setProcessingProgress("Filtering files by date and type...");
+    setCSVData([]);
+
+    try {
+      // Filter files by date range and data type
+      const matchingFiles = filterFilesByDateAndType(
+        allS3Files,
+        startDate,
+        endDate,
+        dataType
+      );
+
+      if (matchingFiles.length === 0) {
+        setCSVError("No files found matching the selected date range and data type");
+        setCSVLoading(false);
+        return;
+      }
+
+      setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
+
+      // Create full URLs for the files
+      const fileUrls = matchingFiles.map(filename => `${S3_DATA_BUCKET}/${filename}`);
+
+      // Process all files (fetch and parse)
+      const combinedData = await processMultipleCSVs(fileUrls);
+      
+      // Apply filters if selected
+      let filteredData = combinedData;
+      if (selectedLocationIds.length > 0 || discountIds.length > 0) {
+        setProcessingProgress("Applying filters...");
+        // Pass the full locations array for mapping IDs to names
+        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
+      }
+
+      setCSVData(filteredData);
+      setProcessingProgress("");
+    } catch (error) {
+      console.error("Error processing CSV files:", error);
+      setCSVError(`Error processing CSV files: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setFilesLoading(false);
+      setCSVLoading(false);
     }
   };
 
   useEffect(() => {
+    // Fetch available files on component mount
     fetchFiles();
   }, []);
-
-  const totalPages = Math.ceil(files.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentFiles = files.slice(startIndex, endIndex);
 
   if (isLoading) {
     return <div className="m-5 p-4">Loading...</div>;
@@ -72,6 +166,14 @@ const DataPage = () => {
   if (error) {
     return <div className="m-5 p-4">Error: {error.toString()}</div>;
   }
+
+  // Check if user's team has DATA role access
+  console.log("DATA PAGE - User team:", userTeam);
+  console.log("DATA PAGE - Team roles:", userTeam?.teamRoles);
+  console.log("DATA PAGE - Is Admin:", userTeam?.isAdmin);
+  
+  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA'));
+  console.log("DATA PAGE - Has Access:", hasAccess);
 
   if (!hasAccess) {
     return (
@@ -90,7 +192,7 @@ const DataPage = () => {
     <div className="m-5 p-4">
       <Header name="Data Department" />
       <div className="mt-4 p-4 bg-white rounded shadow dark:bg-dark-secondary">
-        <h2 className="text-xl font-bold mb-4 dark:text-white">Welcome to Data Department</h2>
+        <h2 className="text-xl font-bold mb-4 dark:text-white">Welcome to Data Department (Enhanced CSV Processing)</h2>
         <div className="bg-green-50 p-4 rounded mb-4 dark:bg-green-900 dark:text-green-100">
           <h3 className="font-semibold mb-2">DATA Access Successful</h3>
           <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
@@ -105,105 +207,183 @@ const DataPage = () => {
             </div>
           </div>
         </div>
-        
-        {/* File List */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold dark:text-white">Available Data Files</h3>
-            <button
-              onClick={fetchFiles}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
-              disabled={filesLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${filesLoading ? 'animate-spin' : ''}`} />
-              Refresh Files
-            </button>
-          </div>
 
-          {filesLoading && (
-            <div className="text-gray-500 text-center py-4 dark:text-neutral-400">
-              <div className="flex justify-center items-center">
-                <CircularProgress size={24} className="mr-2" />
-                <span>Loading files...</span>
-              </div>
-            </div>
-          )}
-
-          {filesError && (
-            <div className="text-red-500 text-center py-4">{filesError}</div>
-          )}
-
-          {!filesLoading && !filesError && (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border rounded-lg dark:bg-dark-secondary">
-                  <thead className="bg-gray-50 dark:bg-dark-tertiary">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-neutral-400">
-                        File Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-neutral-400">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-stroke-dark">
-                    {currentFiles.map((file, index) => (
-                      <tr
-                        key={index}
-                        className="hover:bg-gray-50 dark:hover:bg-dark-tertiary"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-neutral-300">
-                          {file}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <a
-                            href={`${S3_DATA_BUCKET}/${file}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Download
-                          </a>
-                        </td>
-                      </tr>
+        {/* Data Generation Form */}
+        <div className="mt-4 mb-8 p-4 border rounded dark:border-stroke-dark">
+          <h3 className="text-lg font-semibold mb-4 dark:text-white">Generate Data Report</h3>
+          
+          <Grid container spacing={4}>
+            {/* Left column - Form inputs */}
+            <Grid item xs={12} md={6}>
+              <div className="space-y-4">
+                {/* Data Type Selector */}
+                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary">
+                  <InputLabel>Data Type</InputLabel>
+                  <Select
+                    value={dataType}
+                    onChange={(e) => setDataType(e.target.value as string)}
+                    label="Data Type"
+                  >
+                    {DATA_TYPES.map((type) => (
+                      <MenuItem key={type.value} value={type.value}>
+                        {type.label}
+                      </MenuItem>
                     ))}
-                    {currentFiles.length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="text-center py-4 text-gray-500 dark:text-neutral-400">
-                          No data files available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  </Select>
+                  <FormHelperText>Select the type of data to generate</FormHelperText>
+                </FormControl>
 
-              {totalPages > 1 && (
-                <div className="mt-4 flex justify-between items-center">
-                  <div className="text-sm text-gray-700 dark:text-neutral-400">
-                    Showing {startIndex + 1} to {Math.min(endIndex, files.length)} of {files.length} files
+                <DatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(newValue) => setStartDate(newValue)}
+                  format="MMddyyyy"
+                  className="bg-white dark:bg-dark-tertiary w-full"
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
+                  // Allow selection up to yesterday
+                  maxDate={(() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return yesterday;
+                  })()}
+                  slotProps={{
+                    textField: {
+                      variant: "outlined",
+                      fullWidth: true,
+                      className: "bg-white dark:bg-dark-tertiary"
+                    }
+                  }}
+                />
+                
+                <DatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(newValue) => setEndDate(newValue)}
+                  format="MMddyyyy"
+                  className="bg-white dark:bg-dark-tertiary w-full"
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
+                  // Calculate yesterday by creating a new date and setting it to yesterday
+                  maxDate={(() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return yesterday;
+                  })()}
+                  slotProps={{
+                    textField: {
+                      variant: "outlined",
+                      fullWidth: true,
+                      className: "bg-white dark:bg-dark-tertiary"
+                    }
+                  }}
+                />
+
+                <div>
+                  <Typography className="font-medium mb-2 dark:text-white">Selected Locations</Typography>
+                  <Box className="p-3 bg-gray-50 border rounded min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark">
+                    {selectedLocations.length === 0 ? (
+                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                        Leave blank for all locations. Or select specific locations from the table.
+                      </Typography>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedLocations.map((location) => (
+                          <Chip
+                            key={location.id}
+                            label={`${location.name} (${location.id})`}
+                            onDelete={() => handleRemoveLocation(location.id)}
+                            className="bg-blue-50 dark:bg-blue-900/30 dark:text-blue-200"
+                            deleteIcon={<X className="h-4 w-4" />}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </Box>
+                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                    {selectedLocations.length > 0
+                      ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
+                      : "All locations will be used"}
+                  </Typography>
+                </div>
+
+                <div>
+                  <div className="mb-2">
+                    <TextField
+                      label="Add Discount ID"
+                      value={newDiscountId}
+                      onChange={(e) => setNewDiscountId(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
+                      variant="outlined"
+                      className="bg-white dark:bg-dark-tertiary"
+                      fullWidth
+                    />
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-stroke-dark dark:hover:bg-dark-tertiary"
-                    >
-                      <ChevronLeft className="h-5 w-5 dark:text-neutral-400" />
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-stroke-dark dark:hover:bg-dark-tertiary"
-                    >
-                      <ChevronRight className="h-5 w-5 dark:text-neutral-400" />
-                    </button>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {discountIds.map((id) => (
+                      <Chip
+                        key={id}
+                        label={id}
+                        onDelete={() => handleRemoveDiscountId(id)}
+                        className="bg-blue-100 dark:bg-dark-tertiary"
+                        deleteIcon={<X className="h-4 w-4" />}
+                      />
+                    ))}
                   </div>
                 </div>
-              )}
-            </>
-          )}
+
+                <div className="mt-4">
+                  <Button
+                    variant="contained"
+                    onClick={processCSVData}
+                    disabled={csvLoading || !startDate || !endDate}
+                    fullWidth
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-3"
+                  >
+                    {csvLoading ? (
+                      <div className="flex items-center justify-center">
+                        <CircularProgress size={20} className="text-white mr-2" />
+                        <span>Processing...</span>
+                      </div>
+                    ) : "Process Data"}
+                  </Button>
+                  
+                  {/* Progress message for processing */}
+                  {processingProgress && (
+                    <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded text-sm">
+                      {processingProgress}
+                    </div>
+                  )}
+                  
+                  {/* Processing errors */}
+                  {csvError && (
+                    <div className="mt-2 p-3 bg-red-100 text-red-700 rounded">
+                      <p className="font-semibold">Error Processing CSV Data:</p>
+                      <p className="text-sm overflow-auto max-h-24">{csvError}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Grid>
+            
+            {/* Right column - Location Table */}
+            <Grid item xs={12} md={6}>
+              <LocationTable
+                selectedLocationIds={selectedLocationIds}
+                onLocationSelect={handleAddLocation}
+              />
+            </Grid>
+          </Grid>
+        </div>
+
+        {/* Data Table */}
+        <div className="mt-8 mb-8">
+          <CSVDataTable
+            data={csvData}
+            isLoading={csvLoading}
+            error={csvError}
+            selectedLocationIds={selectedLocationIds}
+            selectedDiscountIds={discountIds}
+            reportType={dataType}
+          />
         </div>
       </div>
     </div>
