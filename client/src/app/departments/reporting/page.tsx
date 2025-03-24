@@ -379,6 +379,8 @@ const ReportingPage = () => {
             selectedLocationIds={selectedLocationIds}
             selectedDiscountIds={discountIds}
             reportType={reportType}
+            startDate={startDate}
+            endDate={endDate}
           />
         </div>
       </div>

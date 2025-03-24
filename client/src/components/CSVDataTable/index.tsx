@@ -27,6 +27,8 @@ interface CSVDataTableProps {
   selectedLocationIds: string[];
   selectedDiscountIds: number[];
   reportType: string;
+  startDate?: Date | null;
+  endDate?: Date | null;
 }
 
 type OrderDirection = 'asc' | 'desc';
@@ -37,7 +39,9 @@ const CSVDataTable = ({
   error,
   selectedLocationIds,
   selectedDiscountIds,
-  reportType
+  reportType,
+  startDate,
+  endDate
 }: CSVDataTableProps) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -96,10 +100,62 @@ const CSVDataTable = ({
   };
 
   const handleDownload = () => {
-    // Generate timestamp for filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `${reportType}-${timestamp}.csv`;
+    // Helper function to format date as MM-DD-YYYY
+    const formatDate = (date: Date | null | undefined) => {
+      if (!date) return null;
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}-${day}-${year}`;
+    };
+    
+    // Use start and end dates if available, otherwise use current date
+    let dateStr = '';
+    
+    if (startDate && endDate) {
+      const startFormatted = formatDate(startDate);
+      const endFormatted = formatDate(endDate);
+      
+      // If start and end dates are the same, use single date format
+      if (startFormatted === endFormatted) {
+        dateStr = `_${startFormatted}`;
+      } else {
+        // Otherwise use range format
+        dateStr = `_${startFormatted}_to_${endFormatted}`;
+      }
+    } else {
+      // Fallback to current date if no date range provided
+      const now = new Date();
+      const formattedDate = formatDate(now);
+      dateStr = `_${formattedDate}`;
+    }
+    
+    // Add filter indicator if locations or discounts are selected
+    if ((selectedLocationIds && selectedLocationIds.length > 0) ||
+        (selectedDiscountIds && selectedDiscountIds.length > 0 &&
+         !isDefaultDiscountSelection(selectedDiscountIds))) {
+      dateStr += '_filtered';
+    }
+    
+    // Use the correct naming convention: loyalty_data_MM-DD-YYYY.csv
+    const filename = reportType === 'loyalty_data'
+      ? `loyalty_data${dateStr}.csv`
+      : `${reportType}${dateStr}.csv`;
+      
     downloadCSV(data, filename);
+  };
+  
+  // Helper function to check if using default discount IDs
+  const isDefaultDiscountSelection = (discountIds: number[]) => {
+    // This should match the logic in filterData function
+    return discountIds.length === 7 &&
+      discountIds.includes(77406) &&
+      discountIds.includes(135733) &&
+      discountIds.includes(135736) &&
+      discountIds.includes(135737) &&
+      discountIds.includes(135738) &&
+      discountIds.includes(135739) &&
+      discountIds.includes(135910);
   };
 
   if (isLoading) {

@@ -383,6 +383,8 @@ const DataPage = () => {
             selectedLocationIds={selectedLocationIds}
             selectedDiscountIds={discountIds}
             reportType={dataType}
+            startDate={startDate}
+            endDate={endDate}
           />
         </div>
       </div>
