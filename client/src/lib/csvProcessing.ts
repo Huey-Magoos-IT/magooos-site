@@ -3,11 +3,15 @@ import Papa from 'papaparse';
 /**
  * Fetches a list of files from an S3 bucket URL
  * @param bucketUrl URL to the S3 bucket
+ * @param folderPath Optional folder path within the bucket (e.g., "loyalty-data-pool/")
  * @returns Promise resolving to an array of filenames
  */
-export const fetchFiles = async (bucketUrl: string): Promise<string[]> => {
+export const fetchFiles = async (bucketUrl: string, folderPath: string = ""): Promise<string[]> => {
   try {
-    const response = await fetch(bucketUrl);
+    // Ensure the URL ends with a slash if a folder path is provided
+    const baseUrl = bucketUrl.endsWith('/') ? bucketUrl : `${bucketUrl}/`;
+    // Make the request to the specific folder
+    const response = await fetch(`${baseUrl}${folderPath}`);
     const str = await response.text();
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(str, "text/xml");
@@ -18,8 +22,12 @@ export const fetchFiles = async (bucketUrl: string): Promise<string[]> => {
 
     const keys = xmlDoc.getElementsByTagName("Key");
     // Get files and reverse the order so newest files appear first
+    // Filter to only include files within the specified folder
     const fileList = Array.from(keys)
       .map(key => key.textContent || "")
+      .filter(key => folderPath ? key.startsWith(folderPath) : true)
+      // Remove the folder prefix to get just the filename if a folder path is provided
+      .map(key => folderPath ? key.substring(folderPath.length) : key)
       .filter(Boolean)
       .reverse(); // Reverse to show newest files first
     
@@ -92,15 +100,26 @@ export const fetchAndParseCSV = async (url: string): Promise<ParsedCSVData> => {
 
 /**
  * Process multiple CSV files and combine their data
- * @param urls Array of URLs to CSV files
+ * @param urls Array of URLs to CSV files or an array of filenames
+ * @param bucketUrl Optional S3 bucket URL
+ * @param folderPath Optional folder path within the bucket
  * @returns Promise resolving to the combined data from all CSVs
  */
-export const processMultipleCSVs = async (urls: string[]): Promise<any[]> => {
+export const processMultipleCSVs = async (
+  urls: string[],
+  bucketUrl?: string,
+  folderPath?: string
+): Promise<any[]> => {
   try {
     // Process files sequentially to avoid overwhelming the browser
     let allData: any[] = [];
     
-    for (const url of urls) {
+    for (const urlOrFilename of urls) {
+      // If bucketUrl and folderPath are provided, construct the full URL
+      const url = bucketUrl && folderPath
+        ? `${bucketUrl}/${folderPath}${urlOrFilename}`
+        : urlOrFilename;
+        
       const result = await fetchAndParseCSV(url);
       allData = [...allData, ...result.data];
     }
@@ -140,43 +159,59 @@ export const downloadCSV = (data: any[], filename: string): void => {
 };
 
 /**
- * Extracts date from filename in MMDDYYYY format
- * @param filename Filename containing date in MMDDYYYY format
+ * Extracts date from filename in various formats
+ * @param filename Filename containing date
  * @returns Date object or null if no date found
  */
 export const extractDateFromFilename = (filename: string): Date | null => {
-  // Look for pattern of 8 digits in a row which would be MMDDYYYY
-  const dateMatch = filename.match(/(\d{8})\.csv$/);
-  if (!dateMatch) return null;
+  // Look for pattern of loyalty_data_MM-DD-YYYY.csv
+  let dateMatch = filename.match(/loyalty_data_(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  if (dateMatch) {
+    const month = dateMatch[1];
+    const day = dateMatch[2];
+    const year = dateMatch[3];
+    return new Date(`${month}/${day}/${year}`);
+  }
   
-  const dateStr = dateMatch[1];
-  // Convert MMDDYYYY to MM/DD/YYYY for parsing
-  const month = dateStr.substring(0, 2);
-  const day = dateStr.substring(2, 4);
-  const year = dateStr.substring(4, 8);
+  // Look for pattern of 8 digits in a row which would be MMDDYYYY (legacy format)
+  dateMatch = filename.match(/(\d{8})\.csv$/);
+  if (dateMatch) {
+    const dateStr = dateMatch[1];
+    const month = dateStr.substring(0, 2);
+    const day = dateStr.substring(2, 4);
+    const year = dateStr.substring(4, 8);
+    return new Date(`${month}/${day}/${year}`);
+  }
   
-  return new Date(`${month}/${day}/${year}`);
+  return null;
 };
 
 /**
- * Filter a list of files by date range and report type
+ * Filter a list of files by date range and data type
  * @param files Array of filenames
  * @param startDate Start date for filtering
  * @param endDate End date for filtering
- * @param reportType Type of report ('redflag-report', 'no-loyalty-discount', 'redflag-summary')
+ * @param dataType Type of data ('loyalty_data', 'location-data', etc.)
+ * @param department Optional department prefix for filtering (e.g., 'data', 'reporting')
  * @returns Array of filtered filenames
  */
 export const filterFilesByDateAndType = (
-  files: string[], 
-  startDate: Date | null, 
+  files: string[],
+  startDate: Date | null,
   endDate: Date | null,
-  reportType: string
+  dataType: string,
+  department?: string
 ): string[] => {
   if (!startDate || !endDate) return [];
   
   return files.filter(filename => {
-    // Check if filename matches the report type
-    if (!filename.startsWith(reportType)) return false;
+    // Check if filename matches the data type pattern
+    // Handle both formats: loyalty_data_MM-DD-YYYY.csv and legacy format
+    const isLoyaltyData = filename.startsWith('loyalty_data_');
+    const legacyPattern = department ? `${department}-${dataType}` : dataType;
+    const matchesPattern = isLoyaltyData || filename.startsWith(legacyPattern);
+    
+    if (!matchesPattern) return false;
     
     // Extract and check date
     const fileDate = extractDateFromFilename(filename);

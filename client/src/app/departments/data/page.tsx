@@ -34,18 +34,15 @@ import {
   DEFAULT_LOCATION_IDS
 } from "@/lib/legacyLambdaProcessing";
 
-const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_DATA_BUCKET_URL || "https://qu-location-ids.s3.us-east-2.amazonaws.com";
+const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
+const LOYALTY_DATA_FOLDER = process.env.NEXT_PUBLIC_LOYALTY_DATA_FOLDER || "loyalty-data-pool/";
 
-// PLACEHOLDER: Data file types - to be updated when actual CSV format is provided
-// These will need to match the actual filename patterns in the S3 bucket
+// Data file types based on the new loyalty_data_MM-DD-YYYY.csv format
 const DATA_TYPES = [
-  { value: 'location-data', label: 'Location Data' },
-  { value: 'transaction-data', label: 'Transaction Data' },
-  { value: 'summary-data', label: 'Summary Data' }
+  { value: 'loyalty_data', label: 'Loyalty Data' }
 ];
 
-// NOTE: The current implementation assumes filenames follow the pattern: type-MMDDYYYY.csv
-// This may need adjustment based on actual file naming conventions in the qu-location-ids bucket
+// NOTE: The current implementation handles filenames that follow the pattern: loyalty_data_MM-DD-YYYY.csv
 
 const DataPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
@@ -92,8 +89,8 @@ const DataPage = () => {
   // Fetch S3 files for client-side processing
   const fetchFiles = async () => {
     try {
-      // Use the fetchS3Files utility from csvProcessing
-      const fileList = await fetchS3Files(S3_DATA_BUCKET);
+      // Use the fetchS3Files utility from csvProcessing with the folder path
+      const fileList = await fetchS3Files(S3_DATA_LAKE, LOYALTY_DATA_FOLDER);
       setAllS3Files(fileList);
     } catch (err) {
       console.error("File fetch failed:", err);
@@ -119,7 +116,8 @@ const DataPage = () => {
         allS3Files,
         startDate,
         endDate,
-        dataType
+        dataType,
+        "data" // Optional department prefix
       );
 
       if (matchingFiles.length === 0) {
@@ -129,12 +127,14 @@ const DataPage = () => {
       }
 
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
-
-      // Create full URLs for the files
-      const fileUrls = matchingFiles.map(filename => `${S3_DATA_BUCKET}/${filename}`);
-
-      // Process all files (fetch and parse)
-      const combinedData = await processMultipleCSVs(fileUrls);
+      
+      // Process all files using the updated processMultipleCSVs function
+      // which now accepts bucket URL and folder path
+      const combinedData = await processMultipleCSVs(
+        matchingFiles,
+        S3_DATA_LAKE,
+        LOYALTY_DATA_FOLDER
+      );
       
       // Apply filters if selected
       let filteredData = combinedData;
