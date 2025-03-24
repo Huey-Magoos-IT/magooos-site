@@ -204,13 +204,13 @@ const CSVDataTable = ({
   };
 
   return (
-    <Paper className="overflow-hidden rounded-lg dark:bg-dark-secondary">
-      <Box className="flex items-center justify-between bg-blue-50 p-3 dark:bg-dark-tertiary">
+    <Paper className="overflow-hidden rounded-lg border border-gray-100 shadow-md dark:bg-dark-secondary dark:border-stroke-dark">
+      <Box className="flex items-center justify-between bg-blue-50 p-3 border-b border-blue-100 dark:bg-dark-tertiary dark:border-blue-900/30">
         <div>
-          <Typography variant="h6" className="font-semibold dark:text-white">
+          <Typography variant="h6" className="font-semibold text-gray-800 dark:text-white">
             Data Preview
           </Typography>
-          <Typography variant="body2" className="text-gray-600 dark:text-gray-300">
+          <Typography variant="body2" className="text-blue-700 dark:text-blue-300 font-medium">
             {getFilterInfoText()}
           </Typography>
         </div>
@@ -218,7 +218,7 @@ const CSVDataTable = ({
           <Button
             variant="outlined"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="border-blue-400 hover:border-blue-500 dark:border-blue-600 dark:hover:border-blue-500"
+            className="border-blue-400 text-blue-600 hover:bg-blue-50 hover:border-blue-500 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/10"
             size="small"
             startIcon={isExpanded ? (
               <Minimize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -232,7 +232,7 @@ const CSVDataTable = ({
             variant="contained"
             startIcon={<Download className="h-4 w-4" />}
             onClick={handleDownload}
-            className="bg-blue-500 hover:bg-blue-600"
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 shadow-md hover:shadow-lg transition-all duration-200"
           >
             Download CSV
           </Button>
@@ -251,14 +251,14 @@ const CSVDataTable = ({
               {columns.map((column) => (
                 <TableCell
                   key={column}
-                  className="cursor-pointer font-semibold dark:bg-dark-tertiary dark:text-neutral-300"
+                  className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
                   onClick={() => handleSort(column)}
                 >
                   <TableSortLabel
                     active={orderBy === column}
                     direction={orderBy === column ? orderDirection : 'asc'}
                     onClick={() => handleSort(column)}
-                    IconComponent={() => <ArrowUpDown className="ml-1 h-4 w-4" />}
+                    IconComponent={() => <ArrowUpDown className="ml-1 h-4 w-4 text-blue-500 dark:text-blue-400" />}
                   >
                     {column}
                   </TableSortLabel>
@@ -271,10 +271,14 @@ const CSVDataTable = ({
               <TableRow
                 key={rowIndex}
                 hover
-                className="transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-dark-tertiary"
+                className={`
+                  transition-colors duration-200
+                  ${rowIndex % 2 === 0 ? 'bg-white dark:bg-dark-secondary' : 'bg-gray-50 dark:bg-dark-tertiary/50'}
+                  hover:bg-blue-50 dark:hover:bg-blue-900/10
+                `}
               >
                 {columns.map((column) => (
-                  <TableCell key={`${rowIndex}-${column}`} className="dark:text-neutral-300">
+                  <TableCell key={`${rowIndex}-${column}`} className="dark:text-white">
                     {row[column] !== null && row[column] !== undefined ? String(row[column]) : ''}
                   </TableCell>
                 ))}
@@ -284,7 +288,7 @@ const CSVDataTable = ({
         </Table>
       </TableContainer>
 
-      <div className="border-t dark:border-stroke-dark">
+      <div className="border-t border-gray-200 dark:border-stroke-dark">
         <div className="flex items-center justify-between px-2">
           <TablePagination
             rowsPerPageOptions={[10, 25, 50, 100]}
@@ -294,10 +298,10 @@ const CSVDataTable = ({
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            className="dark:bg-dark-secondary dark:text-neutral-300"
+            className="dark:bg-dark-secondary dark:text-white"
           />
           {isExpanded && (
-            <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center">
+            <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center font-medium">
               <Maximize2 className="h-3 w-3 mr-1" /> Showing all rows
             </Typography>
           )}

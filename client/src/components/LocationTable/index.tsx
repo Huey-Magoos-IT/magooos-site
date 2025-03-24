@@ -82,17 +82,17 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
   };
 
   return (
-    <Paper 
-      elevation={2} 
-      className="rounded-lg overflow-hidden dark:bg-dark-secondary"
-      sx={{ 
+    <Paper
+      elevation={2}
+      className="rounded-lg overflow-hidden dark:bg-dark-secondary border border-gray-100 dark:border-stroke-dark"
+      sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
-      <Typography variant="h6" className="p-4 font-semibold bg-blue-50 dark:bg-dark-tertiary dark:text-white border-b">
+      <Typography variant="h6" className="p-4 font-semibold bg-blue-50 dark:bg-dark-tertiary dark:text-white border-b border-blue-100 dark:border-blue-900/30">
         Available Locations
       </Typography>
       
@@ -100,8 +100,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell 
-                className="cursor-pointer font-semibold dark:bg-dark-tertiary dark:text-neutral-300"
+              <TableCell
+                className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
                 onClick={() => handleRequestSort('name')}
               >
                 <TableSortLabel
@@ -109,14 +109,14 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
                   direction={orderBy === 'name' ? order : 'asc'}
                   onClick={() => handleRequestSort('name')}
                   IconComponent={() => (
-                    <ArrowUpDown className="h-4 w-4 ml-1" />
+                    <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
                   )}
                 >
                   Location Name
                 </TableSortLabel>
               </TableCell>
-              <TableCell 
-                className="cursor-pointer font-semibold dark:bg-dark-tertiary dark:text-neutral-300"
+              <TableCell
+                className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
                 onClick={() => handleRequestSort('id')}
               >
                 <TableSortLabel
@@ -124,7 +124,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
                   direction={orderBy === 'id' ? order : 'asc'}
                   onClick={() => handleRequestSort('id')}
                   IconComponent={() => (
-                    <ArrowUpDown className="h-4 w-4 ml-1" />
+                    <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
                   )}
                 >
                   ID
@@ -170,26 +170,29 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
                 </TableCell>
               </TableRow>
             ) : sortedLocations.length > 0 ? (
-              sortedLocations.map((location) => (
-                <TableRow 
+              sortedLocations.map((location, index) => (
+                <TableRow
                   key={location.id}
                   hover
-                  className="cursor-pointer transition-colors duration-200"
+                  className={`
+                    cursor-pointer transition-colors duration-200
+                    ${index % 2 === 0 ? 'bg-white dark:bg-dark-secondary' : 'bg-gray-50 dark:bg-dark-tertiary/50'}
+                  `}
                   onClick={() => onLocationSelect(location)}
                   onMouseEnter={() => setHoveredRow(location.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                   sx={{
-                    backgroundColor: hoveredRow === location.id ? 'rgba(25, 118, 210, 0.08)' : 'inherit',
+                    backgroundColor: hoveredRow === location.id ? 'rgba(59, 130, 246, 0.08)' : 'inherit',
                     '&:hover': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
                     },
                     '&:active': {
-                      backgroundColor: 'rgba(25, 118, 210, 0.16)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.16)',
                     },
                   }}
                 >
-                  <TableCell className="dark:text-neutral-300">{location.name}</TableCell>
-                  <TableCell className="dark:text-neutral-300">{location.id}</TableCell>
+                  <TableCell className="dark:text-white">{location.name}</TableCell>
+                  <TableCell className="dark:text-white">{location.id}</TableCell>
                 </TableRow>
               ))
             ) : (
@@ -203,8 +206,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
         </Table>
       </TableContainer>
       
-      <Box className="p-3 bg-blue-50 border-t flex justify-end items-center dark:bg-dark-tertiary dark:text-neutral-300">
-        <Typography variant="body2" className="text-sm">
+      <Box className="p-3 bg-blue-50 border-t border-blue-100 flex justify-end items-center dark:bg-dark-tertiary dark:border-blue-900/30 dark:text-white">
+        <Typography variant="body2" className="text-sm font-medium text-blue-700 dark:text-blue-300">
           {isLoading ? 'Loading...' : `${sortedLocations.length} location${sortedLocations.length !== 1 ? 's' : ''} available`}
         </Typography>
       </Box>
