@@ -286,15 +286,20 @@ export const enhanceCSVWithLocationNames = (
  * @param locations Array of location objects with id and name properties for mapping IDs to names
  * @returns Filtered data
  */
- */
 export const filterData = (
   data: any[],
   locationIds: string[] = [],
   discountIds: number[] = [],
   locations: { id: string; name: string }[] = []
 ): any[] => {
+  // Debug info
+  console.log("FILTER DATA - Starting with rows:", data.length);
+  console.log("FILTER DATA - Selected location IDs:", locationIds);
+  console.log("FILTER DATA - Selected discount IDs:", discountIds);
+  
   // If no filters applied, return all data
   if (locationIds.length === 0 && discountIds.length === 0) {
+    console.log("FILTER DATA - No filters applied, returning all data");
     return data;
   }
 
@@ -309,7 +314,15 @@ export const filterData = (
     .map(id => locationNameMap[id])
     .filter(Boolean);
   
-  return data.filter(row => {
+  console.log("FILTER DATA - Location names for filtering:", locationNames);
+  
+  // Sample the first row to see what columns are available
+  if (data.length > 0) {
+    console.log("FILTER DATA - Sample row columns:", Object.keys(data[0]));
+    console.log("FILTER DATA - Sample Store value:", data[0]['Store']);
+  }
+  
+  const filteredData = data.filter(row => {
     
     // Apply location filter if needed
     if (locationIds.length > 0) {
@@ -325,6 +338,9 @@ export const filterData = (
       // Strategy 1: Direct ID match (CSV record has a location ID as a string)
       if (!locationMatch) {
         locationMatch = locationIds.some(id => storeValueStr === id);
+        if (locationMatch) {
+          console.log(`FILTER DATA - Direct ID match: ${storeValueStr} === ${locationIds.find(id => storeValueStr === id)}`);
+        }
       }
       
       // Strategy 2: Name match (CSV record has a location name)
@@ -333,11 +349,17 @@ export const filterData = (
           if (!name) return false;
           const nameStr = String(name);
           
-          return (
+          const matches = (
             storeValueStr.includes(nameStr) ||
             // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
             (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false)
           );
+          
+          if (matches) {
+            console.log(`FILTER DATA - Name match: ${storeValueStr} includes ${nameStr}`);
+          }
+          
+          return matches;
         });
       }
       
@@ -346,6 +368,9 @@ export const filterData = (
         // In case the CSV has numeric location codes (IDs without leading/trailing text)
         // that match our locationIds
         locationMatch = locationIds.includes(storeValueStr);
+        if (locationMatch) {
+          console.log(`FILTER DATA - Numeric code match: ${storeValueStr} in locationIds`);
+        }
       }
       
       if (!locationMatch) return false;
@@ -374,6 +399,8 @@ export const filterData = (
         discountIds.includes(135739) &&
         discountIds.includes(135910);
       
+      console.log("FILTER DATA - Using default discounts:", usingDefaultDiscounts);
+      
       // Only apply discount filtering if the user has changed the defaults
       if (!usingDefaultDiscounts) {
         // Look for exact discount ID matches in relevant columns
@@ -384,11 +411,18 @@ export const filterData = (
             const discountId2 = row['DiscountId'] ? Number(row['DiscountId']) : null;
             const discountId3 = row['DISCL ID'] ? Number(row['DISCL ID']) : null;
             
-            return (
+            // Log the discount IDs found in the row
+            if (discountId1 !== null || discountId2 !== null || discountId3 !== null) {
+              console.log(`FILTER DATA - Row discount IDs: ${discountId1}, ${discountId2}, ${discountId3}`);
+            }
+            
+            const matches = (
               (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
               (discountId2 !== null && !isNaN(discountId2) && discountIds.includes(discountId2)) ||
               (discountId3 !== null && !isNaN(discountId3) && discountIds.includes(discountId3))
             );
+            
+            return matches;
           } catch (e) {
             console.warn('Error comparing discount IDs:', e);
             return false;
@@ -401,4 +435,7 @@ export const filterData = (
     
     return true;
   });
+  
+  console.log(`FILTER DATA - Filtered from ${data.length} to ${filteredData.length} rows`);
+  return filteredData;
 };

@@ -91,7 +91,9 @@ const DataPage = () => {
   const fetchFiles = async () => {
     try {
       // Use the fetchS3Files utility from csvProcessing with the folder path
+      console.log("DATA PAGE - Fetching files from:", S3_DATA_LAKE, LOYALTY_DATA_FOLDER);
       const fileList = await fetchS3Files(S3_DATA_LAKE, LOYALTY_DATA_FOLDER);
+      console.log("DATA PAGE - Files found:", fileList);
       setAllS3Files(fileList);
     } catch (err) {
       console.error("File fetch failed:", err);
@@ -129,29 +131,29 @@ const DataPage = () => {
 
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
       
-      // Process all files using the updated processMultipleCSVs function
-      const combinedData = await processMultipleCSVs(
-        matchingFiles,
-        S3_DATA_LAKE,
-        LOYALTY_DATA_FOLDER
-      );
+      // Create full URLs for the files - matching the Reporting page approach
+      const fileUrls = matchingFiles.map(filename => `${S3_DATA_LAKE}/${LOYALTY_DATA_FOLDER}${filename}`);
+      
+      // Process all files (fetch and parse) - same as Reporting page
+      setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
+      const combinedData = await processMultipleCSVs(fileUrls);
       
       // Log sample data for debugging
       if (combinedData.length > 0) {
         console.log("DATA PAGE - Sample CSV Data:", combinedData[0]);
       }
       
-      // Enhance the CSV data with location names
-      setProcessingProgress("Enhancing data with location information...");
-      const enhancedData = enhanceCSVWithLocationNames(combinedData, selectedLocations);
-      
-      // Apply filters if selected
-      let filteredData = enhancedData;
+      // Apply filters if selected - do this BEFORE enhancing with location names
+      let filteredData = combinedData;
       if (selectedLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
         // Pass the full locations array for mapping IDs to names
-        filteredData = filterData(enhancedData, selectedLocationIds, discountIds, selectedLocations);
+        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
       }
+      
+      // Enhance the CSV data with location names AFTER filtering
+      setProcessingProgress("Enhancing data with location information...");
+      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations);
 
       // Additional debugging
       console.log(`DATA PAGE - Processing complete: ${filteredData.length} rows after filtering`);
