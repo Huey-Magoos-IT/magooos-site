@@ -8,11 +8,24 @@ import Papa from 'papaparse';
  */
 export const fetchFiles = async (bucketUrl: string, folderPath: string = ""): Promise<string[]> => {
   try {
-    // Ensure the URL ends with a slash if a folder path is provided
+    // Ensure the URL ends with a slash
     const baseUrl = bucketUrl.endsWith('/') ? bucketUrl : `${bucketUrl}/`;
-    // Make the request to the specific folder
-    const response = await fetch(`${baseUrl}${folderPath}`);
+    
+    // For S3 bucket listing with a prefix (folder), we need to use the correct query parameter
+    const url = folderPath
+      ? `${baseUrl}?list-type=2&prefix=${encodeURIComponent(folderPath)}`
+      : baseUrl;
+      
+    console.log("Fetching S3 files from URL:", url);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`S3 request failed: ${response.status} ${response.statusText}`);
+    }
+    
     const str = await response.text();
+    console.log("S3 response:", str.substring(0, 200) + "..."); // Log first 200 chars for debugging
+    
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(str, "text/xml");
     
@@ -20,13 +33,16 @@ export const fetchFiles = async (bucketUrl: string, folderPath: string = ""): Pr
       throw new Error("Invalid XML response from S3");
     }
 
-    const keys = xmlDoc.getElementsByTagName("Key");
-    // Get files and reverse the order so newest files appear first
-    // Filter to only include files within the specified folder
-    const fileList = Array.from(keys)
-      .map(key => key.textContent || "")
+    // S3 XML response format changed in list-type=2, so we need to look for Contents/Key
+    const contents = xmlDoc.getElementsByTagName("Contents");
+    const fileList = Array.from(contents)
+      .map(content => {
+        const keyElement = content.getElementsByTagName("Key")[0];
+        return keyElement ? keyElement.textContent || "" : "";
+      })
+      .filter(Boolean)
+      // If folder path is provided, filter to only include files within that folder and remove the prefix
       .filter(key => folderPath ? key.startsWith(folderPath) : true)
-      // Remove the folder prefix to get just the filename if a folder path is provided
       .map(key => folderPath ? key.substring(folderPath.length) : key)
       .filter(Boolean)
       .reverse(); // Reverse to show newest files first
