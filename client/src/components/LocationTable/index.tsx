@@ -111,8 +111,9 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
                   IconComponent={() => (
                     <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
                   )}
+                  className="dark:text-white"
                 >
-                  Location Name
+                  <span className="dark:text-white">Location Name</span>
                 </TableSortLabel>
               </TableCell>
               <TableCell
@@ -126,8 +127,9 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
                   IconComponent={() => (
                     <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
                   )}
+                  className="dark:text-white"
                 >
-                  ID
+                  <span className="dark:text-white">ID</span>
                 </TableSortLabel>
               </TableCell>
             </TableRow>

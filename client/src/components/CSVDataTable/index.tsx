@@ -259,8 +259,9 @@ const CSVDataTable = ({
                     direction={orderBy === column ? orderDirection : 'asc'}
                     onClick={() => handleSort(column)}
                     IconComponent={() => <ArrowUpDown className="ml-1 h-4 w-4 text-blue-500 dark:text-blue-400" />}
+                    className="dark:text-white"
                   >
-                    {column}
+                    <span className="dark:text-white">{column}</span>
                   </TableSortLabel>
                 </TableCell>
               ))}
