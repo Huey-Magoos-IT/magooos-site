@@ -299,6 +299,13 @@ const CSVDataTable = ({
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             className="dark:bg-dark-secondary dark:text-white"
+            labelRowsPerPage={<span className="dark:text-white">Rows per page:</span>}
+            backIconButtonProps={{
+              className: "dark:text-white"
+            }}
+            nextIconButtonProps={{
+              className: "dark:text-white"
+            }}
           />
           {isExpanded && (
             <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center font-medium">

@@ -219,15 +219,15 @@ const ReportingPage = () => {
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value as string)}
                     label="Report Type"
-                    className="border-gray-200 dark:border-stroke-dark"
+                    className="border-gray-200 dark:border-stroke-dark dark:text-white"
                   >
                     {REPORT_TYPES.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
+                      <MenuItem key={type.value} value={type.value} className="dark:text-gray-200">
                         {type.label}
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>Select the type of report to generate</FormHelperText>
+                  <FormHelperText className="dark:text-gray-300">Select the type of report to generate</FormHelperText>
                 </FormControl>
 
                 <DatePicker
@@ -311,6 +311,12 @@ const ReportingPage = () => {
                       onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
                       variant="outlined"
                       className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                      InputProps={{
+                        className: "dark:text-white"
+                      }}
+                      InputLabelProps={{
+                        className: "dark:text-gray-300"
+                      }}
                       fullWidth
                     />
                   </div>
