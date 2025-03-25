@@ -267,7 +267,7 @@ export const enhanceCSVWithLocationNames = (
     
     // Check if row has numeric location ID but no location name
     const storeId = row['LocationID'] || row['Location ID'] || row['Store'];
-    if (storeId && !isNaN(String(storeId)) && locationMap[String(storeId)]) {
+    if (storeId && !isNaN(Number(storeId)) && locationMap[String(storeId)]) {
       // Add a new column with the proper location name
       newRow['Location Name'] = locationMap[String(storeId)];
       // Keep the original ID for reference
