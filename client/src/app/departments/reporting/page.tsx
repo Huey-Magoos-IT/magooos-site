@@ -27,7 +27,9 @@ import {
   fetchFiles as fetchS3Files,
   filterFilesByDateAndType,
   processMultipleCSVs,
-  filterData
+  filterData,
+  fetchEmployeeData,
+  enhanceCSVWithEmployeeNames
 } from "@/lib/csvProcessing";
 import { 
   DEFAULT_DISCOUNT_IDS, 
@@ -139,6 +141,14 @@ const ReportingPage = () => {
         // Pass the full locations array for mapping IDs to names
         filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
       }
+      
+      // Fetch employee data and enhance CSV with employee names
+      setProcessingProgress("Fetching employee data...");
+      const employeeData = await fetchEmployeeData();
+      
+      // Enhance CSV data with employee names
+      setProcessingProgress("Enhancing data with employee names...");
+      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData);
 
       setCSVData(filteredData);
       setProcessingProgress("");

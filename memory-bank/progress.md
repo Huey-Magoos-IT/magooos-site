@@ -43,6 +43,14 @@
 
 ## Recent Enhancements
 
+### March 27, 2025
+- Implemented employee name resolution for CSV data in both Reporting and Data Department pages
+- Added functionality to fetch employee data from "employee-list-incentivio" bucket
+- Created mapping system to replace "Unknown" guest names with actual employee names
+- Implemented caching mechanism to improve performance for employee data
+- Updated technical changelog with detailed documentation of the enhancement
+- Updated Memory Bank to reflect the new functionality
+
 ### March 17, 2025
 - Enhanced Data Department page with client-side CSV processing capabilities
 - Replicated Reporting page functionality for the Data Department

@@ -28,7 +28,9 @@ import {
   filterFilesByDateAndType,
   processMultipleCSVs,
   filterData,
-  enhanceCSVWithLocationNames
+  enhanceCSVWithLocationNames,
+  fetchEmployeeData,
+  enhanceCSVWithEmployeeNames
 } from "@/lib/csvProcessing";
 import {
   DEFAULT_DISCOUNT_IDS,
@@ -154,6 +156,14 @@ const DataPage = () => {
       // Enhance the CSV data with location names AFTER filtering
       setProcessingProgress("Enhancing data with location information...");
       filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations);
+      
+      // Fetch employee data and enhance CSV with employee names
+      setProcessingProgress("Fetching employee data...");
+      const employeeData = await fetchEmployeeData();
+      
+      // Enhance CSV data with employee names
+      setProcessingProgress("Enhancing data with employee names...");
+      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData);
 
       // Additional debugging
       console.log(`DATA PAGE - Processing complete: ${filteredData.length} rows after filtering`);

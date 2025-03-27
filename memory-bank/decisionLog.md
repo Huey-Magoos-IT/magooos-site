@@ -1,5 +1,75 @@
 # Decision Log
 
+## 2025-03-27: Employee Name Resolution Enhancement
+
+### Problem
+The reporting system displayed "Unknown" for guest names in CSV data, which limited the usefulness of the reports:
+1. Users couldn't identify employees by name in the reports
+2. The "Unknown" placeholder made it difficult to track patterns across reports
+3. The original loyalty IDs were preserved but not in a user-friendly format
+
+### Investigation
+1. Examined the existing CSV data format and identified the "Unknown" guest name issue
+2. Reviewed the Python implementation in the Lambda function that performs employee name resolution
+3. Analyzed the structure of the "Customer_Export.csv" file in the "employee-list-incentivio" bucket
+4. Evaluated the feasibility of implementing similar functionality in TypeScript for client-side processing
+
+### Decision Points
+
+#### Decision 1: Implement Client-Side Employee Data Resolution
+- **Choice**: Create a client-side implementation of employee name resolution similar to the Lambda function
+- **Rationale**: Enhances data quality without requiring server-side processing
+- **Alternatives Considered**:
+  - Modifying the Lambda function (rejected due to timeout constraints)
+  - Creating a new Lambda function just for name resolution (rejected for simplicity)
+- **Consequences**: Improved data quality with minimal performance impact
+
+#### Decision 2: Use Caching for Employee Data
+- **Choice**: Implement a module-level cache for employee data
+- **Rationale**: Prevents redundant fetching of the same data during a session
+- **Alternatives Considered**:
+  - No caching (rejected due to performance concerns)
+  - Local storage caching (rejected due to potential staleness issues)
+- **Consequences**: Better performance without sacrificing data freshness
+
+#### Decision 3: Preserve Original IDs While Adding Names
+- **Choice**: Keep original loyalty IDs in the data while adding resolved names
+- **Rationale**: Maintains traceability and debugging capability
+- **Alternatives Considered**:
+  - Completely replacing IDs with names (rejected for data integrity)
+  - Adding a separate column (rejected for UI simplicity)
+- **Consequences**: Enhanced data without losing original information
+
+#### Decision 5: Handle Various CSV Formats
+- **Choice**: Implement flexible column name detection and ID normalization
+- **Rationale**: Ensures compatibility with different CSV export formats
+- **Alternatives Considered**:
+  - Requiring a specific format (rejected for flexibility)
+  - Creating format-specific parsers (rejected for maintainability)
+- **Consequences**: More robust solution that works with various data sources
+
+#### Decision 4: Apply Enhancement to Both Departments
+- **Choice**: Implement the enhancement for both Reporting and Data Department pages
+- **Rationale**: Provides consistent user experience across the application
+- **Alternatives Considered**:
+  - Implementing only for Reporting (rejected for consistency)
+  - Making it an optional feature (rejected for simplicity)
+- **Consequences**: Unified data enhancement approach across the application
+
+### Implementation
+1. Added functions to fetch and parse employee data from S3
+2. Created a mapping system to resolve loyalty IDs to employee names
+3. Implemented caching to improve performance
+4. Updated both department pages to use the new enhancement
+5. Added progress indicators for the new processing steps
+6. Created comprehensive documentation in the technical changelog
+
+### Impact
+- Enhanced data quality with actual employee names
+- Improved report readability and usability
+- Maintained backward compatibility with existing functionality
+- Added minimal performance overhead due to efficient caching
+
 ## 2025-03-17: Data Department CSV Processing Enhancement
 
 ### Problem

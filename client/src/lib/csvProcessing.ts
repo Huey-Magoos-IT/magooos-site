@@ -1,5 +1,81 @@
 import Papa from 'papaparse';
 
+// S3 bucket for employee data
+const EMPLOYEE_BUCKET_URL = process.env.NEXT_PUBLIC_EMPLOYEE_BUCKET_URL || "https://employee-list-incentivio.s3.us-east-2.amazonaws.com";
+const EMPLOYEE_FILE_NAME = "Customer_Export.csv";
+
+// Cache for employee data to avoid fetching it multiple times
+let employeeDataCache: Record<string, string> | null = null;
+
+/**
+ * Fetches and parses employee data from S3
+ * @returns Promise resolving to a mapping of loyalty IDs to employee names
+ */
+export const fetchEmployeeData = async (): Promise<Record<string, string>> => {
+  // Return cached data if available
+  if (employeeDataCache) {
+    console.log("Using cached employee data");
+    return employeeDataCache;
+  }
+
+  try {
+    console.log(`Fetching employee data from ${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
+    const csvText = await fetchCSV(`${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
+    const result = await parseCSV(csvText);
+    
+    const employeeData: Record<string, string> = {};
+    
+    // Process each row in the employee data
+    result.data.forEach((row: any) => {
+      // Extract loyalty ID and name components
+      // Check for various possible column names based on the actual CSV format
+      const loyaltyId = row['Customer_First Name'] || row['Loyalty ID'] || row['LoyaltyID'] || '';
+      
+      // Extract name components - check various possible column formats
+      const firstName = row['First Name'] || row['FirstName'] || '';
+      const lastName = row['Last Name'] || row['LastName'] || '';
+      
+      // If we have a loyalty ID but no name components, try to extract from other fields
+      let fullName = '';
+      if (firstName || lastName) {
+        fullName = `${firstName} ${lastName}`.trim();
+      } else {
+        // Try to find a full name field
+        fullName = row['Customer_Full Name'] || row['FullName'] || row['Name'] || '';
+      }
+      
+      // Only add entries with valid loyalty IDs and names
+      if (loyaltyId && fullName) {
+        employeeData[loyaltyId] = fullName;
+      }
+    });
+    
+    console.log("Sample employee data mapping:",
+      Object.entries(employeeData).slice(0, 5).map(([id, name]) => `${id}: ${name}`));
+    
+    console.log(`Loaded ${Object.keys(employeeData).length} employee records`);
+    
+    // Cache the data for future use
+    employeeDataCache = employeeData;
+    
+    return employeeData;
+  } catch (error) {
+    console.error('Error fetching employee data:', error);
+    // Return empty object on error
+    return {};
+  }
+};
+
+/**
+ * Gets employee name from loyalty ID
+ * @param loyaltyId Loyalty ID to look up
+ * @param employeeData Employee data mapping
+ * @returns Employee name or "Unknown (ID: xyz)" if not found
+ */
+export const getEmployeeName = (loyaltyId: string, employeeData: Record<string, string>): string => {
+  return employeeData[loyaltyId] || `Unknown (ID: ${loyaltyId})`;
+};
+
 /**
  * Fetches a list of files from an S3 bucket URL
  * @param bucketUrl URL to the S3 bucket
@@ -438,4 +514,62 @@ export const filterData = (
   
   console.log(`FILTER DATA - Filtered from ${data.length} to ${filteredData.length} rows`);
   return filteredData;
+};
+
+/**
+ * Enhance CSV data with employee names
+ * Maps loyalty IDs to actual employee names in the data
+ * @param data Array of data objects
+ * @param employeeData Mapping of loyalty IDs to employee names
+ * @returns Enhanced data with employee names
+ */
+export const enhanceCSVWithEmployeeNames = (
+  data: any[],
+  employeeData: Record<string, string> = {}
+): any[] => {
+  if (!data.length || Object.keys(employeeData).length === 0) return data;
+  
+  console.log("Enhancing CSV data with employee names");
+  
+  return data.map(row => {
+    const newRow = { ...row };
+    
+    // Check for loyalty ID in various possible column names
+    // The loyalty ID might be in different formats or column names
+    const loyaltyId = row['Loyalty ID'] || row['LoyaltyID'] || row['loyalty_id'] || '';
+    
+    // Clean up the loyalty ID - remove any non-alphanumeric characters
+    // This helps match IDs that might have different formatting
+    const cleanLoyaltyId = String(loyaltyId).replace(/[^a-zA-Z0-9]/g, '');
+    
+    if (cleanLoyaltyId) {
+      // Try to find the employee name using both original and cleaned loyalty ID
+      let employeeName = employeeData[String(loyaltyId)];
+      
+      // If not found with original ID, try with cleaned ID
+      if (!employeeName) {
+        employeeName = employeeData[cleanLoyaltyId];
+      }
+      
+      // If still not found, use the default format
+      if (!employeeName) {
+        employeeName = `Unknown (ID: ${loyaltyId})`;
+      }
+      
+      // Replace "Unknown" in Guest Name column with actual employee name
+      if (row['Guest Name'] && row['Guest Name'].includes('Unknown')) {
+        newRow['Guest Name'] = employeeName;
+      }
+      
+      // If there's no Guest Name column, add it
+      if (!row['Guest Name']) {
+        newRow['Guest Name'] = employeeName;
+      }
+      
+      // Keep the original loyalty ID for reference
+      newRow['Loyalty ID'] = loyaltyId;
+    }
+    
+    return newRow;
+  });
 };
