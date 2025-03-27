@@ -21,37 +21,39 @@ export const fetchEmployeeData = async (): Promise<Record<string, string>> => {
   try {
     console.log(`Fetching employee data from ${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
     const csvText = await fetchCSV(`${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
-    const result = await parseCSV(csvText);
     
+    // Parse CSV manually to match Python implementation exactly
+    const lines = csvText.split('\n');
     const employeeData: Record<string, string> = {};
     
-    // Process each row in the employee data
-    result.data.forEach((row: any) => {
-      // Extract loyalty ID and name components
-      // Check for various possible column names based on the actual CSV format
-      const loyaltyId = row['Customer_First Name'] || row['Loyalty ID'] || row['LoyaltyID'] || '';
-      
-      // Extract name components - check various possible column formats
-      const firstName = row['First Name'] || row['FirstName'] || '';
-      const lastName = row['Last Name'] || row['LastName'] || '';
-      
-      // If we have a loyalty ID but no name components, try to extract from other fields
-      let fullName = '';
-      if (firstName || lastName) {
-        fullName = `${firstName} ${lastName}`.trim();
-      } else {
-        // Try to find a full name field
-        fullName = row['Customer_Full Name'] || row['FullName'] || row['Name'] || '';
-      }
-      
-      // Only add entries with valid loyalty IDs and names
-      if (loyaltyId && fullName) {
-        employeeData[loyaltyId] = fullName;
-      }
-    });
+    console.log(`Total lines in employee data: ${lines.length}`);
+    console.log(`Header: ${lines[0]}`);
     
+    // Skip header line
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+      
+      // Split by comma and clean up values - exactly like Python implementation
+      const parts = line.split(',');
+      if (parts.length >= 3) {
+        const loyaltyId = parts[0].trim().replace(/"/g, '');
+        const firstName = parts[1].trim().replace(/"/g, '');
+        const lastName = parts[2].trim().replace(/"/g, '');
+        
+        // Only add entries with valid loyalty IDs
+        if (loyaltyId) {
+          employeeData[loyaltyId] = `${firstName} ${lastName}`.trim();
+        }
+      }
+    }
+    
+    console.log(`Loaded ${Object.keys(employeeData).length} employee records`);
+    
+    // Debug: Log a sample of the employee data
+    const sampleEntries = Object.entries(employeeData).slice(0, 5);
     console.log("Sample employee data mapping:",
-      Object.entries(employeeData).slice(0, 5).map(([id, name]) => `${id}: ${name}`));
+      sampleEntries.map(([id, name]) => `${id}: ${name}`).join(', '));
     
     console.log(`Loaded ${Object.keys(employeeData).length} employee records`);
     
@@ -73,7 +75,15 @@ export const fetchEmployeeData = async (): Promise<Record<string, string>> => {
  * @returns Employee name or "Unknown (ID: xyz)" if not found
  */
 export const getEmployeeName = (loyaltyId: string, employeeData: Record<string, string>): string => {
-  return employeeData[loyaltyId] || `Unknown (ID: ${loyaltyId})`;
+  // Exact match with the Python implementation
+  const result = employeeData[loyaltyId] || `Unknown (ID: ${loyaltyId})`;
+  
+  // Debug logging for unknown IDs
+  if (result.includes('Unknown')) {
+    console.log(`DEBUG - Unknown employee: Loyalty ID "${loyaltyId}" not found in employee data`);
+  }
+  
+  return result;
 };
 
 /**
@@ -527,49 +537,65 @@ export const enhanceCSVWithEmployeeNames = (
   data: any[],
   employeeData: Record<string, string> = {}
 ): any[] => {
-  if (!data.length || Object.keys(employeeData).length === 0) return data;
+  if (!data.length || Object.keys(employeeData).length === 0) {
+    console.log("DEBUG - No data or employee data to enhance");
+    return data;
+  }
   
-  console.log("Enhancing CSV data with employee names");
+  console.log(`Enhancing CSV data with employee names (${data.length} rows, ${Object.keys(employeeData).length} employee records)`);
   
-  return data.map(row => {
+  // Track statistics for debugging
+  let totalRows = 0;
+  let enhancedRows = 0;
+  let unknownRows = 0;
+  let missingLoyaltyIdRows = 0;
+  
+  const result = data.map(row => {
+    totalRows++;
     const newRow = { ...row };
     
-    // Check for loyalty ID in various possible column names
-    // The loyalty ID might be in different formats or column names
-    const loyaltyId = row['Loyalty ID'] || row['LoyaltyID'] || row['loyalty_id'] || '';
+    // Check for loyalty ID in various possible column names - exactly like Python implementation
+    const loyaltyId = row['Loyalty ID'] || '';
     
-    // Clean up the loyalty ID - remove any non-alphanumeric characters
-    // This helps match IDs that might have different formatting
-    const cleanLoyaltyId = String(loyaltyId).replace(/[^a-zA-Z0-9]/g, '');
-    
-    if (cleanLoyaltyId) {
-      // Try to find the employee name using both original and cleaned loyalty ID
-      let employeeName = employeeData[String(loyaltyId)];
-      
-      // If not found with original ID, try with cleaned ID
-      if (!employeeName) {
-        employeeName = employeeData[cleanLoyaltyId];
-      }
-      
-      // If still not found, use the default format
-      if (!employeeName) {
-        employeeName = `Unknown (ID: ${loyaltyId})`;
-      }
-      
-      // Replace "Unknown" in Guest Name column with actual employee name
-      if (row['Guest Name'] && row['Guest Name'].includes('Unknown')) {
-        newRow['Guest Name'] = employeeName;
-      }
-      
-      // If there's no Guest Name column, add it
-      if (!row['Guest Name']) {
-        newRow['Guest Name'] = employeeName;
-      }
-      
-      // Keep the original loyalty ID for reference
-      newRow['Loyalty ID'] = loyaltyId;
+    if (!loyaltyId) {
+      missingLoyaltyIdRows++;
+      console.log(`DEBUG - Row ${totalRows}: Missing loyalty ID`);
+      return newRow;
     }
+    
+    // Get employee name using the exact same function as Python
+    const employeeName = getEmployeeName(loyaltyId, employeeData);
+    
+    // Track if this was an unknown employee
+    if (employeeName.includes('Unknown')) {
+      unknownRows++;
+    } else {
+      enhancedRows++;
+    }
+    
+    // Replace "Unknown" in Guest Name column with actual employee name
+    if (row['Guest Name'] && row['Guest Name'].includes('Unknown')) {
+      newRow['Guest Name'] = employeeName;
+    }
+    
+    // If there's no Guest Name column, add it
+    if (!row['Guest Name']) {
+      newRow['Guest Name'] = employeeName;
+    }
+    
+    // Keep the original loyalty ID for reference
+    newRow['Loyalty ID'] = loyaltyId;
     
     return newRow;
   });
+  
+  // Log statistics for debugging
+  console.log(`DEBUG - CSV Enhancement Stats:
+  - Total rows processed: ${totalRows}
+  - Rows with enhanced names: ${enhancedRows}
+  - Rows with unknown names: ${unknownRows}
+  - Rows missing loyalty IDs: ${missingLoyaltyIdRows}
+  - Success rate: ${enhancedRows > 0 ? Math.round((enhancedRows / (enhancedRows + unknownRows)) * 100) : 0}%`);
+  
+  return result;
 };

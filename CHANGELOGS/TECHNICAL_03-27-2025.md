@@ -5,6 +5,20 @@
 ### Overview
 Implemented a new feature to resolve "Unknown" guest names in CSV reports by fetching employee data from the "employee-list-incentivio" bucket. This enhancement improves data quality and usability in both the Reporting and Data Department pages.
 
+### Update (March 27, 2025 - 11:30 AM)
+Enhanced the employee name resolution implementation to more closely match the Python Lambda implementation, with additional debugging to identify why unknown names might still appear:
+
+1. **Improved CSV Parsing**
+   - Modified the CSV parsing to exactly match the Python implementation
+   - Added manual line-by-line parsing for better control over the format
+   - Enhanced logging to show header information and record counts
+
+2. **Enhanced Debugging**
+   - Added detailed logging for unknown employee IDs
+   - Implemented statistics tracking for name resolution success rates
+   - Added sample data logging to verify loyalty ID formats
+   - Improved error reporting for troubleshooting
+
 ### Implementation Details
 
 #### New Functionality

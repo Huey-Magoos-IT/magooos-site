@@ -70,6 +70,32 @@ The reporting system displayed "Unknown" for guest names in CSV data, which limi
 - Maintained backward compatibility with existing functionality
 - Added minimal performance overhead due to efficient caching
 
+### Update (March 27, 2025)
+After initial implementation, we discovered that some employee names were still showing as "Unknown" in the reports. We made the following additional decisions:
+
+#### Decision 6: Align CSV Parsing with Python Implementation
+- **Choice**: Modify the CSV parsing to exactly match the Python implementation
+- **Rationale**: Ensure consistent behavior between client-side and Lambda processing
+- **Alternatives Considered**:
+  - Using PapaParse with custom configuration (rejected for consistency)
+  - Creating a hybrid approach (rejected for simplicity)
+- **Consequences**: More reliable employee name resolution with consistent behavior
+
+#### Decision 7: Add Comprehensive Debugging
+- **Choice**: Implement detailed logging for employee name resolution
+- **Rationale**: Provide visibility into why some names might still appear as "Unknown"
+- **Alternatives Considered**:
+  - Silent failure (rejected for troubleshooting needs)
+  - Error reporting only (rejected for proactive monitoring)
+- **Consequences**: Better ability to diagnose and fix issues with employee name resolution
+
+#### Implementation Details
+1. Modified CSV parsing to use manual line-by-line processing
+2. Added detailed logging for unknown employee IDs
+3. Implemented statistics tracking for name resolution success rates
+4. Added sample data logging to verify loyalty ID formats
+5. Enhanced error reporting for troubleshooting
+
 ## 2025-03-17: Data Department CSV Processing Enhancement
 
 ### Problem

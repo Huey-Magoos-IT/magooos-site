@@ -161,6 +161,22 @@ const DataPage = () => {
       setProcessingProgress("Fetching employee data...");
       const employeeData = await fetchEmployeeData();
       
+      // Debug log for employee data
+      console.log(`DEBUG - Data Department - Employee data fetched: ${Object.keys(employeeData).length} records`);
+      
+      // Sample the first few loyalty IDs from the data for debugging
+      if (filteredData.length > 0) {
+        const sampleLoyaltyIds = filteredData.slice(0, 5).map(row => row['Loyalty ID'] || 'N/A');
+        console.log(`DEBUG - Data Department - Sample loyalty IDs from data: ${sampleLoyaltyIds.join(', ')}`);
+        
+        // Check if these sample IDs exist in the employee data
+        sampleLoyaltyIds.forEach(id => {
+          if (id !== 'N/A') {
+            console.log(`DEBUG - Data Department - Sample ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`);
+          }
+        });
+      }
+      
       // Enhance CSV data with employee names
       setProcessingProgress("Enhancing data with employee names...");
       filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData);

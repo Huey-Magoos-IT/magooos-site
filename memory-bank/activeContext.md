@@ -45,7 +45,27 @@ We've implemented a new client-side processing system for reports with these key
 - DynamoDB for location data
 - Direct S3 data access from browser for client-side processing
 
-## Most Recent Issue: Location Filtering in Reports
+## Most Recent Issue: Employee Name Resolution in Reports
+
+Problem: Some employee names were still showing as "Unknown" in the CSV reports:
+- The employee name resolution feature was implemented but some names remained as "Unknown"
+- The issue was observed in both Reporting and Data Department pages
+- The same data processed by the Python Lambda function showed proper names
+
+Root cause:
+- The CSV parsing implementation in TypeScript differed from the Python implementation
+- The loyalty ID format in the CSV data might not match exactly with the employee data
+- Lack of detailed debugging made it difficult to identify specific mismatches
+
+Solution implemented:
+1. Modified the CSV parsing to exactly match the Python implementation
+2. Added manual line-by-line parsing for better control over the format
+3. Enhanced logging to show header information and record counts
+4. Added detailed logging for unknown employee IDs
+5. Implemented statistics tracking for name resolution success rates
+6. Added sample data logging to verify loyalty ID formats
+
+## Previous Issue: Location Filtering in Reports
 
 Problem: Location filtering in the reporting page was failing with these symptoms:
 - When selecting "Winter Garden, FL" (ID: 4046), no data was displayed
