@@ -5,7 +5,7 @@ import {
   useUpdateUserTeamMutation,
   useGetAuthUserQuery
 } from "@/state/api";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useAppSelector } from "../redux";
 import Header from "@/components/Header";
 import {
@@ -73,7 +73,7 @@ const Users = () => {
   const availableRoles = useMemo(() => teamsData?.availableRoles || [], [teamsData?.availableRoles]);
   
   // Handle team change
-  const handleTeamChange = async (userId: number, newTeamId: number | null) => {
+  const handleTeamChange = useCallback(async (userId: number, newTeamId: number | null) => {
     // Set status to pending
     setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
     
@@ -97,10 +97,10 @@ const Users = () => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
       }, 3000);
     }
-  };
+  }, [updateUserTeam, setUpdateStatus]);
   
   // Handle team change from dropdown
-  const handleTeamChangeEvent = React.useCallback((event: SelectChangeEvent<number | string>, userId: number) => {
+  const handleTeamChangeEvent = useCallback((event: SelectChangeEvent<number | string>, userId: number) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     handleTeamChange(userId, newTeamId);
   }, [handleTeamChange]);
@@ -237,11 +237,10 @@ const Users = () => {
     }
   ], [teams, isUserAdmin, updateStatus, handleTeamChangeEvent]);
 
-  if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
-  if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;
-  
   // Filter users based on search query and team filter
   const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    
     return users.filter(user => {
       // Filter by search query (case insensitive)
       const matchesSearch = searchQuery === "" ||
@@ -255,6 +254,9 @@ const Users = () => {
       return matchesSearch && matchesTeam;
     });
   }, [users, searchQuery, teamFilter]);
+  
+  if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
+  if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;
 
   return (
     <div className="flex w-full flex-col p-8">
