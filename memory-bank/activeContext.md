@@ -147,6 +147,7 @@ A detailed technical changelog has been created at CHANGELOGS/TECHNICAL_03-31-20
 ✅ Enhanced: Sidebar UI with consolidated header and improved branding
 ✅ Fixed: Build issues with proper escaping of apostrophes and React Hooks dependencies
 ✅ Added: Support for rendering Excel-style hyperlinks as clickable links in CSV data tables
+✅ Enhanced: Location selection with search functionality, clickable chips, undo/clear buttons, and improved date pickers
 
 ## Next Steps
 - Add data visualization and charts to reports

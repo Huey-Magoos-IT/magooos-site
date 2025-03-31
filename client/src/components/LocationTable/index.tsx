@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  Paper, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TableRow,
   Typography,
   Box,
   IconButton,
   TableSortLabel,
   CircularProgress,
-  Button
+  Button,
+  TextField,
+  InputAdornment
 } from '@mui/material';
-import { ArrowUpDown, RefreshCw } from 'lucide-react';
+import { ArrowUpDown, RefreshCw, Search } from 'lucide-react';
 import { useGetLocationsQuery } from '../../state/lambdaApi';
 
 // Define the location type based on DynamoDB schema
@@ -40,6 +42,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
   const [order, setOrder] = useState<Order>('asc');
   const [orderBy, setOrderBy] = useState<OrderBy>('name');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   
   // Get locations from DynamoDB via the Lambda API Gateway
   const { data, isLoading, error, refetch } = useGetLocationsQuery();
@@ -53,23 +56,35 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
     return String(error);
   }, [error]);
 
-  // Filter out already selected locations
+  // Filter out already selected locations and apply search filter
   const availableLocations = useMemo(() => {
     if (!data?.locations) return [];
-    return data.locations.filter(location => !selectedLocationIds.includes(location.id));
-  }, [data, selectedLocationIds]);
+    
+    // First filter out already selected locations
+    const unselectedLocations = data.locations.filter(location => !selectedLocationIds.includes(location.id));
+    
+    // If no search query, return all unselected locations
+    if (!searchQuery.trim()) return unselectedLocations;
+    
+    // Apply search filter (case-insensitive)
+    const query = searchQuery.toLowerCase().trim();
+    return unselectedLocations.filter(location =>
+      location.name.toLowerCase().includes(query) ||
+      location.id.toString().includes(query)
+    );
+  }, [data, selectedLocationIds, searchQuery]);
 
   // Sort locations based on current order and orderBy
   const sortedLocations = useMemo(() => {
     return [...availableLocations].sort((a, b) => {
       const isAsc = order === 'asc';
       if (orderBy === 'name') {
-        return isAsc 
-          ? a.name.localeCompare(b.name) 
+        return isAsc
+          ? a.name.localeCompare(b.name)
           : b.name.localeCompare(a.name);
       } else {
-        return isAsc 
-          ? parseInt(a.id) - parseInt(b.id) 
+        return isAsc
+          ? parseInt(a.id) - parseInt(b.id)
           : parseInt(b.id) - parseInt(a.id);
       }
     });
@@ -92,9 +107,28 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
-      <Typography variant="h6" className="p-4 font-semibold bg-blue-50 dark:bg-dark-tertiary dark:text-white border-b border-blue-100 dark:border-blue-900/30">
-        Available Locations
-      </Typography>
+      <div className="p-4 bg-blue-50 dark:bg-dark-tertiary border-b border-blue-100 dark:border-blue-900/30">
+        <Typography variant="h6" className="font-semibold dark:text-white mb-2">
+          Available Locations
+        </Typography>
+        <TextField
+          placeholder="Search by name or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          size="small"
+          fullWidth
+          className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </InputAdornment>
+            ),
+            className: "dark:text-white"
+          }}
+        />
+      </div>
       
       <TableContainer className="flex-grow" style={{ maxHeight: '400px' }}>
         <Table stickyHeader>
@@ -208,8 +242,13 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
         </Table>
       </TableContainer>
       
-      <Box className="p-3 bg-blue-50 border-t border-blue-100 flex justify-end items-center dark:bg-dark-tertiary dark:border-blue-900/30 dark:text-white">
-        <Typography variant="body2" className="text-sm font-medium text-blue-700 dark:text-blue-300">
+      <Box className="p-3 bg-blue-50 border-t border-blue-100 flex justify-between items-center dark:bg-dark-tertiary dark:border-blue-900/30 dark:text-white">
+        {searchQuery.trim() && data?.locations && (
+          <Typography variant="body2" className="text-sm text-blue-700 dark:text-blue-300">
+            {`Showing ${sortedLocations.length} of ${data.locations.filter(location => !selectedLocationIds.includes(location.id)).length} locations`}
+          </Typography>
+        )}
+        <Typography variant="body2" className="text-sm font-medium text-blue-700 dark:text-blue-300 ml-auto">
           {isLoading ? 'Loading...' : `${sortedLocations.length} location${sortedLocations.length !== 1 ? 's' : ''} available`}
         </Typography>
       </Box>

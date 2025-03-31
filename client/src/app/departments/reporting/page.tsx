@@ -263,10 +263,16 @@ const ReportingPage = () => {
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
                   minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  // Allow selection up to yesterday
+                  // Max date is either yesterday or the end date (if set), whichever is earlier
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
+                    
+                    // If end date is set, don't allow selecting a start date after it
+                    if (endDate) {
+                      return endDate < yesterday ? endDate : yesterday;
+                    }
+                    
                     return yesterday;
                   })()}
                   slotProps={{
@@ -284,8 +290,18 @@ const ReportingPage = () => {
                   onChange={(newValue) => setEndDate(newValue)}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  // Calculate yesterday by creating a new date and setting it to yesterday
+                  // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
+                  minDate={(() => {
+                    const minAllowedDate = new Date(2025, 0, 13, 12, 0, 0); // Jan 13, 2025 at noon
+                    
+                    // If start date is set, don't allow selecting an end date before it
+                    if (startDate) {
+                      return startDate > minAllowedDate ? startDate : minAllowedDate;
+                    }
+                    
+                    return minAllowedDate;
+                  })()}
+                  // Max date is yesterday
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -301,7 +317,46 @@ const ReportingPage = () => {
                 />
 
                 <div>
-                  <Typography className="font-medium mb-2 text-gray-800 dark:text-white">Selected Locations</Typography>
+                  <div className="flex justify-between items-center mb-2">
+                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    {selectedLocations.length > 0 && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Remove the last added location (undo functionality)
+                            setSelectedLocations(prev => prev.slice(0, -1));
+                          }}
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                        >
+                          <span className="mr-1">Undo</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
+                            <path d="M9 14 4 9l5-5"/>
+                            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                          </svg>
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Clear all selected locations
+                            setSelectedLocations([]);
+                          }}
+                          className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        >
+                          <span className="mr-1">Clear All</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
+                            <path d="M3 6h18"/>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            <line x1="10" x2="10" y1="11" y2="17"/>
+                            <line x1="14" x2="14" y1="11" y2="17"/>
+                          </svg>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                   <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
                     {selectedLocations.length === 0 ? (
                       <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
@@ -313,8 +368,9 @@ const ReportingPage = () => {
                           <Chip
                             key={location.id}
                             label={`${location.name} (${location.id})`}
+                            onClick={() => handleRemoveLocation(location.id)}
                             onDelete={() => handleRemoveLocation(location.id)}
-                            className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
+                            className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
                             deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
                           />
                         ))}

@@ -93,3 +93,45 @@ Added support for rendering Excel-style hyperlink formulas as clickable links in
 - Enhanced data visualization by properly rendering formatted content
 - Maintained data integrity in CSV exports while improving the display experience
 - Provided a more intuitive user experience for reports containing links to external systems
+
+## Location Selection Enhancements
+
+### Overview
+Implemented several usability improvements to the location selection functionality in the reporting page, making it more intuitive and efficient for users to select and manage locations.
+
+### Implementation Details
+
+#### Search Functionality
+1. **Location Search**
+   - Added a search bar to the LocationTable component
+   - Implemented real-time filtering by location name or ID
+   - Added search results counter showing filtered results
+   - Maintained consistent styling with the application's design system
+
+2. **Improved Location Chip Interaction**
+   - Made entire location chips clickable for removal (not just the X icon)
+   - Enhanced visual feedback with proper cursor styling
+   - Maintained consistent styling with other interactive elements
+
+3. **Enhanced Location Management**
+   - Added an "Undo" button to remove the last added location
+   - Implemented sequential undo capability (can be pressed multiple times)
+   - Added a "Clear All" button to remove all selected locations at once
+   - Added proper icons and styling consistent with the application design
+   - Implemented color-coding for different actions (blue for undo, red for clear all)
+
+4. **Date Range Selection Improvements**
+   - Enhanced date pickers to prevent invalid date range selections
+   - Dynamically adjusted min/max date constraints based on selected values
+   - Prevented selecting a start date after the end date
+   - Prevented selecting an end date before the start date
+   - Maintained existing date range boundaries (Jan 13, 2025 to yesterday)
+   - Greyed out invalid date options in the calendar UI
+
+### Benefits
+- Improved efficiency when working with large numbers of locations
+- Enhanced usability through more intuitive interaction patterns
+- Reduced friction when managing location selections
+- Provided multiple ways to remove locations based on user preference
+- Prevented user errors by enforcing valid date range selections
+- Improved data quality by ensuring consistent date ranges
