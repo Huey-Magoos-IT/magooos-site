@@ -48,6 +48,8 @@ const Users = () => {
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
   const [viewType, setViewType] = useState<ViewType>("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [teamFilter, setTeamFilter] = useState<string | number>("");
   
   // Load view preference from localStorage on component mount
   useEffect(() => {
@@ -237,57 +239,132 @@ const Users = () => {
 
   if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
   if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;
+  
+  // Filter users based on search query and team filter
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      // Filter by search query (case insensitive)
+      const matchesSearch = searchQuery === "" ||
+        (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      // Filter by team
+      const matchesTeam = teamFilter === "" ||
+        (teamFilter === "none" && !user.teamId) ||
+        (user.teamId === teamFilter);
+      
+      return matchesSearch && matchesTeam;
+    });
+  }, [users, searchQuery, teamFilter]);
 
   return (
     <div className="flex w-full flex-col p-8">
-      <div className="flex justify-between items-center mb-4">
-        <Header name="Users" />
-        <ViewToggle currentView={viewType} onChange={setViewType} />
+      <div className="flex flex-col space-y-4 mb-4">
+        <div className="flex justify-between items-center">
+          <Header name="Users" />
+          <ViewToggle currentView={viewType} onChange={setViewType} />
+        </div>
+        
+        {/* Search and Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              placeholder="Search users by name..."
+              className="w-full p-2 pl-10 border rounded-md dark:bg-dark-tertiary dark:border-gray-700 dark:text-white"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="absolute left-3 top-2.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Team Filter Dropdown */}
+          <div className="w-full md:w-64">
+            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+              <InputLabel id="team-filter-label" className="dark:text-white">Filter by Team</InputLabel>
+              <Select
+                labelId="team-filter-label"
+                value={teamFilter}
+                label="Filter by Team"
+                className="dark:text-white"
+                onChange={(e) => setTeamFilter(e.target.value)}
+              >
+                <MenuItem value="">
+                  <em>All Teams</em>
+                </MenuItem>
+                <MenuItem value="none">No Team</MenuItem>
+                {teams.map((team) => (
+                  <MenuItem key={team.id} value={team.id}>
+                    {team.teamName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+        </div>
+        
+        {/* Team Assignment Instructions (for admins only) */}
+        {isUserAdmin && (
+          <div className="p-4 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-100">
+            <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Team Assignment</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              As an administrator, you can assign users to teams using the dropdown selector in the Team column.
+            </p>
+          </div>
+        )}
       </div>
       
-      {/* Team Assignment Instructions (for admins only) */}
-      {isUserAdmin && (
-        <div className="mb-4 p-4 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-100">
-          <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Team Assignment</h3>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            As an administrator, you can assign users to teams using the dropdown selector in the Team column.
-          </p>
-        </div>
-      )}
-      
-      {viewType === "grid" ? (
-        <div style={{ height: 650, width: "100%" }}>
-          <DataGrid
-            rows={users || []}
-            columns={columns}
-            getRowId={(row) => row.userId}
-            pagination
-            slots={{
-              toolbar: CustomToolbar,
+      {filteredUsers.length === 0 ? (
+        <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="text-gray-500 dark:text-gray-400 mb-2">No users found matching your search criteria</div>
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              setTeamFilter("");
             }}
-            className={dataGridClassNames}
-            sx={dataGridSxStyles(isDarkMode)}
-          />
+            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+          >
+            Clear filters
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {users.map(user => (
-            <UserCard
-              key={user.userId}
-              user={{
-                userId: user.userId as number,
-                username: user.username as string,
-                profilePictureUrl: user.profilePictureUrl,
-                teamId: user.teamId
+        viewType === "grid" ? (
+          <div style={{ height: 650, width: "100%" }}>
+            <DataGrid
+              rows={filteredUsers || []}
+              columns={columns}
+              getRowId={(row) => row.userId}
+              pagination
+              slots={{
+                toolbar: CustomToolbar,
               }}
-              teams={teams}
-              roles={availableRoles}
-              isAdmin={isUserAdmin}
-              onTeamChange={handleTeamChange}
-              updateStatus={updateStatus}
+              className={dataGridClassNames}
+              sx={dataGridSxStyles(isDarkMode)}
             />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredUsers.map(user => (
+              <UserCard
+                key={user.userId}
+                user={{
+                  userId: user.userId as number,
+                  username: user.username as string,
+                  profilePictureUrl: user.profilePictureUrl,
+                  teamId: user.teamId
+                }}
+                teams={teams}
+                roles={availableRoles}
+                isAdmin={isUserAdmin}
+                onTeamChange={handleTeamChange}
+                updateStatus={updateStatus}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
