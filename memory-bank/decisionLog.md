@@ -1,5 +1,36 @@
 # Decision Log
 
+## 2025-03-31: Huey Team Logo Update
+
+### Problem
+The Huey Team logo in the sidebar needed to be updated from the "E" image to the new "g_with_tm_black-01" image.
+
+### Investigation
+1. Located the image reference in the Sidebar component
+2. Confirmed the S3 bucket path for the image (huey-site-images.s3.us-east-2.amazonaws.com)
+3. Verified the new image name to use ("g_with_tm_black-01.png")
+
+### Decision Points
+
+#### Decision 1: Update Image Path in Sidebar Component
+- **Choice**: Replace the existing logo.png reference with g_with_tm_black-01.png in the Sidebar component
+- **Rationale**: Direct replacement ensures consistent UI with the updated branding
+- **Alternatives Considered**:
+  - Using a different image format (rejected as PNG is standard for logos)
+  - Implementing a configurable logo path (rejected as unnecessary complexity for a simple change)
+- **Consequences**: Updated branding across the application with minimal code changes
+
+### Implementation
+1. Located the image reference in client/src/components/Sidebar/index.tsx
+2. Updated the src attribute of the Image component to point to the new image
+3. Added file extension (.png) to ensure proper loading
+4. Updated the Memory Bank to document the change
+
+### Impact
+- Updated branding with the new logo
+- Maintained consistent UI elements
+- No functional changes to the application
+
 ## 2025-03-27: Employee Name Resolution Enhancement
 
 ### Problem

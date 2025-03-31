@@ -103,6 +103,10 @@ We've replicated the Reporting Department's client-side CSV processing functiona
    - Added placeholder sorting functionality to be updated when CSV format is finalized
    - Preserved role-based access control (DATA role required)
 
+## Recent UI Update: Logo Change
+
+Updated the Huey Team logo in the sidebar from the "E" image to the "g_with_tm_black-01" image from the huey-site-images S3 bucket. This change affects the logo displayed next to the "HUEY TEAM" text in the sidebar component.
+
 ## Current Status
 
 ✅ Implemented: New client-side CSV processing system for reports
@@ -118,6 +122,7 @@ We've replicated the Reporting Department's client-side CSV processing functiona
 ✅ Enhanced: CSV data with employee name resolution from "employee-list-incentivio" bucket
 ✅ Implemented: Caching mechanism for employee data to improve performance
 ✅ Documented: Employee name resolution enhancement in technical changelog
+✅ Updated: Replaced the "E" logo with "g_with_tm_black-01" in the sidebar next to Huey Team
 
 ## Next Steps
 - Add data visualization and charts to reports

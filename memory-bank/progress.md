@@ -43,6 +43,11 @@
 
 ## Recent Enhancements
 
+### March 31, 2025
+- Updated the Huey Team logo in the sidebar from "logo.png" to "g_with_tm_black-01.png"
+- Ensured proper image loading by adding file extension
+- Updated Memory Bank documentation to reflect the UI change
+
 ### March 27, 2025
 - Implemented employee name resolution for CSV data in both Reporting and Data Department pages
 - Added functionality to fetch employee data from "employee-list-incentivio" bucket
