@@ -50,6 +50,37 @@ const CSVDataTable = ({
   const [columns, setColumns] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Function to parse and render cell content, including hyperlinks
+  const renderCellContent = (value: any): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    
+    const stringValue = String(value);
+    
+    // Check if the value is an Excel-style hyperlink formula
+    // Format: =HYPERLINK("URL","text")
+    const hyperlinkMatch = stringValue.match(/=HYPERLINK\("([^"]+)","([^"]+)"\)/);
+    
+    if (hyperlinkMatch) {
+      const url = hyperlinkMatch[1];
+      const text = hyperlinkMatch[2];
+      
+      return (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          {text}
+        </a>
+      );
+    }
+    
+    return stringValue;
+  };
+
   useEffect(() => {
     // Reset to first page when data changes
     setPage(0);
@@ -280,7 +311,7 @@ const CSVDataTable = ({
               >
                 {columns.map((column) => (
                   <TableCell key={`${rowIndex}-${column}`} className="dark:text-white">
-                    {row[column] !== null && row[column] !== undefined ? String(row[column]) : ''}
+                    {renderCellContent(row[column])}
                   </TableCell>
                 ))}
               </TableRow>

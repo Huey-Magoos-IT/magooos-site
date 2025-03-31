@@ -126,6 +126,8 @@ Updated the sidebar with the following changes:
 
 These changes create a cleaner, more focused UI that highlights only the currently active features while preserving the ability to restore work-in-progress features in the future. The build fixes ensure that the application can be successfully built and deployed without errors or warnings.
 
+A detailed technical changelog has been created at CHANGELOGS/TECHNICAL_03-31-2025.md to document these changes.
+
 ## Current Status
 
 ✅ Implemented: New client-side CSV processing system for reports
@@ -142,6 +144,9 @@ These changes create a cleaner, more focused UI that highlights only the current
 ✅ Implemented: Caching mechanism for employee data to improve performance
 ✅ Documented: Employee name resolution enhancement in technical changelog
 ✅ Updated: Replaced the "E" logo with "g_with_tm_black-01" in the sidebar next to Huey Team
+✅ Enhanced: Sidebar UI with consolidated header and improved branding
+✅ Fixed: Build issues with proper escaping of apostrophes and React Hooks dependencies
+✅ Added: Support for rendering Excel-style hyperlinks as clickable links in CSV data tables
 
 ## Next Steps
 - Add data visualization and charts to reports
