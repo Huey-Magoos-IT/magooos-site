@@ -109,11 +109,8 @@ const UserCard: React.FC<UserCardProps> = ({
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Team</div>
           {isAdmin ? (
             <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
-              <InputLabel id={`team-select-label-card-${user.userId}`} className="dark:text-white">Team</InputLabel>
               <Select
-                labelId={`team-select-label-card-${user.userId}`}
                 value={user.teamId || ''}
-                label="Team"
                 onChange={handleTeamChange}
                 className="dark:text-white"
                 disabled={updateStatus[user.userId] === 'pending'}
