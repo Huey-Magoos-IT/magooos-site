@@ -10,7 +10,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 const RealTimeSummaryPage = () => {
   const [date, setDate] = useState<Date | null>(new Date());
-  const [location, setLocation] = useState("Huey Magoo's HQ Lab");
+  const [location, setLocation] = useState("Huey Magoo&apos;s HQ Lab");
   const [showFilters, setShowFilters] = useState(false);
   const [employeeRequired, setEmployeeRequired] = useState("Yes");
 
@@ -113,7 +113,7 @@ const RealTimeSummaryPage = () => {
                   onChange={(e) => setLocation(e.target.value as string)}
                   label="Location"
                 >
-                  <MenuItem value="Huey Magoo's HQ Lab">Huey Magoo's HQ Lab</MenuItem>
+                  <MenuItem value="Huey Magoo&apos;s HQ Lab">Huey Magoo&apos;s HQ Lab</MenuItem>
                   <MenuItem value="Winter Garden, FL">Winter Garden, FL</MenuItem>
                   <MenuItem value="Orlando, FL">Orlando, FL</MenuItem>
                 </Select>

@@ -33,7 +33,7 @@ const QUNavbar = () => {
           <div className="bg-red-600 h-[50px] w-[50px] flex items-center justify-center">
             <Image
               src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
-              alt="Huey Magoo's Logo"
+              alt="Huey Magoo&apos;s Logo"
               width={30}
               height={30}
               className="invert" // Make logo white on red background
