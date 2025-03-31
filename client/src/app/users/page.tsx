@@ -153,11 +153,8 @@ const Users = () => {
         return (
           <div className="flex items-center w-full">
             <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
-              <InputLabel id={`team-select-label-${userId}`} className="dark:text-white">Team</InputLabel>
               <Select
-                labelId={`team-select-label-${userId}`}
                 value={currentTeamId || ''}
-                label="Team"
                 onChange={(e) => handleTeamChangeEvent(e, userId)}
                 className="dark:text-white"
                 disabled={status === 'pending'}
@@ -286,11 +283,8 @@ const Users = () => {
           {/* Team Filter Dropdown */}
           <div className="w-full md:w-64">
             <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
-              <InputLabel id="team-filter-label" className="dark:text-white">Filter by Team</InputLabel>
               <Select
-                labelId="team-filter-label"
                 value={teamFilter}
-                label="Filter by Team"
                 className="dark:text-white"
                 onChange={(e) => setTeamFilter(e.target.value)}
               >
