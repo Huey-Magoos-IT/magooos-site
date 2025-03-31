@@ -1,17 +1,19 @@
 # Decision Log
 
-## 2025-03-31: Sidebar Redesign and Feature Hiding
+## 2025-03-31: Sidebar Redesign, Feature Hiding, and Build Fixes
 
 ### Problem
 The sidebar had several issues that needed to be addressed:
 1. Redundant header sections with "HUEY" at the top and "HUEY TEAM" with a logo below it
 2. Work-in-progress features (Projects and Timeline) that were not ready for production use
 3. Visual clutter from too many navigation options
-
+4. Build failures due to ESLint errors and React Hooks warnings
 ### Investigation
 1. Examined the Sidebar component structure in client/src/components/Sidebar/index.tsx
 2. Identified the two separate header sections that could be consolidated
 3. Analyzed the navigation links to determine which were essential vs. work-in-progress
+4. Evaluated the best approach to hide features while preserving the code for future use
+5. Reviewed build logs to identify ESLint errors and React Hooks warnings
 4. Evaluated the best approach to hide features while preserving the code for future use
 
 ### Decision Points
@@ -49,6 +51,15 @@ The sidebar had several issues that needed to be addressed:
   - Adding a "coming soon" indicator (rejected for simplicity)
 - **Consequences**: Focused UI with only production-ready features while preserving future options
 
+#### Decision 5: Fix Build Issues
+- **Choice**: Address ESLint errors and React Hooks warnings
+- **Rationale**: Ensure successful builds and deployments while following best practices
+- **Alternatives Considered**:
+  - Disabling ESLint rules (rejected as it would hide potential issues)
+  - Ignoring warnings (rejected as it could lead to bugs in the future)
+  - Restructuring components to avoid the issues (rejected as too complex for simple fixes)
+- **Consequences**: More reliable code that follows best practices and builds successfully
+
 ### Implementation
 1. Redesigned the top header section to include both the logo and brand name
 2. Removed the secondary HUEY TEAM section completely
@@ -56,7 +67,9 @@ The sidebar had several issues that needed to be addressed:
 4. Commented out the entire Projects section (dropdown and project links)
 5. Adjusted spacing and styling for the consolidated header
 6. Added proper border styling to maintain visual separation
-7. Updated the Memory Bank to document the changes
+7. Fixed ESLint error by properly escaping the apostrophe in "Huey Magoo's" to "Huey Magoo&apos;s"
+8. Fixed React Hooks exhaustive-deps warning by adding handleTeamChange to the dependency array in users/page.tsx
+9. Updated the Memory Bank to document all changes and fixes
 
 ### Impact
 - Cleaner, more professional UI with less redundancy
@@ -64,6 +77,9 @@ The sidebar had several issues that needed to be addressed:
 - More focused navigation with only production-ready features
 - Preserved code for future reintroduction of work-in-progress features
 - Improved overall user experience with simplified navigation
+- Fixed build issues to ensure successful deployment
+- Improved code quality by addressing ESLint errors and React Hooks warnings
+- Enhanced maintainability by following best practices
 
 ## 2025-03-27: Employee Name Resolution Enhancement
 

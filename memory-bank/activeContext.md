@@ -103,7 +103,7 @@ We've replicated the Reporting Department's client-side CSV processing functiona
    - Added placeholder sorting functionality to be updated when CSV format is finalized
    - Preserved role-based access control (DATA role required)
 
-## Recent UI Update: Sidebar Redesign
+## Recent UI Update: Sidebar Redesign and Build Fixes
 
 Updated the sidebar with the following changes:
 
@@ -120,7 +120,11 @@ Updated the sidebar with the following changes:
 2. Hidden the entire Projects section (including the dropdown and all project links)
 3. Kept the code commented out for future reference when the feature is ready to be reintroduced
 
-These changes create a cleaner, more focused UI that highlights only the currently active features while preserving the ability to restore work-in-progress features in the future.
+### Build Fixes
+1. Fixed ESLint error in Sidebar component by properly escaping the apostrophe in "Huey Magoo's" to "Huey Magoo&apos;s"
+2. Fixed React Hooks exhaustive-deps warning in users/page.tsx by adding handleTeamChange to the dependency array of the useMemo hook
+
+These changes create a cleaner, more focused UI that highlights only the currently active features while preserving the ability to restore work-in-progress features in the future. The build fixes ensure that the application can be successfully built and deployed without errors or warnings.
 
 ## Current Status
 

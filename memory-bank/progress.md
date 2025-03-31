@@ -52,7 +52,9 @@
 - Removed Timeline link from the main navigation
 - Hidden the entire Projects section (including dropdown and project links)
 - Preserved code for future reintroduction of work-in-progress features
-- Updated Memory Bank documentation to reflect all UI changes
+- Fixed ESLint error by properly escaping the apostrophe in "Huey Magoo's"
+- Fixed React Hooks exhaustive-deps warning in users/page.tsx
+- Updated Memory Bank documentation to reflect all UI changes and fixes
 
 ### March 27, 2025
 - Implemented employee name resolution for CSV data in both Reporting and Data Department pages
