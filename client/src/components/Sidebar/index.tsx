@@ -59,9 +59,17 @@ const Sidebar = () => {
     <div className={sidebarClassNames}>
       <div className="flex h-[100%] w-full flex-col justify-start">
         {/* TOP LOGO */}
-        <div className="z-50 flex min-h-[56px] w-64 items-center justify-between bg-white px-6 pt-3 dark:bg-black">
-          <div className="text-xl font-bold text-gray-800 dark:text-white">
-            HUEY
+        <div className="z-50 flex min-h-[70px] w-64 items-center justify-between border-b-[1.5px] border-gray-200 bg-white px-6 py-3 dark:border-gray-700 dark:bg-black">
+          <div className="flex items-center gap-4">
+            <Image
+              src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
+              alt="Logo"
+              width={40}
+              height={40}
+            />
+            <div className="text-xl font-bold text-gray-800 dark:text-white">
+              Huey Magoo's
+            </div>
           </div>
           {isSidebarCollapsed ? null : (
             <button
@@ -74,35 +82,18 @@ const Sidebar = () => {
             </button>
           )}
         </div>
-        {/* TEAM */}
-        <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-4 dark:border-gray-700">
-          <Image
-            src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
-            alt="Logo"
-            width={40}
-            height={40}
-          />
-          <div>
-            <h3 className="text-md font-bold tracking-wide dark:text-gray-200">
-              HUEY TEAM
-            </h3>
-            <div className="mt-1 flex items-start gap-2">
-              <LockIcon className="mt-[0.1rem] h-3 w-3 text-gray-500 dark:text-gray-400" />
-              <p className="text-xs text-gray-500">Private</p>
-            </div>
-          </div>
-        </div>
         {/* NAVBAR LINKS */}
         <nav className="z-10 w-full">
           <SidebarLink icon={Home} label="Home" href="/" />
-          <SidebarLink icon={Briefcase} label="Timeline" href="/timeline" />
+          {/* Timeline link hidden as requested */}
           <SidebarLink icon={Search} label="Search" href="/search" />
           <SidebarLink icon={Settings} label="Settings" href="/settings" />
           <SidebarLink icon={User} label="Users" href="/users" />
           <SidebarLink icon={Users} label="Teams" href="/teams" />
         </nav>
 
-        {/* PROJECTS LINKS */}
+        {/* PROJECTS SECTION HIDDEN AS REQUESTED */}
+        {/* Keeping the code commented out for future reference
         <button
           onClick={() => setShowProjects((prev) => !prev)}
           className="flex w-full items-center justify-between px-8 py-3 text-gray-500"
@@ -114,7 +105,6 @@ const Sidebar = () => {
             <ChevronDown className="h-5 w-5" />
           )}
         </button>
-        {/* PROJECTS LIST */}
         {showProjects &&
           projects?.map((project) => (
             <SidebarLink
@@ -124,6 +114,7 @@ const Sidebar = () => {
               href={`/projects/${project.id}`}
             />
           ))}
+        */}
 
         {/* DEPARTMENTS LINKS */}
         <button

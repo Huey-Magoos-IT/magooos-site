@@ -1,35 +1,69 @@
 # Decision Log
 
-## 2025-03-31: Huey Team Logo Update
+## 2025-03-31: Sidebar Redesign and Feature Hiding
 
 ### Problem
-The Huey Team logo in the sidebar needed to be updated from the "E" image to the new "g_with_tm_black-01" image.
+The sidebar had several issues that needed to be addressed:
+1. Redundant header sections with "HUEY" at the top and "HUEY TEAM" with a logo below it
+2. Work-in-progress features (Projects and Timeline) that were not ready for production use
+3. Visual clutter from too many navigation options
 
 ### Investigation
-1. Located the image reference in the Sidebar component
-2. Confirmed the S3 bucket path for the image (huey-site-images.s3.us-east-2.amazonaws.com)
-3. Verified the new image name to use ("g_with_tm_black-01.png")
+1. Examined the Sidebar component structure in client/src/components/Sidebar/index.tsx
+2. Identified the two separate header sections that could be consolidated
+3. Analyzed the navigation links to determine which were essential vs. work-in-progress
+4. Evaluated the best approach to hide features while preserving the code for future use
 
 ### Decision Points
 
-#### Decision 1: Update Image Path in Sidebar Component
-- **Choice**: Replace the existing logo.png reference with g_with_tm_black-01.png in the Sidebar component
-- **Rationale**: Direct replacement ensures consistent UI with the updated branding
+#### Decision 1: Consolidate Header Sections
+- **Choice**: Merge the two header sections (HUEY and HUEY TEAM) into a single header
+- **Rationale**: Eliminates redundancy and creates a cleaner, more professional UI
 - **Alternatives Considered**:
-  - Using a different image format (rejected as PNG is standard for logos)
-  - Implementing a configurable logo path (rejected as unnecessary complexity for a simple change)
-- **Consequences**: Updated branding across the application with minimal code changes
+  - Keeping both sections but making them visually distinct (rejected for simplicity)
+  - Removing one section entirely (rejected as both contained important elements)
+- **Consequences**: Cleaner UI with less visual clutter and better use of space
+
+#### Decision 2: Update Branding Text
+- **Choice**: Replace "HUEY" with "Huey Magoo's" for clearer branding
+- **Rationale**: Provides more explicit branding that matches the company name
+- **Alternatives Considered**:
+  - Keeping "HUEY" (rejected as less descriptive)
+  - Using an abbreviated form (rejected for brand clarity)
+- **Consequences**: Improved brand recognition and consistency
+
+#### Decision 3: Remove Redundant Elements
+- **Choice**: Remove the "Private" text and lock icon
+- **Rationale**: This information was not essential and added visual noise
+- **Alternatives Considered**:
+  - Moving the private indicator to another location (rejected as unnecessary)
+  - Replacing it with different metadata (rejected for simplicity)
+- **Consequences**: Cleaner interface focused on essential information
+
+#### Decision 4: Hide Work-in-Progress Features
+- **Choice**: Remove Timeline link and hide the entire Projects section
+- **Rationale**: These features are not ready for production but may be reintroduced later
+- **Alternatives Considered**:
+  - Disabling the features but keeping them visible (rejected for cleanliness)
+  - Removing the code entirely (rejected for future maintainability)
+  - Adding a "coming soon" indicator (rejected for simplicity)
+- **Consequences**: Focused UI with only production-ready features while preserving future options
 
 ### Implementation
-1. Located the image reference in client/src/components/Sidebar/index.tsx
-2. Updated the src attribute of the Image component to point to the new image
-3. Added file extension (.png) to ensure proper loading
-4. Updated the Memory Bank to document the change
+1. Redesigned the top header section to include both the logo and brand name
+2. Removed the secondary HUEY TEAM section completely
+3. Removed the Timeline link from the main navigation
+4. Commented out the entire Projects section (dropdown and project links)
+5. Adjusted spacing and styling for the consolidated header
+6. Added proper border styling to maintain visual separation
+7. Updated the Memory Bank to document the changes
 
 ### Impact
-- Updated branding with the new logo
-- Maintained consistent UI elements
-- No functional changes to the application
+- Cleaner, more professional UI with less redundancy
+- Better branding clarity with the full "Huey Magoo's" name
+- More focused navigation with only production-ready features
+- Preserved code for future reintroduction of work-in-progress features
+- Improved overall user experience with simplified navigation
 
 ## 2025-03-27: Employee Name Resolution Enhancement
 

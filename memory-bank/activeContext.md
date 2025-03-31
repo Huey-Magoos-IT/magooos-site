@@ -103,9 +103,24 @@ We've replicated the Reporting Department's client-side CSV processing functiona
    - Added placeholder sorting functionality to be updated when CSV format is finalized
    - Preserved role-based access control (DATA role required)
 
-## Recent UI Update: Logo Change
+## Recent UI Update: Sidebar Redesign
 
-Updated the Huey Team logo in the sidebar from the "E" image to the "g_with_tm_black-01" image from the huey-site-images S3 bucket. This change affects the logo displayed next to the "HUEY TEAM" text in the sidebar component.
+Updated the sidebar with the following changes:
+
+### Header Redesign
+1. Consolidated the two header sections (HUEY and HUEY TEAM) into a single header
+2. Replaced "HUEY" with "Huey Magoo's" for better branding clarity
+3. Moved the logo to the top header section next to the brand name
+4. Removed the "HUEY TEAM" section and the "Private" text
+5. Maintained the X button for closing the sidebar
+6. Added proper border styling to the consolidated header
+
+### Navigation Simplification
+1. Removed the Timeline link from the main navigation
+2. Hidden the entire Projects section (including the dropdown and all project links)
+3. Kept the code commented out for future reference when the feature is ready to be reintroduced
+
+These changes create a cleaner, more focused UI that highlights only the currently active features while preserving the ability to restore work-in-progress features in the future.
 
 ## Current Status
 
