@@ -1,6 +1,74 @@
 # Decision Log
 
-## 2025-03-31: Users Page Enhancement with Dual View and Role Visualization
+## 2025-03-31 (Afternoon): UI Improvements and Build Fixes
+
+### Problem
+Several issues needed to be addressed in the Users page and build process:
+1. Team dropdown selectors were causing clipping issues in the UI
+2. The ViewToggle component icons didn't match their functionality
+3. The application had build failures due to React Hooks warnings and type errors
+4. The Users page lacked search and filtering capabilities
+
+### Investigation
+1. Examined the team selector dropdowns in the DataGrid and UserCard components
+2. Analyzed the ViewToggle component and its icon usage
+3. Reviewed build logs to identify React Hooks warnings and type errors
+4. Evaluated options for implementing search and filtering functionality
+
+### Decision Points
+
+#### Decision 1: Remove Labels from Team Dropdowns
+- **Choice**: Remove all "Team" labels from dropdown selectors
+- **Rationale**: Prevents clipping issues while maintaining functionality
+- **Alternatives Considered**:
+  - Increasing dropdown width (rejected for space constraints)
+  - Using a different UI component (rejected for consistency)
+  - Shortening the label text (rejected for clarity)
+- **Consequences**: Cleaner UI with no clipping issues, while maintaining context through section headers
+
+#### Decision 2: Fix ViewToggle Component Icons
+- **Choice**: Use List icon for table view and Grid icon for card view
+- **Rationale**: Match icons to the actual view being displayed
+- **Alternatives Considered**:
+  - Keeping original icon mapping (rejected for intuitiveness)
+  - Using different icons entirely (rejected for standard conventions)
+  - Renaming the view types (rejected for code consistency)
+- **Consequences**: More intuitive UI with icons that match their functionality
+
+#### Decision 3: Implement Search and Filtering
+- **Choice**: Add client-side filtering with search bar and team filter
+- **Rationale**: Improves usability for finding specific users
+- **Alternatives Considered**:
+  - Server-side filtering (rejected for simplicity and performance)
+  - Advanced query builder (rejected for complexity)
+  - Separate search page (rejected for user experience)
+- **Consequences**: Enhanced user experience with quick filtering capabilities
+
+#### Decision 4: Fix React Hooks and Type Issues
+- **Choice**: Properly implement React Hooks patterns and fix type errors
+- **Rationale**: Ensure successful builds and follow React best practices
+- **Alternatives Considered**:
+  - Disabling ESLint rules (rejected for code quality)
+  - Restructuring components (rejected for complexity)
+  - Using different state management (rejected for consistency)
+- **Consequences**: More reliable code that follows best practices and builds successfully
+
+### Implementation
+1. Removed labels from all team selector dropdowns
+2. Updated ViewToggle component to use appropriate icons and tooltips
+3. Implemented search bar and team filter with client-side filtering
+4. Fixed React Hooks issues by using useCallback and moving useMemo before conditionals
+5. Fixed type error in search/page.tsx by properly mapping User object to UserCard props
+6. Updated Memory Bank documentation to reflect all changes
+
+### Impact
+- Improved UI with no clipping issues in team dropdowns
+- More intuitive view toggle with icons that match functionality
+- Enhanced user experience with search and filtering capabilities
+- Successful builds with no React Hooks warnings or type errors
+- Better code quality following React best practices
+
+## 2025-03-31 (Morning): Users Page Enhancement with Dual View and Role Visualization
 
 ### Problem
 The Users page had several issues that needed to be addressed:

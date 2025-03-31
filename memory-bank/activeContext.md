@@ -159,21 +159,43 @@ We need to extend the current API queries to include:
 - ✅ Extended API queries for role information
 - ✅ Implemented responsive design for all screen sizes
 
-## Recent Build Fixes (March 31, 2025 - Afternoon)
+## Recent UI and Build Improvements (March 31, 2025 - Afternoon)
 
-Fixed additional build issues that were causing deployment failures:
+### Search and Filtering Implementation
+1. Added comprehensive search functionality
+   - Implemented search bar for filtering users by username
+   - Added team filter dropdown for filtering by team
+   - Created client-side filtering logic with useMemo
+   - Added "No results found" message with clear filters button
+   - Ensured filtering works for both grid and card views
 
+### UI Enhancements
+1. Fixed team dropdown clipping issues
+   - Removed labels from all team selector dropdowns in the DataGrid
+   - Removed labels from the team filter dropdown in the search bar
+   - Removed labels from the team selector in the UserCard component
+   - Maintained section headers for context
+
+2. Fixed ViewToggle component icons
+   - Used List icon (horizontal lines) for table view (grid viewType)
+   - Used Grid icon (squares) for card view (list viewType)
+   - Updated tooltips to "Table View" and "Card View" for clarity
+   - Ensured icons match the actual view being displayed
+
+### Build Fixes
 1. Type error in search/page.tsx:
    - The UserCard component in search/page.tsx was passing a User object directly to the UserCard component
    - The UserCard component expects specific props including teams, isAdmin, onTeamChange, and updateStatus
    - Fixed by properly mapping the User object to the expected props structure
 
 2. React Hooks warnings in users/page.tsx:
-   - Wrapped the handleTeamChangeEvent function in useCallback to prevent it from being recreated on every render
+   - Fixed conditional React Hook call by moving useMemo before any conditional returns
+   - Wrapped the handleTeamChange function in useCallback with proper dependencies
+   - Wrapped the handleTeamChangeEvent function in useCallback with proper dependencies
    - Used useMemo for teams and availableRoles to prevent them from being recalculated on every render
    - These changes ensure proper dependency tracking in the useMemo hook for columns
 
-These fixes resolve all the build errors and warnings shown in the deployment logs, allowing the application to be successfully built and deployed.
+These improvements enhance the user experience with better filtering capabilities and a more intuitive interface, while also resolving all build errors and warnings shown in the deployment logs, allowing the application to be successfully built and deployed.
 
 ## Next Steps
 
