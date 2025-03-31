@@ -68,7 +68,7 @@ const Sidebar = () => {
               height={40}
             />
             <div className="text-xl font-bold text-gray-800 dark:text-white">
-              Huey Magoo&apos;s
+              Huey Magoo's
             </div>
           </div>
           {isSidebarCollapsed ? null : (

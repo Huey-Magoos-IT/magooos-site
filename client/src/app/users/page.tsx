@@ -160,7 +160,7 @@ const Users = () => {
         );
       }
     }
-  ], [teams, isUserAdmin, updateStatus, handleTeamChange]);
+  ], [teams, isUserAdmin, updateStatus]);
 
   if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
   if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;

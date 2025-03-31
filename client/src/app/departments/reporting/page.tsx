@@ -229,20 +229,6 @@ const ReportingPage = () => {
             </div>
           </div>
         </div>
-        
-        {/* New QU-Style Reporting Link */}
-        <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-          <h3 className="font-semibold mb-2 text-blue-800 dark:text-blue-200">Try Our New Reporting Interface</h3>
-          <p className="text-blue-700 dark:text-blue-300 mb-3">
-            We&apos;ve developed a new reporting interface with improved navigation and data visualization.
-          </p>
-          <a
-            href="/reports/real-time-summary"
-            className="inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm"
-          >
-            View Real Time Summary
-          </a>
-        </div>
 
         {/* Data Generation Form */}
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
