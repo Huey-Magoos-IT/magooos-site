@@ -25,10 +25,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
             ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
             : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
         }`}
-        aria-label="Grid View"
-        title="Grid View"
+        aria-label="Table View"
+        title="Table View"
       >
-        <Grid size={20} />
+        <List size={20} />
       </button>
       <button
         onClick={() => onChange("list")}
@@ -37,10 +37,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
             ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
             : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
         }`}
-        aria-label="List View"
-        title="List View"
+        aria-label="Card View"
+        title="Card View"
       >
-        <List size={20} />
+        <Grid size={20} />
       </button>
     </div>
   );
