@@ -63,7 +63,19 @@ const Search = () => {
               <h2>Users</h2>
             )}
             {searchResults.users?.map((user) => (
-              <UserCard key={user.userId} user={user} />
+              <UserCard
+                key={user.userId}
+                user={{
+                  userId: user.userId as number,
+                  username: user.username as string,
+                  profilePictureUrl: user.profilePictureUrl,
+                  teamId: user.teamId
+                }}
+                teams={[]}
+                isAdmin={false}
+                onTeamChange={() => {}}
+                updateStatus={{}}
+              />
             ))}
           </div>
         )}

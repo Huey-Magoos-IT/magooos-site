@@ -66,9 +66,9 @@ const Users = () => {
   const isUserAdmin = authData?.userDetails?.team?.isAdmin ||
     authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'ADMIN') || false;
   
-  // Extract teams and roles from teamsData
-  const teams = teamsData?.teams || [];
-  const availableRoles = teamsData?.availableRoles || [];
+  // Extract teams and roles from teamsData using useMemo to prevent re-renders
+  const teams = useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
+  const availableRoles = useMemo(() => teamsData?.availableRoles || [], [teamsData?.availableRoles]);
   
   // Handle team change
   const handleTeamChange = async (userId: number, newTeamId: number | null) => {
@@ -98,10 +98,10 @@ const Users = () => {
   };
   
   // Handle team change from dropdown
-  const handleTeamChangeEvent = (event: SelectChangeEvent<number | string>, userId: number) => {
+  const handleTeamChangeEvent = React.useCallback((event: SelectChangeEvent<number | string>, userId: number) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     handleTeamChange(userId, newTeamId);
-  };
+  }, [handleTeamChange]);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
