@@ -64,6 +64,94 @@ Implemented a comprehensive sidebar redesign to improve UI clarity and focus, wh
 - Build fixes ensure compliance with React best practices and ESLint rules
 - All changes are documented in the Memory Bank for future reference
 
+## Users Page Enhancement: Dual View and Role Visualization
+
+### Overview
+Enhanced the Users page with dual view options (grid/list) and role visualization to improve usability and provide more comprehensive user information. These improvements make it easier to manage users, understand their roles, and assign teams.
+
+### Implementation Details
+
+#### New Components
+1. **ViewToggle Component**
+   - Created a reusable component for toggling between grid and list views
+   - Implemented with Lucide React icons for visual clarity
+   - Added persistent view preference using localStorage
+   - Designed with consistent styling and dark mode support
+
+2. **RoleBadge Component**
+   - Developed a reusable component for displaying role information
+   - Implemented color-coding based on role type (ADMIN: red, DATA: blue, REPORTING: green)
+   - Added tooltip support for role descriptions
+   - Created consistent styling with dark mode support
+
+3. **UserCard Component**
+   - Created a comprehensive card component for the list view
+   - Implemented expandable sections for additional user information
+   - Added role badges and team information display
+   - Included team selection functionality for admin users
+   - Designed with responsive layout for all screen sizes
+
+#### Users Page Enhancements
+1. **Dual View Implementation**
+   - Added toggle between grid and list views
+   - Enhanced grid view with role information column
+   - Created responsive list view using UserCard components
+   - Added view preference persistence using localStorage
+
+2. **Role Visualization**
+   - Added role information column to the grid view
+   - Implemented role badges with appropriate colors
+   - Added tooltips for role descriptions
+   - Limited visible roles with "+X more" indicator for users with many roles
+   - Added detailed role access information in expandable card view
+
+3. **Team Selection Improvements**
+   - Fixed team dropdown cutoff issue by adding maxHeight and scrolling
+   - Enhanced dropdown styling for better visibility
+   - Improved error handling and status indicators
+   - Unified team change handling between views
+
+4. **Layout Restructuring**
+   - Improved header section with view toggle
+   - Enhanced responsive design for all screen sizes
+   - Better utilized available screen space
+   - Implemented grid layout for list view with responsive columns
+
+### Technical Components
+1. **View State Management**
+   - Implemented using React useState hook
+   - Added localStorage persistence for user preferences
+   - Created useEffect hooks for loading/saving preferences
+
+2. **Role Data Integration**
+   - Utilized team roles data from the existing API
+   - Mapped team roles to user display
+   - Implemented efficient role filtering and display
+
+3. **Responsive Design**
+   - Implemented responsive grid for list view (1 column on mobile, 2 on tablet, 3 on desktop)
+   - Added mobile-friendly controls
+   - Ensured consistent experience across device sizes
+
+4. **TypeScript Improvements**
+   - Added proper typing for all components
+   - Fixed null handling for team assignments
+   - Improved type safety throughout the implementation
+
+### Benefits
+- Enhanced user management with more comprehensive information display
+- Improved role visibility with color-coded badges and tooltips
+- Fixed UI issues with team dropdown selection
+- Added flexibility with dual view options for different use cases
+- Improved mobile experience with responsive design
+- Enhanced code quality with proper TypeScript typing
+
+### Future Enhancements
+- Advanced search and filtering capabilities
+- User details expansion with project and task information
+- Direct role management interface for admin users
+- Batch operations for team and role assignments
+
 ## CSV Data Table Enhancement: Hyperlink Support
 
 ### Overview

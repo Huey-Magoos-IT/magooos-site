@@ -1,5 +1,101 @@
 # Decision Log
 
+## 2025-03-31: Users Page Enhancement with Dual View and Role Visualization
+
+### Problem
+The Users page had several issues that needed to be addressed:
+1. The team selection dropdown was being cut off in the UI
+2. The page didn't display user roles or permissions
+3. Limited search and filtering capabilities
+4. Inefficient use of screen space
+5. Lack of detailed user information
+
+### Investigation
+1. Examined the current Users page implementation in client/src/app/users/page.tsx
+2. Analyzed the data structure for users, teams, and roles
+3. Reviewed the role-based access control system
+4. Identified opportunities for improved visualization and layout
+
+### Decision Points
+
+#### Decision 1: Implement Dual View Options (Grid/List)
+- **Choice**: Create a toggle between grid and card-based views
+- **Rationale**: Different view options provide flexibility for different use cases and screen sizes
+- **Alternatives Considered**:
+  - Enhancing only the grid view (rejected as it limits information display)
+  - Creating a completely new table-based view (rejected for consistency)
+  - Using a tabbed interface (rejected for simplicity)
+- **Consequences**: More flexible UI that adapts to different user needs and screen sizes
+
+#### Decision 2: Create Reusable View Toggle Component
+- **Choice**: Implement a standalone ViewToggle component
+- **Rationale**: Promotes reusability across the application for similar view switching needs
+- **Alternatives Considered**:
+  - Inline toggle implementation (rejected for reusability)
+  - Using a third-party component (rejected for customization needs)
+- **Consequences**: Consistent view switching pattern that can be reused in other parts of the application
+
+#### Decision 3: Implement Role Visualization with Badges
+- **Choice**: Create a RoleBadge component with color-coding based on role type
+- **Rationale**: Visual differentiation makes roles easier to identify at a glance
+- **Alternatives Considered**:
+  - Text-only role display (rejected for visual clarity)
+  - Icon-based role display (rejected for simplicity)
+  - Dropdown role selector (rejected as roles are team-based, not directly assigned)
+- **Consequences**: Improved role visibility with intuitive color-coding
+
+#### Decision 4: Fix Team Dropdown Cutoff Issue
+- **Choice**: Add maxHeight and scrolling to the team selection dropdown
+- **Rationale**: Prevents UI issues with long team lists while maintaining functionality
+- **Alternatives Considered**:
+  - Modal-based team selection (rejected as too complex for this issue)
+  - Limiting visible teams (rejected for functionality)
+  - Auto-sizing dropdown (rejected due to unpredictable layout issues)
+- **Consequences**: Properly contained dropdown that works with any number of teams
+
+#### Decision 5: Create Card-Based List View
+- **Choice**: Implement a UserCard component for the list view
+- **Rationale**: Cards provide more space for detailed user information
+- **Alternatives Considered**:
+  - Table-based list view (rejected for flexibility)
+  - Simple list items (rejected for information density)
+- **Consequences**: More comprehensive user information display in a visually appealing format
+
+#### Decision 6: Add Expandable Details in Card View
+- **Choice**: Implement expandable sections in the UserCard component
+- **Rationale**: Allows for additional information without cluttering the default view
+- **Alternatives Considered**:
+  - Always showing all details (rejected for cleanliness)
+  - Modal-based details view (rejected for simplicity)
+- **Consequences**: Clean default view with option to see more details when needed
+
+#### Decision 7: Persist View Preference
+- **Choice**: Store view preference in localStorage
+- **Rationale**: Maintains user preference across sessions for better UX
+- **Alternatives Considered**:
+  - Server-side preference storage (rejected as too heavy for this feature)
+  - No persistence (rejected for user experience)
+- **Consequences**: Consistent user experience with remembered preferences
+
+### Implementation
+1. Created ViewToggle component for switching between grid and list views
+2. Implemented RoleBadge component for role visualization
+3. Developed UserCard component for the list view
+4. Enhanced the Users page with dual view support
+5. Fixed team dropdown cutoff issue
+6. Added role information to both views
+7. Implemented view preference persistence
+8. Added responsive design for all screen sizes
+
+### Impact
+- Enhanced user management with more comprehensive information display
+- Improved role visibility with color-coded badges and tooltips
+- Fixed UI issues with team dropdown selection
+- Added flexibility with dual view options for different use cases
+- Improved mobile experience with responsive design
+- Enhanced code quality with proper TypeScript typing
+- Established reusable patterns for view toggling and information display
+
 ## 2025-03-31: Sidebar Redesign, Feature Hiding, and Build Fixes
 
 ### Problem

@@ -27,6 +27,13 @@
 - ✅ CSV table with expandable view for better data visualization
 - ✅ Extended date range selection (up to current day) for client-side processing
 
+### Users Page Enhancement (In Progress)
+- ⬜ Implement dual view options (grid/list)
+- ⬜ Add role visualization with badges
+- ⬜ Fix team dropdown cutoff issue
+- ⬜ Enhance layout for better space utilization
+- ⬜ Improve mobile responsiveness
+
 ### Pending Items
 - Role deletion functionality
 - More detailed role permissions (beyond departments)
@@ -44,6 +51,8 @@
 ## Recent Enhancements
 
 ### March 31, 2025
+- Started Users page enhancement with focus on dual view options and role visualization
+- Created detailed implementation plan for Users page redesign
 - Redesigned the sidebar header by consolidating redundant sections
 - Replaced "HUEY" with "Huey Magoo's" for better branding clarity
 - Moved the logo to the top header section next to the brand name
