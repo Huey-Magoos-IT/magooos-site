@@ -2,7 +2,7 @@
 
 import React, { useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Info } from "lucide-react";
-import { Tooltip, Box, Typography } from "@mui/material";
+import { Tooltip } from "@mui/material";
 
 interface QUReportSectionProps {
   title: string;
@@ -22,7 +22,7 @@ const QUReportSection: React.FC<QUReportSectionProps> = ({
   return (
     <div className="mb-4 border border-gray-200 rounded-md overflow-hidden shadow-sm dark:border-gray-700">
       {/* Section Header */}
-      <div 
+      <div
         className="flex items-center justify-between px-4 py-3 bg-white cursor-pointer dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
         onClick={() => setIsOpen(!isOpen)}
       >

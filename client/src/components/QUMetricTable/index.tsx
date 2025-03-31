@@ -20,10 +20,10 @@ const QUMetricTable: React.FC<QUMetricTableProps> = ({ metrics }) => {
       <table className="w-full border-collapse">
         <tbody>
           {metrics.map((metric, index) => (
-            <tr 
+            <tr
               key={index}
               className={`
-                border-b border-gray-100 dark:border-gray-700 
+                border-b border-gray-100 dark:border-gray-700
                 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}
                 hover:bg-blue-50 dark:hover:bg-blue-900/10
               `}
@@ -41,7 +41,7 @@ const QUMetricTable: React.FC<QUMetricTableProps> = ({ metrics }) => {
                 </div>
               </td>
               <td className="py-3 px-4 text-sm text-right font-medium text-gray-900 dark:text-white">
-                {typeof metric.value === 'number' 
+                {typeof metric.value === 'number'
                   ? metric.value.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2
