@@ -197,6 +197,14 @@ We need to extend the current API queries to include:
 
 These improvements enhance the user experience with better filtering capabilities and a more intuitive interface, while also resolving all build errors and warnings shown in the deployment logs, allowing the application to be successfully built and deployed.
 
+## Recent Updates (April 1, 2025)
+
+1. **Automatic Page Refresh Enhancement**
+   - Added automatic page reload after user team changes
+   - Implemented page refresh after report exports
+   - Enhanced downloadCSV function with configurable reload behavior
+   - Improved overall data consistency across the application
+   
 ## Next Steps
 
 1. Create the ViewToggle component

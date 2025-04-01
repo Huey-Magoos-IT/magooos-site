@@ -57,6 +57,7 @@ const UserCard: React.FC<UserCardProps> = ({
   const handleTeamChange = (event: SelectChangeEvent<number | string>) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     onTeamChange(user.userId, newTeamId);
+    // Note: Page reload is handled in the parent component after the API call completes
   };
 
   return (

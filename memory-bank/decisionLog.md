@@ -1,5 +1,51 @@
 # Decision Log
 
+## 2025-04-01: Page Reload After User Changes and Report Exports
+
+### Problem
+The application needed to automatically reload the page in two specific scenarios:
+1. When switching users (changing team assignments) to reflect updated user data
+2. After exporting reports to ensure data freshness
+
+### Investigation
+1. Examined the team change functionality in users/page.tsx and UserCard component
+2. Analyzed the CSV download implementation in csvProcessing.ts
+3. Reviewed how CSVDataTable handles report exports
+
+### Decision Points
+
+#### Decision 1: Add Page Reload After Team Changes
+- **Choice**: Add an automatic page reload after successful team changes with a delay
+- **Rationale**: Ensures all components reflect the updated team assignment without requiring manual refresh
+- **Alternatives Considered**:
+  - Using RTK Query cache invalidation (rejected as it might not update all needed data)
+  - Adding manual refresh button (rejected as it requires additional user action)
+  - Using context state updates (rejected as some components might still use stale data)
+- **Consequences**: More consistent UI with guaranteed fresh data after team changes
+
+#### Decision 2: Add Page Reload After Report Exports
+- **Choice**: Enhance downloadCSV function with optional page reload functionality
+- **Rationale**: Ensures fresh data is used for subsequent report generation
+- **Alternatives Considered**:
+  - Refreshing only the data components (rejected for consistency and simplicity)
+  - Manual refresh prompt (rejected for better user experience)
+  - No reload (rejected as it could lead to stale data being used)
+- **Consequences**: Improved data consistency with minimal user friction
+
+### Implementation
+1. Modified handleTeamChange in users/page.tsx to reload the page after successful team changes
+2. Enhanced downloadCSV function with an optional reloadAfterDownload parameter
+3. Updated CSVDataTable to use the new parameter with explicit true value
+4. Added appropriate delays to ensure operations complete before reload
+
+### Impact
+- Enhanced user experience with automatic refresh of data after critical operations
+- Improved data consistency throughout the application
+- Eliminated the need for manual page refreshes after these operations
+- Maintained visual feedback with delayed reload to show success/error states
+
+# Previous Decisions
+
 ## 2025-03-31 (Afternoon): UI Improvements and Build Fixes
 
 ### Problem

@@ -246,8 +246,9 @@ export const convertToCSV = (data: any[]): string => {
  * Creates and triggers download of a CSV file
  * @param data Array of objects to convert to CSV
  * @param filename Name for the downloaded file
+ * @param reloadAfterDownload Whether to reload the page after download (default: true)
  */
-export const downloadCSV = (data: any[], filename: string): void => {
+export const downloadCSV = (data: any[], filename: string, reloadAfterDownload: boolean = true): void => {
   const csvContent = convertToCSV(data);
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -258,6 +259,13 @@ export const downloadCSV = (data: any[], filename: string): void => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  
+  // Reload the page after a short delay to ensure download has started
+  if (reloadAfterDownload) {
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000); // 1 second delay should be sufficient for the download to begin
+  }
 };
 
 /**

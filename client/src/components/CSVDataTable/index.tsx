@@ -173,7 +173,8 @@ const CSVDataTable = ({
       ? `loyalty_data${dateStr}.csv`
       : `${reportType}${dateStr}.csv`;
       
-    downloadCSV(data, filename);
+    // Call downloadCSV with reloadAfterDownload=true to ensure page reloads after download
+    downloadCSV(data, filename, true);
   };
   
   // Helper function to check if using default discount IDs

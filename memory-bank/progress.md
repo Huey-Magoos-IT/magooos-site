@@ -50,6 +50,13 @@
 
 ## Recent Enhancements
 
+### April 1, 2025
+- Implemented automatic page reload functionality in key scenarios:
+  - Added smart page reload after user team changes to ensure UI reflects updated assignments
+  - Enhanced CSV download with automatic refresh after export completion
+  - Improved overall data consistency and user experience by eliminating manual refreshes
+- Updated documentation in the decision log to explain implementation choices
+
 ### March 31, 2025 - Morning
 - Redesigned the sidebar header by consolidating redundant sections
 - Replaced "HUEY" with "Huey Magoo's" for better branding clarity
