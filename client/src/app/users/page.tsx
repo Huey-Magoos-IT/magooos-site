@@ -83,12 +83,12 @@ const Users = () => {
       // Set success status
       setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
       
-      // Clear success status after 2 seconds and reload the page
+      // Clear success status and reload the page almost immediately
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
         // Reload the page to reflect the updated user team assignment
         window.location.reload();
-      }, 2000);
+      }, 300); // Reduced to 300ms for almost immediate reload while still showing success indicator
     } catch (error) {
       console.error('Error updating user team:', error);
       // Set error status
