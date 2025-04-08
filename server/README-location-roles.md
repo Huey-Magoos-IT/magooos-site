@@ -12,15 +12,27 @@ The location-based access control system allows:
 
 ## Implementation Steps
 
-### 1. Run Migration and Seed Script
+### 1. Prepare Environment and Run Migration Script
 
-The migration script will apply the schema changes and create the necessary roles:
+Before running the migration script, ensure you are in the **server** directory:
+
+```bash
+cd /root/magooos-site/server
+```
+
+Then install dependencies (if not done yet):
+
+```bash
+npm install
+```
+
+The migration script will apply the schema changes and create the necessary roles. It will also install dependencies automatically if missing.
 
 ```bash
 # Make the script executable
 chmod +x migrate-and-seed-location-roles.sh
 
-# Run the script
+# Run the script from inside the server directory
 ./migrate-and-seed-location-roles.sh
 ```
 

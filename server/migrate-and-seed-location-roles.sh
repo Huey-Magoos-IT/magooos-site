@@ -6,7 +6,17 @@
 echo "Starting migration and seeding for location-based roles..."
 
 # Navigate to the server directory
-cd /magooos-site/server
+# Change to the directory where this script is located
+cd "$(dirname "$0")" || exit 1
+
+# Now we are inside /root/magooos-site/server or wherever the script is
+echo "Current directory: $(pwd)"
+
+# Check if node_modules exists, if not, install dependencies
+if [ ! -d "node_modules" ]; then
+  echo "node_modules not found. Installing dependencies..."
+  npm install
+fi
 
 # Run Prisma migration to apply schema changes
 echo "Running Prisma migration..."
