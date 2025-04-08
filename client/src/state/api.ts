@@ -46,6 +46,16 @@ export interface Team {
   teamRoles?: TeamRole[];
 }
 
+export interface Group {
+  id: number;
+  name: string;
+  description?: string;
+  locationIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  users?: User[];
+}
+
 export interface User {
   userId?: number;
   username: string;
@@ -53,7 +63,10 @@ export interface User {
   profilePictureUrl?: string;
   cognitoId?: string;
   teamId?: number;
+  groupId?: number;
+  locationIds?: string[];
   team?: Team;
+  group?: Group;
 }
 
 export interface Attachment {
@@ -103,7 +116,7 @@ export const api = createApi({
     },
   }),
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Roles"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Roles", "Groups"],
   endpoints: (build) => ({
     getAuthUser: build.query({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
@@ -321,6 +334,58 @@ export const api = createApi({
       },
       invalidatesTags: ["Users", "Teams"],
     }),
+    // GROUPS FUNCTIONALITY
+    getGroups: build.query<Group[], void>({
+      query: () => "groups",
+      providesTags: ["Groups", "Users"]
+    }),
+    createGroup: build.mutation<Group, { name: string; description?: string; locationIds?: string[] }>({
+      query: (body) => ({
+        url: "groups",
+        method: "POST",
+        body
+      }),
+      invalidatesTags: ["Groups", "Users"]
+    }),
+    updateGroup: build.mutation<Group, { id: number; name?: string; description?: string; locationIds?: string[] }>({
+      query: ({ id, ...data }) => ({
+        url: `groups/${id}`,
+        method: "PUT",
+        body: data
+      }),
+      invalidatesTags: ["Groups", "Users"]
+    }),
+    deleteGroup: build.mutation<void, number>({
+      query: (id) => ({
+        url: `groups/${id}`,
+        method: "DELETE"
+      }),
+      invalidatesTags: ["Groups", "Users"]
+    }),
+    assignGroupToUser: build.mutation<void, { userId: number; groupId: number }>({
+      query: (body) => ({
+        url: "groups/assign",
+        method: "POST",
+        body
+      }),
+      invalidatesTags: ["Groups", "Users"]
+    }),
+    updateUserLocations: build.mutation<void, { userId: number; locationIds: string[] }>({
+      query: ({ userId, locationIds }) => ({
+        url: `users/${userId}/locations`,
+        method: "PATCH",
+        body: { locationIds }
+      }),
+      invalidatesTags: ["Users"]
+    }),
+    createLocationUser: build.mutation<User, { username: string; locationIds: string[]; teamId: number }>({
+      query: (body) => ({
+        url: "users/location-user",
+        method: "POST",
+        body
+      }),
+      invalidatesTags: ["Users"]
+    }),
   }),
 });
 
@@ -344,4 +409,12 @@ export const {
   useGetAuthUserQuery,
   useProcessDataMutation,
   useUpdateUserTeamMutation,
+  // Groups functionality hooks
+  useGetGroupsQuery,
+  useCreateGroupMutation,
+  useUpdateGroupMutation,
+  useDeleteGroupMutation,
+  useAssignGroupToUserMutation,
+  useUpdateUserLocationsMutation,
+  useCreateLocationUserMutation,
 } = api;

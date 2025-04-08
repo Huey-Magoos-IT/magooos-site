@@ -1,5 +1,88 @@
 # Decision Log
 
+## 2025-04-07: Groups Functionality Implementation
+
+### Problem
+The application needed a way to manage location-based access control:
+1. Admins needed to create groups of locations
+2. LocationAdmin users needed to be assigned to manage these groups
+3. LocationUsers needed access to specific locations within their group
+4. Data needed to be filtered based on user's location access
+
+### Investigation
+1. Examined existing permission model based on roles
+2. Analyzed database schema for potential changes
+3. Evaluated different approaches for storing location IDs
+4. Reviewed frontend components for reusability
+
+### Decision Points
+
+#### Decision 1: Use Array Fields for Location IDs
+- **Choice**: Store location IDs as string arrays in both Group and User models
+- **Rationale**: Provides flexibility and performance for location-based filtering
+- **Alternatives Considered**:
+  - Junction tables (rejected due to query complexity)
+  - JSON fields (rejected for type safety)
+  - Comma-separated strings (rejected for query limitations)
+- **Consequences**: Simpler queries and better performance at the cost of some data normalization
+
+#### Decision 2: Implement Group-User Relationship
+- **Choice**: Add a groupId field to the User model with a relation to Group
+- **Rationale**: Enables clear assignment of LocationAdmin users to groups
+- **Alternatives Considered**:
+  - Many-to-many relationship (rejected as users should only manage one group)
+  - Group membership table (rejected for simplicity)
+- **Consequences**: Clear ownership model with straightforward queries
+
+#### Decision 3: Automatic Location Synchronization
+- **Choice**: Automatically sync group locations to LocationAdmin users
+- **Rationale**: Ensures LocationAdmin users always have access to all locations in their group
+- **Alternatives Considered**:
+  - Manual location assignment (rejected for consistency)
+  - Separate permission checks (rejected for performance)
+- **Consequences**: Simplified management with guaranteed access to relevant locations
+
+#### Decision 4: Use Raw SQL for Complex Queries
+- **Choice**: Implement complex queries using Prisma's raw SQL capabilities
+- **Rationale**: Some operations are difficult to express in Prisma's query language
+- **Alternatives Considered**:
+  - Multiple Prisma queries (rejected for performance)
+  - Custom middleware (rejected for complexity)
+- **Consequences**: More efficient queries at the cost of some type safety
+
+#### Decision 5: Create Dedicated GroupCard Component
+- **Choice**: Create a new GroupCard component rather than adapting existing components
+- **Rationale**: Groups have unique properties that warrant a specialized component
+- **Alternatives Considered**:
+  - Adapting UserCard (rejected for clarity)
+  - Using a generic card component (rejected for specific functionality)
+- **Consequences**: Cleaner UI with components tailored to their data models
+
+#### Decision 6: Implement Permission Boundaries
+- **Choice**: Add strict permission checks in controllers for location-based access
+- **Rationale**: Ensures users can only access locations they're authorized for
+- **Alternatives Considered**:
+  - Client-side filtering only (rejected for security)
+  - Role-based access without location checks (rejected for granularity)
+- **Consequences**: Secure access control with appropriate permission boundaries
+
+### Implementation
+1. Updated Prisma schema with Group model and User model changes
+2. Implemented Group controller with CRUD operations and permission checks
+3. Updated User controller with location management functions
+4. Created GroupCard component for UI
+5. Implemented Groups management page with create/edit/delete functionality
+6. Added user assignment dialog for assigning LocationAdmin users to groups
+7. Updated API slice with new endpoints for groups and locations
+8. Added access control utilities for location-based permissions
+
+### Impact
+- Enhanced access control with location-based permissions
+- Improved user management with group assignments
+- Added flexibility for managing location access
+- Established pattern for future location-based features
+- Maintained consistent UI with existing components
+
 ## 2025-04-01: Page Reload After User Changes and Report Exports
 
 ### Problem
@@ -617,90 +700,3 @@ Team assignment functionality was failing with permission errors when:
 - **Consequences**: Maintains an administrative backdoor while simplifying the permission model
 
 #### Decision 3: Maintain Backward Compatibility
-- **Choice**: Keep existing no-team endpoint while fixing primary assignment flow
-- **Rationale**: Ensures existing client code continues to work without breaking changes
-- **Alternatives Considered**:
-  - Rewriting the entire team assignment flow (rejected as too risky)
-  - Adding a version parameter to endpoints (rejected as unnecessary complexity)
-- **Consequences**: Smooth transition with no client-side changes required
-
-### Implementation
-1. Simplified permission logic in joinTeam controller to focus on authenticated user
-2. Added special case handling for admin username
-3. Enhanced logging for permission-related operations
-4. Maintained backward compatibility with existing team assignment flows
-
-### Lessons Learned
-1. **Check The Right User**: Permission checks must focus on the authenticated user making the request
-2. **Avoid Circular Dependencies**: Permission systems should avoid dependencies that create impossible conditions
-3. **Plan for Edge Cases**: Always handle special cases like "no team" explicitly
-4. **Test All Pathways**: Ensure all possible state transitions are tested, including edge cases
-
-### Impact
-- Fixed team assignment for all users regardless of their current team status
-- Eliminated the catch-22 situation in permission model
-- Improved system resilience with proper edge case handling
-- Established a clearer pattern for permission checking
-
-## 2025-03-07: Team Assignment API Fix
-
-### Problem
-Team assignment functionality was failing with 404 errors in two scenarios:
-1. When using a custom `/users/team-assignment` endpoint
-2. When attempting to set a user to "no team" (teamId = 0)
-
-### Investigation
-1. Examined client-side error logs showing 404 errors for API requests
-2. Reviewed server logs to understand the request path through API Gateway
-3. Compared working endpoints (teams/join) with non-working endpoints
-4. Identified pattern that only certain route formats work with API Gateway
-
-### Root Causes
-1. **API Gateway Route Configuration**: Only specific route patterns are properly configured
-   - `/teams/*` and `/projects/*` work reliably
-   - Custom routes like `/users/team-assignment` are not recognized
-2. **Missing Handling for "No Team"**: The system had no specific endpoint to handle null team assignment
-
-### Decision Points
-
-#### Decision 1: Use Existing Endpoints Instead of Custom Routes
-- **Choice**: Use the existing `/teams/:teamId/join` endpoint instead of creating custom user endpoints
-- **Rationale**: The existing endpoint is already configured in API Gateway and works reliably
-- **Alternatives Considered**: 
-  - Adding a new API Gateway route for custom endpoints (rejected due to complexity and deployment risks)
-  - Creating a workaround using Lambda direct access (rejected due to consistency concerns)
-- **Consequences**: Simplified approach but requires client-side logic to handle different team scenarios
-
-#### Decision 2: Create Special Endpoint for "No Team" Option
-- **Choice**: Create a dedicated `/teams/remove-user-from-team` endpoint 
-- **Rationale**: Special case needs explicit server-side handling since "teamId=0" is not a valid team ID
-- **Alternatives Considered**:
-  - Using null in URL path (rejected due to routing issues)
-  - Adding query parameter flag (rejected due to API Gateway limitations)
-- **Consequences**: More explicit handling of special cases, at the cost of more endpoints to maintain
-
-#### Decision 3: Use Standard RTK Query Patterns
-- **Choice**: Use standard query function with conditional routing rather than complex queryFn override
-- **Rationale**: Simpler approach is more maintainable and less error-prone
-- **Alternatives Considered**:
-  - Custom queryFn implementation (rejected due to TypeScript errors and complexity)
-  - Separate mutation for "no team" (rejected for UX consistency reasons)
-- **Consequences**: Cleaner code, better TypeScript support, more maintainable solution
-
-### Implementation
-1. Created a special server endpoint `/teams/remove-user-from-team` to handle "no team" case
-2. Updated client code to conditionally route requests based on teamId
-3. Added comprehensive logging for debugging
-4. Documented API Gateway constraints in system patterns
-
-### Lessons Learned
-1. **Simplicity First**: Standard patterns are more reliable than custom implementations
-2. **API Gateway Constraints**: Need to understand and work within the limitations of API Gateway
-3. **Edge Case Handling**: Special cases need explicit handling with dedicated endpoints
-4. **Documentation Importance**: System patterns need to reflect architectural constraints
-
-### Impact
-- Fixed team assignment functionality for all scenarios
-- Established pattern for handling similar API issues
-- Improved understanding of API Gateway constraints
-- Updated documentation to prevent similar issues

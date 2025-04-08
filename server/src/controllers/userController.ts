@@ -10,6 +10,209 @@ const prisma = new PrismaClient({
   log: ['query', 'info', 'warn', 'error']
 });
 
+/**
+ * Update user locations (admin or locationAdmin)
+ */
+export const updateUserLocations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    const { locationIds } = req.body;
+    
+    console.log(`[PATCH /users/${targetUserId}/locations] Updating user locations:`, { locationCount: locationIds?.length });
+    
+    // Get current user with roles
+    const userId = req.user?.userId;
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    const isLocationAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
+    
+    // For LocationAdmin users, check if all locations are in their group
+    if (isLocationAdmin && !isAdmin) {
+      // Get the LocationAdmin's group and its locations
+      const adminWithGroup = await prisma.$queryRaw`
+        SELECT g."locationIds"
+        FROM "User" u
+        JOIN "Group" g ON u."groupId" = g.id
+        WHERE u."userId" = ${userId}
+      `;
+      
+      if (!(adminWithGroup as any[])[0]) {
+        console.error(`[PATCH /users/${targetUserId}/locations] LocationAdmin has no group assigned`);
+        res.status(403).json({ message: "Access denied: No group assigned" });
+        return;
+      }
+      
+      const groupLocationIds = (adminWithGroup as any[])[0].locationIds;
+      
+      // Check if all requested locations are in the admin's group
+      const invalidLocations = locationIds.filter((id: string) => !groupLocationIds.includes(id));
+      
+      if (invalidLocations.length > 0) {
+        console.error(`[PATCH /users/${targetUserId}/locations] Invalid locations:`, invalidLocations);
+        res.status(403).json({
+          message: "Access denied: Some locations are not in your group",
+          invalidLocations
+        });
+        return;
+      }
+    } else if (!isAdmin) {
+      // Regular users can't update locations
+      console.error(`[PATCH /users/${targetUserId}/locations] Access denied: Not an admin or locationAdmin`);
+      res.status(403).json({ message: "Access denied: Requires ADMIN or LOCATION_ADMIN role" });
+      return;
+    }
+    
+    // Update user locations
+    await prisma.$executeRaw`
+      UPDATE "User"
+      SET "locationIds" = ${locationIds}
+      WHERE "userId" = ${targetUserId}
+    `;
+    
+    console.log(`[PATCH /users/${targetUserId}/locations] User locations updated successfully`);
+    res.status(200).json({ message: "User locations updated successfully" });
+  } catch (error: any) {
+    console.error(`[PATCH /users/${req.params.id}/locations] Error:`, error);
+    res.status(500).json({
+      message: "Error updating user locations",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Create LocationUser (admin or locationAdmin)
+ */
+export const createLocationUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username, locationIds, teamId } = req.body;
+    
+    console.log("[POST /users/location-user] Creating location user:", { username, locationCount: locationIds?.length, teamId });
+    
+    // Validate input
+    if (!username || !teamId || !locationIds || !Array.isArray(locationIds)) {
+      console.error("[POST /users/location-user] Invalid input");
+      res.status(400).json({ message: "Username, teamId, and locationIds are required" });
+      return;
+    }
+    
+    // Get current user with roles
+    const userId = req.user?.userId;
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    const isLocationAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
+    
+    // For LocationAdmin users, check if all locations are in their group
+    if (isLocationAdmin && !isAdmin) {
+      // Get the LocationAdmin's group and its locations
+      const adminWithGroup = await prisma.$queryRaw`
+        SELECT g."locationIds"
+        FROM "User" u
+        JOIN "Group" g ON u."groupId" = g.id
+        WHERE u."userId" = ${userId}
+      `;
+      
+      if (!(adminWithGroup as any[])[0]) {
+        console.error("[POST /users/location-user] LocationAdmin has no group assigned");
+        res.status(403).json({ message: "Access denied: No group assigned" });
+        return;
+      }
+      
+      const groupLocationIds = (adminWithGroup as any[])[0].locationIds;
+      
+      // Check if all requested locations are in the admin's group
+      const invalidLocations = locationIds.filter((id: string) => !groupLocationIds.includes(id));
+      
+      if (invalidLocations.length > 0) {
+        console.error("[POST /users/location-user] Invalid locations:", invalidLocations);
+        res.status(403).json({
+          message: "Access denied: Some locations are not in your group",
+          invalidLocations
+        });
+        return;
+      }
+      
+      // Check if the team has LOCATION_USER role
+      const team = await prisma.team.findUnique({
+        where: { id: parseInt(teamId) },
+        include: {
+          teamRoles: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
+      
+      const hasLocationUserRole = team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_USER');
+      
+      if (!hasLocationUserRole) {
+        console.error("[POST /users/location-user] Team does not have LOCATION_USER role");
+        res.status(400).json({ message: "Team must have LOCATION_USER role" });
+        return;
+      }
+    } else if (!isAdmin) {
+      // Regular users can't create location users
+      console.error("[POST /users/location-user] Access denied: Not an admin or locationAdmin");
+      res.status(403).json({ message: "Access denied: Requires ADMIN or LOCATION_ADMIN role" });
+      return;
+    }
+    
+    // Generate a random Cognito ID for now (this would be replaced by actual Cognito integration)
+    const tempCognitoId = `temp-${Math.random().toString(36).substring(2, 15)}`;
+    
+    // Create user in database using raw SQL
+    await prisma.$executeRaw`
+      INSERT INTO "User" (username, "cognitoId", "teamId", "locationIds", "profilePictureUrl")
+      VALUES (${username}, ${tempCognitoId}, ${parseInt(teamId)}, ${locationIds}::text[], 'i1.jpeg')
+    `;
+    
+    // Get the created user
+    const newUser = await prisma.user.findUnique({
+      where: { cognitoId: tempCognitoId }
+    });
+    
+    if (!newUser) {
+      console.error("[POST /users/location-user] Failed to retrieve created user");
+      res.status(500).json({ message: "User created but could not be retrieved" });
+      return;
+    }
+    
+    console.log(`[POST /users/location-user] User created: ${newUser.userId} - ${newUser.username}`);
+    res.status(201).json(newUser);
+  } catch (error: any) {
+    console.error("[POST /users/location-user] Error:", error);
+    res.status(500).json({
+      message: "Error creating location user",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany();

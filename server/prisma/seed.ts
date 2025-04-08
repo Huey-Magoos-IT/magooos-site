@@ -16,6 +16,7 @@ async function deleteAllData() {
     "User",
     "Project",
     "Team",
+    "Group", // Group model for location-based access control
     "Role", // New table from role-based access control
   ];
 
@@ -37,7 +38,9 @@ async function setupRoles() {
   const roles = [
     { name: "ADMIN", description: "Full access to all areas" },
     { name: "DATA", description: "Access to data department" },
-    { name: "REPORTING", description: "Access to reporting department" }
+    { name: "REPORTING", description: "Access to reporting department" },
+    { name: "LOCATION_ADMIN", description: "Can manage users within assigned group" },
+    { name: "LOCATION_USER", description: "Has access to data for assigned locations" }
   ];
 
   // Create roles if they don't exist

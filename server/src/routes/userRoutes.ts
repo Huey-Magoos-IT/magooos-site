@@ -1,6 +1,13 @@
 import { Router } from "express";
 
-import { getUser, getUsers, postUser, updateUserTeam } from "../controllers/userController";
+import {
+  getUser,
+  getUsers,
+  postUser,
+  updateUserTeam,
+  updateUserLocations,
+  createLocationUser
+} from "../controllers/userController";
 
 const router = Router();
 
@@ -8,6 +15,8 @@ router.get("/", getUsers);
 router.post("/", postUser);
 router.get("/:cognitoId", getUser);
 router.patch("/:userId/team", updateUserTeam);
+router.patch("/:id/locations", updateUserLocations);
+router.post("/location-user", createLocationUser);
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {

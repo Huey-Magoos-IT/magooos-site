@@ -31,3 +31,27 @@ export const hasAnyRole = (teamRoles: TeamRole[] | undefined, requiredRoles: str
     return normalizedRequiredRoles.includes(roleName) || roleName === 'ADMIN';  // ADMIN always has access
   });
 };
+
+// Check if user has access to a specific location
+export const hasLocationAccess = (userLocations: string[] | undefined, locationId: string): boolean => {
+  if (!userLocations || userLocations.length === 0) return false;
+  return userLocations.includes(locationId);
+};
+
+// Check if locationAdmin has access to a specific group
+export const hasGroupAccess = (userGroupId: number | null | undefined, groupId: number): boolean => {
+  if (!userGroupId) return false;
+  return userGroupId === groupId;
+};
+
+// Check if user is a LocationAdmin
+export const isLocationAdmin = (teamRoles: TeamRole[] | undefined): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  return teamRoles.some(tr => tr.role.name === 'LOCATION_ADMIN' || tr.role.name === 'ADMIN');
+};
+
+// Check if user is a LocationUser
+export const isLocationUser = (teamRoles: TeamRole[] | undefined): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  return teamRoles.some(tr => tr.role.name === 'LOCATION_USER');
+};
