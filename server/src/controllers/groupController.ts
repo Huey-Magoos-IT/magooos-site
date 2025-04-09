@@ -42,6 +42,24 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
  * Create a new group (admin only)
  */
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const user = await prisma.user.findUnique({
+    where: { userId },
+    include: {
+      team: {
+        include: {
+          teamRoles: {
+            include: { role: true }
+          }
+        }
+      }
+    }
+  });
+  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+  if (!isAdmin) {
+    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+    return;
+  }
   try {
     const { name, description, locationIds = [] } = req.body;
     console.log("[POST /groups] Creating group:", { name, description, locationCount: locationIds.length });
@@ -80,6 +98,24 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
  * Update a group (admin only)
  */
 export const updateGroup = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const user = await prisma.user.findUnique({
+    where: { userId },
+    include: {
+      team: {
+        include: {
+          teamRoles: {
+            include: { role: true }
+          }
+        }
+      }
+    }
+  });
+  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+  if (!isAdmin) {
+    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+    return;
+  }
   try {
     const groupId = parseInt(req.params.id);
     const { name, description, locationIds } = req.body;
@@ -136,6 +172,24 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
  * Assign a group to a LocationAdmin user (admin only)
  */
 export const assignGroupToUser = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const user = await prisma.user.findUnique({
+    where: { userId },
+    include: {
+      team: {
+        include: {
+          teamRoles: {
+            include: { role: true }
+          }
+        }
+      }
+    }
+  });
+  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+  if (!isAdmin) {
+    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+    return;
+  }
   try {
     const { userId, groupId } = req.body;
     console.log("[POST /groups/assign] Assigning group to user:", { userId, groupId });
@@ -242,6 +296,24 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
  * Delete a group (admin only)
  */
 export const deleteGroup = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const user = await prisma.user.findUnique({
+    where: { userId },
+    include: {
+      team: {
+        include: {
+          teamRoles: {
+            include: { role: true }
+          }
+        }
+      }
+    }
+  });
+  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+  if (!isAdmin) {
+    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+    return;
+  }
   try {
     const groupId = parseInt(req.params.id);
     console.log(`[DELETE /groups/${groupId}] Deleting group`);
