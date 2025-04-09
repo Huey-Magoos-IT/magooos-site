@@ -10,50 +10,14 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /groups] Fetching groups");
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let userId = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log("[GET /groups] Using userId from req.user:", req.user.userId);
-      userId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!userId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log("[GET /groups] Using Cognito ID from header:", cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log("[GET /groups] Found user from Cognito ID:", userFromCognito.username);
-          userId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log("[GET /groups] No authenticated user found, looking for admin user");
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log("[GET /groups] Using admin user as fallback in non-production mode");
-        userId = adminUser.userId;
-      }
-    }
-    
-    if (!userId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error("[GET /groups] No user ID in request");
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const userId = req.user.userId;
     
     // Get current user with roles
     const user = await prisma.user.findUnique({
@@ -145,51 +109,15 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       return;
     }
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let userId = null;
-    let user = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log("[POST /groups] Using userId from req.user:", req.user.userId);
-      userId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!userId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log("[POST /groups] Using Cognito ID from header:", cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log("[POST /groups] Found user from Cognito ID:", userFromCognito.username);
-          userId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log("[POST /groups] No authenticated user found, looking for admin user");
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log("[POST /groups] Using admin user as fallback in non-production mode");
-        userId = adminUser.userId;
-      }
-    }
-    
-    if (!userId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error("[POST /groups] No user ID in request");
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const userId = req.user.userId;
+    let user = null;
     
     // Get user with roles
     user = await prisma.user.findUnique({
@@ -245,51 +173,15 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
     const { name, description, locationIds } = req.body;
     console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let userId = null;
-    let user = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log("[PUT /groups/:id] Using userId from req.user:", req.user.userId);
-      userId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!userId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log("[PUT /groups/:id] Using Cognito ID from header:", cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log("[PUT /groups/:id] Found user from Cognito ID:", userFromCognito.username);
-          userId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log("[PUT /groups/:id] No authenticated user found, looking for admin user");
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log("[PUT /groups/:id] Using admin user as fallback in non-production mode");
-        userId = adminUser.userId;
-      }
-    }
-    
-    if (!userId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error("[PUT /groups/:id] No user ID in request");
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const userId = req.user.userId;
+    let user = null;
     
     // Get user with roles
     user = await prisma.user.findUnique({
@@ -368,51 +260,15 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
     const { userId, groupId } = req.body;
     console.log("[POST /groups/assign] Assigning group to user:", { userId, groupId });
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let adminId = null;
-    let admin = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log("[POST /groups/assign] Using userId from req.user:", req.user.userId);
-      adminId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!adminId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log("[POST /groups/assign] Using Cognito ID from header:", cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log("[POST /groups/assign] Found user from Cognito ID:", userFromCognito.username);
-          adminId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!adminId && process.env.NODE_ENV !== 'production') {
-      console.log("[POST /groups/assign] No authenticated user found, looking for admin user");
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log("[POST /groups/assign] Using admin user as fallback in non-production mode");
-        adminId = adminUser.userId;
-      }
-    }
-    
-    if (!adminId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error("[POST /groups/assign] No user ID in request");
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const adminId = req.user.userId;
+    let admin = null;
     
     // Get admin user with roles
     admin = await prisma.user.findUnique({
@@ -497,51 +353,15 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
     const locationId = req.params.locationId;
     console.log(`[GET /groups/locations/${locationId}/users] Fetching users for location`);
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let userId = null;
-    let user = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log(`[GET /groups/locations/${locationId}/users] Using userId from req.user:`, req.user.userId);
-      userId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!userId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log(`[GET /groups/locations/${locationId}/users] Using Cognito ID from header:`, cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log(`[GET /groups/locations/${locationId}/users] Found user from Cognito ID:`, userFromCognito.username);
-          userId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log(`[GET /groups/locations/${locationId}/users] No authenticated user found, looking for admin user`);
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log(`[GET /groups/locations/${locationId}/users] Using admin user as fallback in non-production mode`);
-        userId = adminUser.userId;
-      }
-    }
-    
-    if (!userId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error(`[GET /groups/locations/${locationId}/users] No user ID in request`);
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const userId = req.user.userId;
+    let user = null;
     
     // Get user with roles
     user = await prisma.user.findUnique({
@@ -625,51 +445,15 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
     const groupId = parseInt(req.params.id);
     console.log(`[DELETE /groups/${groupId}] Deleting group`);
     
-    // Multiple authentication methods for flexibility with API Gateway
-    let userId = null;
-    let user = null;
-    
-    // Method 1: Check for user in req.user (set by middleware)
-    if (req.user?.userId) {
-      console.log(`[DELETE /groups/${groupId}] Using userId from req.user:`, req.user.userId);
-      userId = req.user.userId;
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!userId) {
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log(`[DELETE /groups/${groupId}] Using Cognito ID from header:`, cognitoId);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log(`[DELETE /groups/${groupId}] Found user from Cognito ID:`, userFromCognito.username);
-          userId = userFromCognito.userId;
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!userId && process.env.NODE_ENV !== 'production') {
-      console.log(`[DELETE /groups/${groupId}] No authenticated user found, looking for admin user`);
-      // Find the admin user for testing purposes
-      const adminUser = await prisma.user.findFirst({
-        where: { username: 'admin' }
-      });
-      
-      if (adminUser) {
-        console.log(`[DELETE /groups/${groupId}] Using admin user as fallback in non-production mode`);
-        userId = adminUser.userId;
-      }
-    }
-    
-    if (!userId) {
+    // Check if user is authenticated via middleware
+    if (!req.user?.userId) {
       console.error(`[DELETE /groups/${groupId}] No user ID in request`);
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
+    
+    const userId = req.user.userId;
+    let user = null;
     
     // Get user with roles
     user = await prisma.user.findUnique({
