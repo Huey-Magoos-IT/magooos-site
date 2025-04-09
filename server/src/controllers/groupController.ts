@@ -20,6 +20,14 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
     `;
     
     console.log(`[GET /groups] Found ${(groups as any[]).length} groups`);
+    
+    // Set explicit content type and anti-caching headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
     res.json(groups);
   } catch (error: any) {
     console.error("[GET /groups] Error:", error);
