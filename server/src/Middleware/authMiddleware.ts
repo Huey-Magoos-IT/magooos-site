@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log(`[authMiddleware] Path: ${req.path}`);
+    console.log(`[authMiddleware] Headers: ${JSON.stringify(req.headers)}`);
     
     // Multiple authentication methods for flexibility with API Gateway
     let userId = null;
@@ -20,22 +21,40 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     if (authHeader && authHeader.startsWith('Bearer ')) {
       console.log('[authMiddleware] Authorization header found');
       
+      // Extract the token
+      const token = authHeader.split(' ')[1];
+      console.log(`[authMiddleware] Token: ${token.substring(0, 20)}...`);
+      
       // In a production system, we would decode and verify the JWT token here
       // For now, we'll just check if the header exists and proceed
+    }
+    
+    // Method 2: Check for Cognito ID in x-user-cognito-id header
+    const cognitoId = req.headers['x-user-cognito-id'] as string;
+    if (cognitoId) {
+      console.log(`[authMiddleware] Using Cognito ID from header: ${cognitoId}`);
+      const userFromCognito = await prisma.user.findUnique({
+        where: { cognitoId }
+      });
       
-      // Method 2: Check for Cognito ID in x-user-cognito-id header
-      const cognitoId = req.headers['x-user-cognito-id'] as string;
-      if (cognitoId) {
-        console.log(`[authMiddleware] Using Cognito ID from header: ${cognitoId}`);
-        const userFromCognito = await prisma.user.findUnique({
-          where: { cognitoId }
-        });
-        
-        if (userFromCognito) {
-          console.log(`[authMiddleware] Found user from Cognito ID: ${userFromCognito.username}`);
-          userId = userFromCognito.userId;
-          username = userFromCognito.username;
-        }
+      if (userFromCognito) {
+        console.log(`[authMiddleware] Found user from Cognito ID: ${userFromCognito.username}`);
+        userId = userFromCognito.userId;
+        username = userFromCognito.username;
+      }
+    }
+    
+    // Method 3: Check for requestingUserId in body
+    if (!userId && req.body && req.body.requestingUserId) {
+      console.log(`[authMiddleware] Using requestingUserId from body: ${req.body.requestingUserId}`);
+      const userFromId = await prisma.user.findUnique({
+        where: { userId: parseInt(req.body.requestingUserId) }
+      });
+      
+      if (userFromId) {
+        console.log(`[authMiddleware] Found user from ID: ${userFromId.username}`);
+        userId = userFromId.userId;
+        username = userFromId.username;
       }
     }
     
