@@ -8,9 +8,8 @@ const prisma = new PrismaClient();
  */
 export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log("[GET /groups] Fetching groups");
-    
-    // Fetch all groups with their users
+    console.log("[GET /groups] Fetching groups (public)");
+
     const groups = await prisma.$queryRaw`
       SELECT g.*,
         (SELECT json_agg(json_build_object('userId', u."userId", 'username', u.username))
@@ -18,16 +17,15 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
          WHERE u."groupId" = g.id) as users
       FROM "Group" g
     `;
-    
+
     console.log(`[GET /groups] Found ${(groups as any[]).length} groups`);
-    
-    // Set explicit content type and anti-caching headers
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('Surrogate-Control', 'no-store');
-    
+
     res.json(groups);
   } catch (error: any) {
     console.error("[GET /groups] Error:", error);
@@ -42,22 +40,10 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
  * Create a new group (admin only)
  */
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
-  const user = await prisma.user.findUnique({
-    where: { userId },
-    include: {
-      team: {
-        include: {
-          teamRoles: {
-            include: { role: true }
-          }
-        }
-      }
-    }
-  });
-  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-  if (!isAdmin) {
-    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+  // Simple admin check using API key
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    res.status(403).json({ message: 'Access denied: Admin API key required' });
     return;
   }
   try {
@@ -98,22 +84,10 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
  * Update a group (admin only)
  */
 export const updateGroup = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
-  const user = await prisma.user.findUnique({
-    where: { userId },
-    include: {
-      team: {
-        include: {
-          teamRoles: {
-            include: { role: true }
-          }
-        }
-      }
-    }
-  });
-  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-  if (!isAdmin) {
-    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+  // Simple admin check using API key
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    res.status(403).json({ message: 'Access denied: Admin API key required' });
     return;
   }
   try {
@@ -172,22 +146,10 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
  * Assign a group to a LocationAdmin user (admin only)
  */
 export const assignGroupToUser = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
-  const user = await prisma.user.findUnique({
-    where: { userId },
-    include: {
-      team: {
-        include: {
-          teamRoles: {
-            include: { role: true }
-          }
-        }
-      }
-    }
-  });
-  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-  if (!isAdmin) {
-    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+  // Simple admin check using API key
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    res.status(403).json({ message: 'Access denied: Admin API key required' });
     return;
   }
   try {
@@ -296,22 +258,10 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
  * Delete a group (admin only)
  */
 export const deleteGroup = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.userId;
-  const user = await prisma.user.findUnique({
-    where: { userId },
-    include: {
-      team: {
-        include: {
-          teamRoles: {
-            include: { role: true }
-          }
-        }
-      }
-    }
-  });
-  const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-  if (!isAdmin) {
-    res.status(403).json({ message: 'Access denied: ADMIN role required' });
+  // Simple admin check using API key
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_API_KEY) {
+    res.status(403).json({ message: 'Access denied: Admin API key required' });
     return;
   }
   try {
