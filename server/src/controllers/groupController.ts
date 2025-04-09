@@ -40,20 +40,55 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
  * Create a new group (admin only)
  */
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
-  // Simple admin check using API key
-  const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_API_KEY) {
-    res.status(403).json({ message: 'Access denied: Admin API key required' });
+  const { name, description, locationIds = [] } = req.body;
+  console.log("[POST /groups] Creating group:", { name, description, locationCount: locationIds.length });
+  
+  // Validate input
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    console.error("[POST /groups] Invalid group name");
+    res.status(400).json({ message: "Group name is required" });
     return;
   }
+  
   try {
-    const { name, description, locationIds = [] } = req.body;
-    console.log("[POST /groups] Creating group:", { name, description, locationCount: locationIds.length });
+    // Simplify permission check - similar to Teams controller
+    // Get user ID from JWT token
+    const userId = req.user?.userId;
+    if (!userId) {
+      console.error("[POST /groups] No user ID in request");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
     
-    // Validate input
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      console.error("[POST /groups] Invalid group name");
-      res.status(400).json({ message: "Group name is required" });
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!user) {
+      console.error("[POST /groups] User not found");
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Simplify permission model - focus on allowing two scenarios:
+    // 1. The user with username "admin" can always perform operations
+    // 2. Users with ADMIN role can perform operations
+    const isSpecialAdminUser = user.username === 'admin';
+    const isAdminRole = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isSpecialAdminUser && !isAdminRole) {
+      console.error("[POST /groups] Access denied: User is not admin");
+      res.status(403).json({ message: "Access denied: ADMIN role required" });
       return;
     }
     
@@ -84,16 +119,51 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
  * Update a group (admin only)
  */
 export const updateGroup = async (req: Request, res: Response): Promise<void> => {
-  // Simple admin check using API key
-  const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_API_KEY) {
-    res.status(403).json({ message: 'Access denied: Admin API key required' });
-    return;
-  }
+  const groupId = parseInt(req.params.id);
+  const { name, description, locationIds } = req.body;
+  console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
+  
   try {
-    const groupId = parseInt(req.params.id);
-    const { name, description, locationIds } = req.body;
-    console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
+    // Simplify permission check - similar to Teams controller
+    // Get user ID from JWT token
+    const userId = req.user?.userId;
+    if (!userId) {
+      console.error("[PUT /groups/:id] No user ID in request");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+    
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!user) {
+      console.error("[PUT /groups/:id] User not found");
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Simplify permission model - focus on allowing two scenarios:
+    // 1. The user with username "admin" can always perform operations
+    // 2. Users with ADMIN role can perform operations
+    const isSpecialAdminUser = user.username === 'admin';
+    const isAdminRole = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isSpecialAdminUser && !isAdminRole) {
+      console.error("[PUT /groups/:id] Access denied: User is not admin");
+      res.status(403).json({ message: "Access denied: ADMIN role required" });
+      return;
+    }
     
     // Update group
     await prisma.$executeRaw`
@@ -146,19 +216,54 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
  * Assign a group to a LocationAdmin user (admin only)
  */
 export const assignGroupToUser = async (req: Request, res: Response): Promise<void> => {
-  // Simple admin check using API key
-  const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_API_KEY) {
-    res.status(403).json({ message: 'Access denied: Admin API key required' });
-    return;
-  }
+  const { userId: targetUserId, groupId } = req.body;
+  console.log("[POST /groups/assign] Assigning group to user:", { userId: targetUserId, groupId });
+  
   try {
-    const { userId, groupId } = req.body;
-    console.log("[POST /groups/assign] Assigning group to user:", { userId, groupId });
+    // Simplify permission check - similar to Teams controller
+    // Get user ID from JWT token
+    const userId = req.user?.userId;
+    if (!userId) {
+      console.error("[POST /groups/assign] No user ID in request");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
     
     // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!user) {
+      console.error("[POST /groups/assign] User not found");
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Simplify permission model - focus on allowing two scenarios:
+    // 1. The user with username "admin" can always perform operations
+    // 2. Users with ADMIN role can perform operations
+    const isSpecialAdminUser = user.username === 'admin';
+    const isAdminRole = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isSpecialAdminUser && !isAdminRole) {
+      console.error("[POST /groups/assign] Access denied: User is not admin");
+      res.status(403).json({ message: "Access denied: ADMIN role required" });
+      return;
+    }
+    
+    // Check if target user exists
     const targetUser = await prisma.user.findUnique({
-      where: { userId: parseInt(userId) },
+      where: { userId: parseInt(targetUserId) },
       include: {
         team: {
           include: {
@@ -171,7 +276,7 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
     });
     
     if (!targetUser) {
-      console.error("[POST /groups/assign] User not found");
+      console.error("[POST /groups/assign] Target user not found");
       res.status(404).json({ message: "User not found" });
       return;
     }
@@ -193,10 +298,10 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
       SET
         "groupId" = ${parseInt(groupId)},
         "locationIds" = ${(group as any[])[0].locationIds}
-      WHERE "userId" = ${parseInt(userId)}
+      WHERE "userId" = ${parseInt(targetUserId)}
     `;
     
-    console.log(`[POST /groups/assign] Group ${groupId} assigned to user ${userId}`);
+    console.log(`[POST /groups/assign] Group ${groupId} assigned to user ${targetUserId}`);
     res.status(200).json({ message: "Group assigned to user successfully" });
   } catch (error: any) {
     console.error("[POST /groups/assign] Error:", error);
@@ -258,15 +363,61 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
  * Delete a group (admin only)
  */
 export const deleteGroup = async (req: Request, res: Response): Promise<void> => {
-  // Simple admin check using API key
-  const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_API_KEY) {
-    res.status(403).json({ message: 'Access denied: Admin API key required' });
-    return;
-  }
+  const groupId = parseInt(req.params.id);
+  console.log(`[DELETE /groups/${groupId}] Deleting group`);
+  
   try {
-    const groupId = parseInt(req.params.id);
-    console.log(`[DELETE /groups/${groupId}] Deleting group`);
+    // Simplify permission check - similar to Teams controller
+    // Get user ID from JWT token
+    const userId = req.user?.userId;
+    if (!userId) {
+      console.error(`[DELETE /groups/${groupId}] No user ID in request`);
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+    
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!user) {
+      console.error(`[DELETE /groups/${groupId}] User not found`);
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Simplify permission model - focus on allowing two scenarios:
+    // 1. The user with username "admin" can always perform operations
+    // 2. Users with ADMIN role can perform operations
+    const isSpecialAdminUser = user.username === 'admin';
+    const isAdminRole = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isSpecialAdminUser && !isAdminRole) {
+      console.error(`[DELETE /groups/${groupId}] Access denied: User is not admin`);
+      res.status(403).json({ message: "Access denied: ADMIN role required" });
+      return;
+    }
+    
+    // Check if group exists
+    const group = await prisma.$queryRaw`
+      SELECT * FROM "Group" WHERE id = ${groupId}
+    `;
+    
+    if (!(group as any[])[0]) {
+      console.error(`[DELETE /groups/${groupId}] Group not found`);
+      res.status(404).json({ message: "Group not found" });
+      return;
+    }
     
     // Update all users to remove group and location access
     await prisma.$executeRaw`
