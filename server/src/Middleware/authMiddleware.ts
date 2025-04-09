@@ -25,8 +25,34 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       const token = authHeader.split(' ')[1];
       console.log(`[authMiddleware] Token: ${token.substring(0, 20)}...`);
       
-      // In a production system, we would decode and verify the JWT token here
-      // For now, we'll just check if the header exists and proceed
+      try {
+        // Simple approach to extract the Cognito ID from the token
+        // In a production system, we would use a proper JWT library
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          console.log('[authMiddleware] Token payload:', JSON.stringify(payload));
+          
+          // Extract the Cognito ID (sub claim)
+          const cognitoIdFromToken = payload.sub;
+          if (cognitoIdFromToken) {
+            console.log(`[authMiddleware] Extracted Cognito ID from token: ${cognitoIdFromToken}`);
+            
+            // Look up the user by Cognito ID
+            const userFromToken = await prisma.user.findUnique({
+              where: { cognitoId: cognitoIdFromToken }
+            });
+            
+            if (userFromToken) {
+              console.log(`[authMiddleware] Found user from token: ${userFromToken.username}`);
+              userId = userFromToken.userId;
+              username = userFromToken.username;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[authMiddleware] Error extracting Cognito ID from token:', error);
+      }
     }
     
     // Method 2: Check for Cognito ID in x-user-cognito-id header
