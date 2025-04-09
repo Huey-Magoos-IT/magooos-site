@@ -5,7 +5,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { PrismaClient } from "@prisma/client";
-import { authMiddleware } from "./middleware/authMiddleware";
 /* ROUTE IMPORTS */
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -32,9 +31,6 @@ app.use(cors({
   exposedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'Surrogate-Control'],
   credentials: true
 }));
-
-// Apply authentication middleware globally
-app.use(authMiddleware);
 
 /* ERROR HANDLING */
 app.use((err: any, req: Request, res: Response, next: any) => {
