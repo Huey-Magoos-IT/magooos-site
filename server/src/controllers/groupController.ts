@@ -10,81 +10,17 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /groups] Fetching groups");
     
-    // Get current user ID from the request
-    const userId = req.user?.userId;
+    // Fetch all groups with their users
+    const groups = await prisma.$queryRaw`
+      SELECT g.*,
+        (SELECT json_agg(json_build_object('userId', u."userId", 'username', u.username))
+         FROM "User" u
+         WHERE u."groupId" = g.id) as users
+      FROM "Group" g
+    `;
     
-    if (!userId) {
-      console.error("[GET /groups] No user ID in request");
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-    
-    // Get current user with roles
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    // Check if admin
-    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    const isLocationAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
-    console.log(`[GET /groups] User roles: Admin=${isAdmin}, LocationAdmin=${isLocationAdmin}`);
-    
-    if (isAdmin) {
-      // Admins can see all groups
-      const groups = await prisma.$queryRaw`
-        SELECT g.*, 
-          (SELECT json_agg(json_build_object('userId', u."userId", 'username', u.username))
-           FROM "User" u
-           WHERE u."groupId" = g.id) as users
-        FROM "Group" g
-      `;
-      
-      console.log(`[GET /groups] Found ${(groups as any[]).length} groups for admin`);
-      res.json(groups);
-    } else if (isLocationAdmin) {
-      // LocationAdmins can only see their assigned group
-      const userWithGroup = await prisma.$queryRaw`
-        SELECT "groupId" FROM "User" WHERE "userId" = ${userId}
-      `;
-      
-      if (!(userWithGroup as any[])[0]?.groupId) {
-        console.error(`[GET /groups] No group assigned to LocationAdmin: ${userId}`);
-        res.status(404).json({ message: "No group assigned" });
-        return;
-      }
-      
-      const group = await prisma.$queryRaw`
-        SELECT g.*,
-          (SELECT json_agg(json_build_object('userId', u."userId", 'username', u.username))
-           FROM "User" u
-           WHERE u."groupId" = g.id) as users
-        FROM "Group" g
-        WHERE g.id = ${(userWithGroup as any[])[0].groupId}
-      `;
-      
-      if (!(group as any[])[0]) {
-        console.error(`[GET /groups] Group not found for LocationAdmin: ${(userWithGroup as any[])[0].groupId}`);
-        res.status(404).json({ message: "Group not found" });
-        return;
-      }
-      
-      console.log(`[GET /groups] Found group for LocationAdmin: ${(group as any[])[0].name}`);
-      res.json([group]); // Return as array for consistent frontend handling
-    } else {
-      // Others can't see any groups
-      console.error(`[GET /groups] Access denied for user: ${userId}`);
-      res.status(403).json({ message: "Access denied: Requires ADMIN or LOCATION_ADMIN role" });
-    }
+    console.log(`[GET /groups] Found ${(groups as any[]).length} groups`);
+    res.json(groups);
   } catch (error: any) {
     console.error("[GET /groups] Error:", error);
     res.status(500).json({
@@ -106,29 +42,6 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       console.error("[POST /groups] Invalid group name");
       res.status(400).json({ message: "Group name is required" });
-      return;
-    }
-    
-    // Check if admin
-    const userId = req.user?.userId;
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
-    if (!isAdmin) {
-      console.error("[POST /groups] Access denied: Not an admin");
-      res.status(403).json({ message: "Access denied: Only admins can create groups" });
       return;
     }
     
@@ -164,33 +77,10 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
     const { name, description, locationIds } = req.body;
     console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
     
-    // Check if admin
-    const userId = req.user?.userId;
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
-    if (!isAdmin) {
-      console.error("[PUT /groups/:id] Access denied: Not an admin");
-      res.status(403).json({ message: "Access denied: Only admins can update groups" });
-      return;
-    }
-    
     // Update group
     await prisma.$executeRaw`
       UPDATE "Group"
-      SET 
+      SET
         name = ${name ? name.trim() : null},
         description = ${description},
         "locationIds" = ${locationIds ? locationIds : []},
@@ -242,30 +132,7 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
     const { userId, groupId } = req.body;
     console.log("[POST /groups/assign] Assigning group to user:", { userId, groupId });
     
-    // Check if admin
-    const adminId = req.user?.userId;
-    const admin = await prisma.user.findUnique({
-      where: { userId: adminId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    const isAdmin = admin?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
-    if (!isAdmin) {
-      console.error("[POST /groups/assign] Access denied: Not an admin");
-      res.status(403).json({ message: "Access denied: Only admins can assign groups" });
-      return;
-    }
-    
-    // Check if user has LOCATION_ADMIN role
+    // Check if user exists
     const targetUser = await prisma.user.findUnique({
       where: { userId: parseInt(userId) },
       include: {
@@ -279,11 +146,9 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
       }
     });
     
-    const isLocationAdmin = targetUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
-    if (!isLocationAdmin) {
-      console.error("[POST /groups/assign] User is not a LocationAdmin");
-      res.status(400).json({ message: "User must have LOCATION_ADMIN role to be assigned a group" });
+    if (!targetUser) {
+      console.error("[POST /groups/assign] User not found");
+      res.status(404).json({ message: "User not found" });
       return;
     }
     
@@ -301,7 +166,7 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
     // Update user with group and give access to all group locations
     await prisma.$executeRaw`
       UPDATE "User"
-      SET 
+      SET
         "groupId" = ${parseInt(groupId)},
         "locationIds" = ${(group as any[])[0].locationIds}
       WHERE "userId" = ${parseInt(userId)}
@@ -326,45 +191,9 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
     const locationId = req.params.locationId;
     console.log(`[GET /groups/locations/${locationId}/users] Fetching users for location`);
     
-    // Verify access rights
-    const userId = req.user?.userId;
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    // Also get user's group to check location access
-    const userWithGroup = await prisma.$queryRaw`
-      SELECT u."groupId", g."locationIds"
-      FROM "User" u
-      LEFT JOIN "Group" g ON u."groupId" = g.id
-      WHERE u."userId" = ${userId}
-    `;
-    
-    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    const isLocationAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
-    // For LocationAdmin users, check if the location is in their group
-    if (isLocationAdmin && !isAdmin) {
-      const userGroup = (userWithGroup as any[])[0];
-      if (!userGroup || !userGroup.locationIds.includes(locationId)) {
-        console.error(`[GET /groups/locations/${locationId}/users] Access denied: Location not in user's group`);
-        res.status(403).json({ message: "Access denied: Location not in your group" });
-        return;
-      }
-    }
-    
     // Find all users with this location
     const users = await prisma.$queryRaw`
-      SELECT u.*, 
+      SELECT u.*,
         (SELECT json_build_object(
           'id', t.id,
           'teamName', t."teamName",
@@ -409,33 +238,10 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
     const groupId = parseInt(req.params.id);
     console.log(`[DELETE /groups/${groupId}] Deleting group`);
     
-    // Check if admin
-    const userId = req.user?.userId;
-    const user = await prisma.user.findUnique({
-      where: { userId },
-      include: {
-        team: {
-          include: {
-            teamRoles: {
-              include: { role: true }
-            }
-          }
-        }
-      }
-    });
-    
-    const isAdmin = user?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
-    if (!isAdmin) {
-      console.error(`[DELETE /groups/${groupId}] Access denied: Not an admin`);
-      res.status(403).json({ message: "Access denied: Only admins can delete groups" });
-      return;
-    }
-    
     // Update all users to remove group and location access
     await prisma.$executeRaw`
       UPDATE "User"
-      SET 
+      SET
         "groupId" = NULL,
         "locationIds" = '{}'::text[]
       WHERE "groupId" = ${groupId}
