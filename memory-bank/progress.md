@@ -5,35 +5,36 @@
 ### Status: Implementation Phase
 
 #### Completed
-- ✅ Analyzed requirements for Groups functionality
-- ✅ Evaluated different database schema approaches
-- ✅ Selected balanced approach using array fields
-- ✅ Created comprehensive implementation plan
-- ✅ Updated memory bank with implementation details
-- ✅ Updated Prisma schema with Group model
-- ✅ Implemented Group controller and routes
-- ✅ Updated User controller with location management
+- ✅ Backend and frontend for Groups are now architecturally identical to Teams (except for data stored)
+- ✅ All permission checks, controller logic, and routes are consistent with Teams
+- ✅ Prisma client is up-to-date and recognizes the Group model
+- ✅ All endpoints for Groups (GET, POST, PUT, DELETE, assign, etc.) match the Teams pattern
 - ✅ Created GroupCard component for UI
 - ✅ Created Groups management page
 - ✅ Updated API slice with new endpoints
 - ✅ Added access control utilities for location-based permissions
 
 #### In Progress
-- 🔄 Creating migration for database changes
-- 🔄 Updating seed script with new roles
+- 🔄 GET /groups returns 401 Unauthorized due to API Gateway authorizer, not backend code
+- 🔄 Debugging API Gateway authorizer and frontend request headers
 
 #### Pending
+- ⏳ Make /groups GET public in API Gateway (or ensure frontend sends JWT)
 - ⏳ Implement LocationUser creation flow
 - ⏳ Update data/reporting pages with location filtering
 - ⏳ Test the implementation on the EC2 server
 - ⏳ Add documentation for the new features
 
 ### Next Steps
-1. Create migration and update seed script with new roles
-2. Implement LocationUser creation for LocationAdmins
-3. Update data/reporting pages to filter by user's locations
-4. Test the implementation on the EC2 server
-5. Add documentation for the new features
+1. Check API Gateway: Is authorizer attached to /groups GET but not /teams or /users?
+2. Check proxy+ mapping: Is /groups included?
+3. Check frontend: Is Authorization header sent for /groups?
+4. Make /groups GET public in API Gateway if needed.
+5. Create migration and update seed script with new roles (if not already done)
+6. Implement LocationUser creation for LocationAdmins
+7. Update data/reporting pages to filter by user's locations
+8. Test the implementation on the EC2 server
+9. Add documentation for the new features
 
 ### Implementation Details
 

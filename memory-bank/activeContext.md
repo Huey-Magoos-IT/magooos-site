@@ -37,23 +37,30 @@ We've chosen a balanced approach that:
 ## Current Status
 
 - ✅ Updated Prisma schema with Group model and User model changes
-- ✅ Implemented Group controller and routes
+- ✅ Implemented Group controller and routes (now architecturally identical to Teams)
 - ✅ Updated User controller with location management functions
 - ✅ Created GroupCard component for UI
 - ✅ Created Groups management page
 - ✅ Updated API slice with new endpoints
 - ✅ Added access control utilities for location-based permissions
+- ⬜ GET /groups returns 401 Unauthorized due to API Gateway authorizer, not backend code
 
 ## Next Steps
 
-1. ⬜ Create migration and update seed script with new roles
-2. ⬜ Implement LocationUser creation for LocationAdmins
-3. ⬜ Update data/reporting pages to filter by user's locations
-4. ⬜ Test the implementation on the EC2 server
-5. ⬜ Add documentation for the new features
+1. ⬜ Check API Gateway: Is authorizer attached to /groups GET but not /teams or /users?
+2. ⬜ Check proxy+ mapping: Is /groups included?
+3. ⬜ Check frontend: Is Authorization header sent for /groups?
+4. ⬜ Make /groups GET public in API Gateway if needed.
+5. ⬜ Create migration and update seed script with new roles (if not already done)
+6. ⬜ Implement LocationUser creation for LocationAdmins
+7. ⬜ Update data/reporting pages to filter by user's locations
+8. ⬜ Test the implementation on the EC2 server
+9. ⬜ Add documentation for the new features
 
 ## Open Questions
 
+- Why is API Gateway configured differently for /groups than for /teams or /users?
+- Is there a reason to require JWT for /groups GET?
 - How will the Cognito integration work for creating new LocationUsers?
 - Should we implement server-side filtering for location-based data access?
 - Do we need to add any additional indexes for performance optimization?

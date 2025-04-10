@@ -347,34 +347,48 @@ const DataPage = () => {
                 </div>
 
                 <div>
-                  <div className="mb-2">
-                    <TextField
-                      label="Add Discount ID"
-                      value={newDiscountId}
-                      onChange={(e) => setNewDiscountId(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
-                      variant="outlined"
-                      className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                      InputProps={{
-                        className: "dark:text-white"
-                      }}
-                      InputLabelProps={{
-                        className: "dark:text-gray-300"
-                      }}
-                      fullWidth
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {discountIds.map((id) => (
-                      <Chip
-                        key={id}
-                        label={id}
-                        onDelete={() => handleRemoveDiscountId(id)}
-                        className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
-                        deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
-                      />
-                    ))}
-                  </div>
+                  {(userTeam?.isAdmin || hasRole(userTeam.teamRoles, 'ADMIN')) ? (
+                    <>
+                      <div className="mb-2">
+                        <TextField
+                          label="Add Discount ID"
+                          value={newDiscountId}
+                          onChange={(e) => setNewDiscountId(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
+                          variant="outlined"
+                          className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                          InputProps={{
+                            className: "dark:text-white"
+                          }}
+                          InputLabelProps={{
+                            className: "dark:text-gray-300"
+                          }}
+                          fullWidth
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {discountIds.map((id) => (
+                          <Chip
+                            key={id}
+                            label={id}
+                            onDelete={() => handleRemoveDiscountId(id)}
+                            className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
+                            deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {discountIds.map((id) => (
+                        <Chip
+                          key={id}
+                          label={id}
+                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4">

@@ -44,7 +44,7 @@ const CSVDataTable = ({
   endDate
 }: CSVDataTableProps) => {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
   const [orderBy, setOrderBy] = useState<string | null>(null);
   const [orderDirection, setOrderDirection] = useState<OrderDirection>('asc');
   const [columns, setColumns] = useState<string[]>([]);
