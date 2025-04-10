@@ -48,7 +48,7 @@ const CSVDataTable = ({
   const [orderBy, setOrderBy] = useState<string | null>(null);
   const [orderDirection, setOrderDirection] = useState<OrderDirection>('asc');
   const [columns, setColumns] = useState<string[]>([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   // Function to parse and render cell content, including hyperlinks
   const renderCellContent = (value: any): React.ReactNode => {
