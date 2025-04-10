@@ -417,7 +417,7 @@ const ReportingPage = () => {
                   </div>
                 )}
 
-                <div className="mt-4">
+                <div className={`${(userTeam?.isAdmin || hasRole(userTeam.teamRoles, 'ADMIN')) ? 'mt-4' : 'mt-2'}`}>
                   <Button
                     variant="contained"
                     onClick={processCSVData}
