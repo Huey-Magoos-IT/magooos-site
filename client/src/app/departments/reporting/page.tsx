@@ -237,7 +237,7 @@ const ReportingPage = () => {
           <Grid container spacing={4}>
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col h-full justify-center">
                 {/* Report Type Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
                   <InputLabel className="text-gray-700 dark:text-gray-300">Report Type</InputLabel>
