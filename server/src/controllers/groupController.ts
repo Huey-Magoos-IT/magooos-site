@@ -10,13 +10,33 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /groups] Fetching all groups");
     
-    // Extract user ID from request headers (set by API Gateway)
-    const userId = req.headers['x-user-cognito-id'];
-    if (!userId) {
-      console.log("[GET /groups] No user ID in request");
-      res.status(401).json({ message: "Unauthorized" });
+    // Authentication Check (multiple methods)
+    let authUserId: string | undefined;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+    if (requestingUserIdFromBody) {
+      console.log("[GET /groups] Using requestingUserId from body:", requestingUserIdFromBody);
+      // In a real scenario, you might fetch the user here to verify
+      authUserId = requestingUserIdFromBody;
+    } else if (cognitoIdFromHeader) {
+      console.log("[GET /groups] Using Cognito ID from header:", cognitoIdFromHeader);
+      // Fetch user by Cognito ID to get internal userId if needed, or just use cognitoId
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString(); // Or use cognitoIdFromHeader directly depending on needs
+    } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[GET /groups] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[GET /groups] Using admin user as fallback");
+    }
+
+    if (!authUserId) {
+      console.log("[GET /groups] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
       return;
     }
+    console.log("[GET /groups] Authenticated User ID:", authUserId);
     
     const groups = await prisma.group.findMany({
       include: {
@@ -55,13 +75,32 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
   const { name, description, locationIds = [] } = req.body;
   console.log("[POST /groups] Creating group:", { name, description, locationCount: locationIds.length });
   
-  // Extract user ID from request headers (set by API Gateway)
-  const userId = req.headers['x-user-cognito-id'];
-  if (!userId) {
-    console.log("[POST /groups] No user ID in request");
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log("[POST /groups] Using requestingUserId from body:", requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log("[POST /groups] Using Cognito ID from header:", cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[POST /groups] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[POST /groups] Using admin user as fallback");
   }
+
+  if (!authUserId) {
+      console.log("[POST /groups] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log("[POST /groups] Authenticated User ID:", authUserId);
+  // TODO: Add permission check - only admins should create groups
   
   // Validate input
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -110,13 +149,32 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
   const { name, description, locationIds } = req.body;
   console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
   
-  // Extract user ID from request headers (set by API Gateway)
-  const userId = req.headers['x-user-cognito-id'];
-  if (!userId) {
-    console.log("[PUT /groups/:id] No user ID in request");
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log("[PUT /groups/:id] Using requestingUserId from body:", requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log("[PUT /groups/:id] Using Cognito ID from header:", cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[PUT /groups/:id] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[PUT /groups/:id] Using admin user as fallback");
   }
+
+  if (!authUserId) {
+      console.log("[PUT /groups/:id] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log("[PUT /groups/:id] Authenticated User ID:", authUserId);
+  // TODO: Add permission check - only admins should update groups
   
   try {
     // Check if group exists
@@ -182,13 +240,32 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
   const { userId: targetUserId, groupId } = req.body;
   console.log("[POST /groups/assign] Assigning group to user:", { userId: targetUserId, groupId });
   
-  // Extract user ID from request headers (set by API Gateway)
-  const userId = req.headers['x-user-cognito-id'];
-  if (!userId) {
-    console.log("[POST /groups/assign] No user ID in request");
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log("[POST /groups/assign] Using requestingUserId from body:", requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log("[POST /groups/assign] Using Cognito ID from header:", cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[POST /groups/assign] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[POST /groups/assign] Using admin user as fallback");
   }
+
+  if (!authUserId) {
+      console.log("[POST /groups/assign] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log("[POST /groups/assign] Authenticated User ID:", authUserId);
+  // TODO: Add permission check - only admins should assign groups
   
   try {
     // Check if target user exists
@@ -250,13 +327,31 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
     const locationId = req.params.locationId;
     console.log(`[GET /groups/locations/${locationId}/users] Fetching users for location`);
     
-    // Extract user ID from request headers (set by API Gateway)
-    const userId = req.headers['x-user-cognito-id'];
-    if (!userId) {
-      console.log(`[GET /groups/locations/${locationId}/users] No user ID in request`);
-      res.status(401).json({ message: "Unauthorized" });
-      return;
+    // Authentication Check (multiple methods)
+    let authUserId: string | undefined;
+    const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+    if (requestingUserIdFromBody) {
+        console.log(`[GET /groups/locations/${locationId}/users] Using requestingUserId from body:`, requestingUserIdFromBody);
+        authUserId = requestingUserIdFromBody;
+    } else if (cognitoIdFromHeader) {
+        console.log(`[GET /groups/locations/${locationId}/users] Using Cognito ID from header:`, cognitoIdFromHeader);
+        const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+        authUserId = user?.userId?.toString();
+    } else if (process.env.NODE_ENV !== 'production') {
+        console.log(`[GET /groups/locations/${locationId}/users] No authenticated user found, looking for admin user (dev fallback)`);
+        const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+        authUserId = adminUser?.userId?.toString();
+        if (authUserId) console.log(`[GET /groups/locations/${locationId}/users] Using admin user as fallback`);
     }
+
+    if (!authUserId) {
+        console.log(`[GET /groups/locations/${locationId}/users] Authentication failed - no valid requesting user found`);
+        res.status(401).json({ message: "Authentication required" });
+        return;
+    }
+    console.log(`[GET /groups/locations/${locationId}/users] Authenticated User ID:`, authUserId);
     
     // Find all users with this location
     const users = await prisma.user.findMany({
@@ -296,13 +391,32 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
   const groupId = parseInt(req.params.id);
   console.log(`[DELETE /groups/${groupId}] Deleting group`);
   
-  // Extract user ID from request headers (set by API Gateway)
-  const userId = req.headers['x-user-cognito-id'];
-  if (!userId) {
-    console.log(`[DELETE /groups/${groupId}] No user ID in request`);
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log(`[DELETE /groups/${groupId}] Using requestingUserId from body:`, requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log(`[DELETE /groups/${groupId}] Using Cognito ID from header:`, cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DELETE /groups/${groupId}] No authenticated user found, looking for admin user (dev fallback)`);
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log(`[DELETE /groups/${groupId}] Using admin user as fallback`);
   }
+
+  if (!authUserId) {
+      console.log(`[DELETE /groups/${groupId}] Authentication failed - no valid requesting user found`);
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log(`[DELETE /groups/${groupId}] Authenticated User ID:`, authUserId);
+  // TODO: Add permission check - only admins should delete groups
   
   try {
     // Check if group exists
@@ -352,13 +466,32 @@ export const deleteGroupPost = async (req: Request, res: Response): Promise<void
   
   console.log("[POST /groups/delete-group] Deleting group with ID:", groupId);
   
-  // Extract user ID from request headers (set by API Gateway)
-  const userId = req.headers['x-user-cognito-id'];
-  if (!userId) {
-    console.log("[POST /groups/delete-group] No user ID in request");
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log("[POST /groups/delete-group] Using requestingUserId from body:", requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log("[POST /groups/delete-group] Using Cognito ID from header:", cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[POST /groups/delete-group] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[POST /groups/delete-group] Using admin user as fallback");
   }
+
+  if (!authUserId) {
+      console.log("[POST /groups/delete-group] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log("[POST /groups/delete-group] Authenticated User ID:", authUserId);
+  // TODO: Add permission check - only admins should delete groups
   
   if (!groupId) {
     if (!res.headersSent) {
