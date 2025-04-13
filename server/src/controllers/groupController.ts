@@ -10,6 +10,14 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /groups] Fetching all groups");
     
+    // Extract user ID from request headers (set by API Gateway)
+    const userId = req.headers['x-user-cognito-id'];
+    if (!userId) {
+      console.log("[GET /groups] No user ID in request");
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+    
     const groups = await prisma.group.findMany({
       include: {
         users: {
@@ -46,6 +54,14 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
   const { name, description, locationIds = [] } = req.body;
   console.log("[POST /groups] Creating group:", { name, description, locationCount: locationIds.length });
+  
+  // Extract user ID from request headers (set by API Gateway)
+  const userId = req.headers['x-user-cognito-id'];
+  if (!userId) {
+    console.log("[POST /groups] No user ID in request");
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   
   // Validate input
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -93,6 +109,14 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
   const groupId = parseInt(req.params.id);
   const { name, description, locationIds } = req.body;
   console.log("[PUT /groups/:id] Updating group:", { groupId, name, description, locationCount: locationIds?.length });
+  
+  // Extract user ID from request headers (set by API Gateway)
+  const userId = req.headers['x-user-cognito-id'];
+  if (!userId) {
+    console.log("[PUT /groups/:id] No user ID in request");
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   
   try {
     // Check if group exists
@@ -158,6 +182,14 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
   const { userId: targetUserId, groupId } = req.body;
   console.log("[POST /groups/assign] Assigning group to user:", { userId: targetUserId, groupId });
   
+  // Extract user ID from request headers (set by API Gateway)
+  const userId = req.headers['x-user-cognito-id'];
+  if (!userId) {
+    console.log("[POST /groups/assign] No user ID in request");
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  
   try {
     // Check if target user exists
     const targetUser = await prisma.user.findUnique({
@@ -218,6 +250,14 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
     const locationId = req.params.locationId;
     console.log(`[GET /groups/locations/${locationId}/users] Fetching users for location`);
     
+    // Extract user ID from request headers (set by API Gateway)
+    const userId = req.headers['x-user-cognito-id'];
+    if (!userId) {
+      console.log(`[GET /groups/locations/${locationId}/users] No user ID in request`);
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+    
     // Find all users with this location
     const users = await prisma.user.findMany({
       where: {
@@ -255,6 +295,14 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
 export const deleteGroup = async (req: Request, res: Response): Promise<void> => {
   const groupId = parseInt(req.params.id);
   console.log(`[DELETE /groups/${groupId}] Deleting group`);
+  
+  // Extract user ID from request headers (set by API Gateway)
+  const userId = req.headers['x-user-cognito-id'];
+  if (!userId) {
+    console.log(`[DELETE /groups/${groupId}] No user ID in request`);
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   
   try {
     // Check if group exists
@@ -303,6 +351,14 @@ export const deleteGroupPost = async (req: Request, res: Response): Promise<void
   const groupId = req.params.id || req.body.groupId;
   
   console.log("[POST /groups/delete-group] Deleting group with ID:", groupId);
+  
+  // Extract user ID from request headers (set by API Gateway)
+  const userId = req.headers['x-user-cognito-id'];
+  if (!userId) {
+    console.log("[POST /groups/delete-group] No user ID in request");
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
   
   if (!groupId) {
     if (!res.headersSent) {
