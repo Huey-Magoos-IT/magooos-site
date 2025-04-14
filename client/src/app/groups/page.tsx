@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { useGetGroupsQuery, useCreateGroupMutation, useUpdateGroupMutation, useDeleteGroupMutation, useGetUsersQuery, useAssignGroupToUserMutation, Group } from "@/state/api";
+import {
+  useGetGroupsQuery,
+  useCreateGroupMutation,
+  useUpdateGroupMutation,
+  useDeleteGroupMutation,
+  useGetUsersQuery,
+  useGetTeamsQuery,
+  useAssignGroupToUserMutation,
+  Group,
+  User,
+  Team,
+  TeamRole
+} from "@/state/api";
 import { useGetAuthUserQuery } from "@/state/api";
 import { hasRole } from "@/lib/accessControl";
 import GroupCard from "@/components/GroupCard";
@@ -170,54 +182,43 @@ const GroupsPage = () => {
       }
     }
   };
-  // Find users who can be assigned to groups
-  // First, find teams that have the LOCATION_ADMIN role
-  const teamsWithLocationAdminRole = users.reduce((teams, user) => {
-    if (user.team && user.team.teamRoles) {
-      const hasLocationAdminRole = user.team.teamRoles.some(tr =>
-        tr.role.name.toUpperCase() === "LOCATION_ADMIN"
-      );
-      
-      if (hasLocationAdminRole && !teams.includes(user.team.id)) {
-        teams.push(user.team.id);
-      }
-    }
-    return teams;
-  }, [] as number[]);
+  // Get all teams from the API
+  const { data: teamsData } = useGetTeamsQuery();
   
-  // Then find all users in those teams
-  const locationAdminUsers = users.filter(user => {
-    return user.team && teamsWithLocationAdminRole.includes(user.team.id);
+  // Find teams that have the LOCATION_ADMIN role
+  const teamsWithLocationAdminRole = teamsData?.teams?.filter((team: Team) =>
+    team.teamRoles?.some((tr: TeamRole) =>
+      tr.role.name.toUpperCase() === "LOCATION_ADMIN"
+    )
+  ) || [];
+  
+  console.log("Teams with LOCATION_ADMIN role:", teamsWithLocationAdminRole.map((team: Team) => ({
+    id: team.id,
+    name: team.teamName,
+    roles: team.teamRoles?.map((tr: TeamRole) => tr.role.name)
+  })));
+  
+  // Get all users from teams with LOCATION_ADMIN role
+  const locationAdminUsers = teamsWithLocationAdminRole.flatMap((team: Team) => {
+    // Based on the JSON you provided, the property might be called 'user' in the API response
+    // but TypeScript expects a different property name
+    return (team as any).user || [];
   });
-
+  
+  console.log("Users from teams with LOCATION_ADMIN role:", locationAdminUsers.map((user: any) => ({
+    userId: user.userId,
+    username: user.username
+  })));
+  
   // Filter out users already assigned to the current group
-  const availableUsers = locationAdminUsers.filter(user => {
-    return user.groupId !== currentGroup?.id;
+  const availableUsers = locationAdminUsers.filter((user: any) => {
+    const fullUser = users.find((u: User) => u.userId === user.userId);
+    return fullUser?.groupId !== currentGroup?.id;
   });
-
-  // Debug logs to help troubleshoot
-  console.log("All users:", users.map(user => ({
-    username: user.username,
-    userId: user.userId,
-    teamId: user.team?.id,
-    teamName: user.team?.teamName,
-    teamRoles: user.team?.teamRoles?.map(tr => tr.role.name)
-  })));
   
-  console.log("Teams with LOCATION_ADMIN role:", teamsWithLocationAdminRole);
-  
-  console.log("Users in teams with LOCATION_ADMIN role:", locationAdminUsers.map(user => ({
-    username: user.username,
+  console.log("Available users for group assignment:", availableUsers.map((user: any) => ({
     userId: user.userId,
-    teamId: user.team?.id,
-    teamName: user.team?.teamName
-  })));
-  
-  console.log("Available users for group assignment:", availableUsers.map(user => ({
-    username: user.username,
-    userId: user.userId,
-    teamId: user.team?.id,
-    teamName: user.team?.teamName
+    username: user.username
   })));
 
   if (isLoadingGroups || isLoadingUsers) {
@@ -436,7 +437,7 @@ const GroupsPage = () => {
                 <MenuItem value="">
                   <em>Select a user</em>
                 </MenuItem>
-                {availableUsers.map((user) => (
+                {availableUsers.map((user: any) => (
                   <MenuItem key={user.userId} value={user.userId}>
                     {user.username}
                   </MenuItem>
