@@ -8,7 +8,8 @@ import {
   deleteGroup,
   assignGroupToUser,
   getLocationUsers,
-  deleteGroupPost
+  deleteGroupPost,
+  removeUserFromGroup
 } from "../controllers/groupController";
 
 const router = Router();
