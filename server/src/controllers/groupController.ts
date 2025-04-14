@@ -10,6 +10,10 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
     console.log("[GET /groups] Fetching all groups");
     
+    // Debug logging to see what's in the request
+    console.log("[GET /groups] Request Headers:", JSON.stringify(req.headers, null, 2));
+    console.log("[GET /groups] Request Body:", JSON.stringify(req.body, null, 2));
+    
     // Authentication Check (multiple methods)
     let authUserId: string | undefined;
     const requestingUserIdFromBody = req.body.requestingUserId;
