@@ -22,6 +22,7 @@ User -> Team Membership -> Team Roles -> Permission Checks -> Protected Resource
 6. **Avoid circular dependencies**: Don't create permission checks that depend on the outcome of the operation
 7. **Provide special administrative overrides**: Include specific handling for admin users
 8. **Handle "no team" case explicitly**: Users without teams need special handling in permission models
+9. **Support multiple authentication methods**: Check for authentication in multiple places (headers, body, tokens)
 
 ## Permission Model Design Pattern
 
@@ -315,3 +316,28 @@ S3 Data Files -> Client-Side Fetch -> In-Browser Processing -> Filtered Results 
 8. **Special handling for percentage values**: Don't directly convert percentage strings to numbers
 9. **Include graceful error handling**: Detect and report issues during any processing stage
 10. **Document filtering edge cases**: Clearly explain special handling for filter defaults
+
+## Location-Based Access Control Pattern
+
+### Implementation
+```
+User -> Group Assignment -> Location Access -> Data Filtering -> Protected Resources
+```
+
+### Key Components
+- `Group` model with locationIds array
+- `User` model with groupId relation and locationIds array
+- Group controller with CRUD operations
+- Location selection interface with LocationTable component
+
+### Pattern Rules
+1. **Group-based location assignment**: Locations are assigned to groups, then users are assigned to groups
+2. **Automatic location synchronization**: LocationAdmin users automatically get access to all locations in their group
+3. **Cascading location updates**: When a group's locations change, update all associated users
+4. **Permission boundaries**: Users can only access data for their assigned locations
+5. **Multiple authentication methods**: Support various authentication approaches (headers, tokens, body parameters)
+6. **Consistent UI patterns**: Use the same location selection interface across the application
+7. **Clear visual feedback**: Show selected locations with options to undo or clear all
+8. **Efficient array storage**: Use array fields for location IDs to simplify queries
+9. **Proper error handling**: Provide clear error messages for permission boundaries
+10. **Documentation**: Clearly document the location-based access control model

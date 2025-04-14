@@ -66,6 +66,15 @@ S3 Buckets:
    - Teams can have multiple roles simultaneously
    - Restricted content with proper error handling
    - Reusable access control components and permission checks
+   - Location-based access control through Groups functionality
+
+2. Location-Based Access Control:
+   - Groups of locations managed by admins
+   - LocationAdmin users assigned to groups
+   - LocationUsers with access to specific locations
+   - Automatic synchronization of locations for group members
+   - Location-based data filtering in reporting and data pages
+   - Permission boundaries enforced at controller level
 
 2. Priority System (Legacy):
    - client/src/app/priority/[level]/page.tsx

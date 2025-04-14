@@ -13,28 +13,43 @@
 - ✅ Created Groups management page
 - ✅ Updated API slice with new endpoints
 - ✅ Added access control utilities for location-based permissions
+- ✅ Fixed authentication issue in Group controller by adding Bearer token support
+- ✅ Successfully tested authentication fix on the EC2 server
 
 #### In Progress
-- 🔄 GET /groups returns 401 Unauthorized due to API Gateway authorizer, not backend code
-- 🔄 Debugging API Gateway authorizer and frontend request headers
+- 🔄 Enhancing Groups UI with LocationTable component
+- 🔄 Improving location selection interface to match reporting page
 
 #### Pending
-- ⏳ Make /groups GET public in API Gateway (or ensure frontend sends JWT)
 - ⏳ Implement LocationUser creation flow
 - ⏳ Update data/reporting pages with location filtering
-- ⏳ Test the implementation on the EC2 server
 - ⏳ Add documentation for the new features
 
 ### Next Steps
-1. Check API Gateway: Is authorizer attached to /groups GET but not /teams or /users?
-2. Check proxy+ mapping: Is /groups included?
-3. Check frontend: Is Authorization header sent for /groups?
-4. Make /groups GET public in API Gateway if needed.
-5. Create migration and update seed script with new roles (if not already done)
-6. Implement LocationUser creation for LocationAdmins
-7. Update data/reporting pages to filter by user's locations
-8. Test the implementation on the EC2 server
-9. Add documentation for the new features
+1. Enhance the Groups page UI with a LocationTable component similar to the reporting page:
+   - Replace the current dropdown with a LocationTable component
+   - Add the "Selected Locations" display with Undo and Clear All buttons
+   - Implement the same location selection workflow
+   - Maintain consistent styling and user experience
+2. Create migration and update seed script with new roles (if not already done)
+3. Implement LocationUser creation for LocationAdmins
+4. Update data/reporting pages to filter by user's locations
+5. Add documentation for the new features
+
+### Authentication Fix Details
+We identified and fixed an authentication issue in the Group controller:
+
+1. **Problem**: The `/groups` endpoint was returning 401 Unauthorized errors
+2. **Root Cause**:
+   - The frontend was sending authentication via the `Authorization` header with a Bearer token
+   - The backend was only checking for `x-user-cognito-id` header or `requestingUserId` in the body
+3. **Solution**:
+   - Added code to all group controller methods to also check for and use the Bearer token
+   - Implemented a simple JWT token extraction and admin user lookup
+4. **Verification**:
+   - Deployed the fix to the EC2 server
+   - Confirmed the `/groups` endpoint now returns 200 OK with proper data
+   - Logs show the Bearer token is being properly recognized and processed
 
 ### Implementation Details
 

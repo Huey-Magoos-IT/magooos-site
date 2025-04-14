@@ -21,11 +21,13 @@ server/
 │   │   ├── taskController.ts      # Task operations and assignments
 │   │   ├── teamController.ts      # Team management operations
 │   │   ├── userController.ts      # User operations and Cognito sync
+│   │   ├── groupController.ts     # Group and location management
 │   │   └── searchController.ts    # Global search functionality
 │   └── routes/                    # API endpoint definitions
 │       ├── projectRoutes.ts       # Project-related endpoints
 │       ├── taskRoutes.ts          # Task management endpoints
 │       ├── teamRoutes.ts          # Team operations endpoints
+│       ├── groupRoutes.ts         # Group management endpoints
 │       ├── userRoutes.ts          # User management endpoints
 │       └── searchRoutes.ts        # Search functionality endpoints
 └── ecosystem.config.js            # PM2 production configuration
@@ -54,7 +56,18 @@ server/
    - Assignment handling
    - Priority and timeline tracking
 
-3. **Team Controller** (`controllers/teamController.ts`)
+3. **Group Controller** (`controllers/groupController.ts`)
+   - Group CRUD operations
+   - Location management
+   - User assignment to groups
+   - Location-based access control
+   - Multiple authentication methods:
+     - Request body parameters
+     - Custom headers
+     - Bearer token authentication
+     - Special admin user handling
+
+4. **Team Controller** (`controllers/teamController.ts`)
    - Team creation and management
    - Member assignments
    - Role-based access control
@@ -95,7 +108,16 @@ server/
    - PATCH /tasks/:id/status - Update status
    - GET /tasks/user/:userId - User's tasks
 
-3. **Team Routes** (`routes/teamRoutes.ts`)
+3. **Group Routes** (`routes/groupRoutes.ts`)
+   - GET /groups - List all groups
+   - POST /groups - Create new group
+   - PUT /groups/:id - Update group
+   - DELETE /groups/:id - Remove group
+   - POST /groups/assign - Assign group to user
+   - GET /groups/locations/:locationId/users - Get users for a location
+   - POST /groups/delete-group - Alternative deletion endpoint
+
+4. **Team Routes** (`routes/teamRoutes.ts`)
    - Team CRUD operations
    - Member management endpoints
    - Team assignment handling
@@ -122,14 +144,22 @@ Core Models:
    - Basic profile information
    - Cognito integration
    - Team associations
+   - Group association (for LocationAdmin users)
+   - Location access (locationIds array)
    - Task relationships (author/assignee)
 
-2. **Role**
-   - Role name (e.g., ADMIN, DATA, REPORTING)
+2. **Group**
+   - Group name and description
+   - Location IDs array (locationIds)
+   - Relationship to users (LocationAdmin users)
+   - Created/updated timestamps
+
+3. **Role**
+   - Role name (e.g., ADMIN, DATA, REPORTING, LOCATION_ADMIN, LOCATION_USER)
    - Optional description
    - Relationship to teams through TeamRole
 
-3. **TeamRole**
+4. **TeamRole**
    - Many-to-many relationship between Team and Role
    - Unique constraint on teamId+roleId combinations
    - Cascade deletion with parent entities
@@ -697,7 +727,6 @@ To deploy a backend change like one to teams or user to production, follow these
    # Compile the TypeScript code to JavaScript
    npm run build
    ```
-
 4. Run the Prisma migration (only needed for schema changes)
    ```bash
    # Apply the migration to the production database
@@ -727,4 +756,74 @@ To deploy a backend change like one to teams or user to production, follow these
    # Test the new roles endpoint
    curl -v https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod/teams/roles \
      -H "Authorization: Bearer YOUR_JWT_TOKEN"
+   
+   # Test the groups endpoint with Bearer token
+   curl -v https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod/groups \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN"
+   ```
+
+## Authentication Troubleshooting
+
+### Bearer Token Authentication
+
+When implementing authentication for new endpoints, ensure support for multiple authentication methods:
+
+1. **Bearer Token Authentication**
+   ```typescript
+   // Extract Bearer token from Authorization header
+   const authHeader = req.headers.authorization;
+   if (authHeader && authHeader.startsWith('Bearer ')) {
+     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+     // Verify token and extract user information
+     // ...
+   }
+   ```
+
+2. **Custom Headers**
+   ```typescript
+   // Check for custom Cognito ID header
+   const cognitoId = req.headers['x-user-cognito-id'];
+   if (cognitoId) {
+     // Look up user by Cognito ID
+     // ...
+   }
+   ```
+
+3. **Request Body Parameters**
+   ```typescript
+   // Check for user ID in request body
+   const { requestingUserId } = req.body;
+   if (requestingUserId) {
+     // Look up user by ID
+     // ...
+   }
+   ```
+
+4. **Comprehensive Logging**
+   ```typescript
+   // Log authentication attempts for debugging
+   console.log("[Authentication] Headers:", req.headers);
+   console.log("[Authentication] Body:", req.body);
+   console.log("[Authentication] Method:", req.method);
+   console.log("[Authentication] Path:", req.path);
+   ```
+
+5. **Special Admin User Handling**
+   ```typescript
+   // Special case for admin user
+   const isAdminUser = username === 'admin' || email === 'admin@example.com';
+   if (isAdminUser) {
+     // Grant admin access
+     // ...
+   }
+   ```
+
+### Common Authentication Issues
+
+1. **Missing Authorization Header**: Frontend not sending the Bearer token
+2. **Token Format Issues**: Token not properly formatted with 'Bearer ' prefix
+3. **Expired Tokens**: JWT tokens have expired and need refresh
+4. **CORS Preflight**: OPTIONS requests not properly handling Authorization header
+5. **API Gateway Configuration**: API Gateway not forwarding Authorization header
+6. **Multiple Authentication Methods**: Endpoint only supporting one authentication method
    ```

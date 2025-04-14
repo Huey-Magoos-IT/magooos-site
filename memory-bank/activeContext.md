@@ -43,24 +43,38 @@ We've chosen a balanced approach that:
 - ✅ Created Groups management page
 - ✅ Updated API slice with new endpoints
 - ✅ Added access control utilities for location-based permissions
-- ⬜ GET /groups returns 401 Unauthorized due to API Gateway authorizer, not backend code
+- ✅ Fixed authentication issue in Group controller by adding Bearer token support
+
+## Authentication Fix Details
+
+We identified and fixed an authentication issue in the Group controller:
+
+1. The frontend was sending authentication via the `Authorization` header with a Bearer token
+2. The backend was only checking for `x-user-cognito-id` header or `requestingUserId` in the body
+3. We added code to all group controller methods to also check for and use the Bearer token
+4. The fix was successful, and the `/groups` endpoint now properly authenticates requests
 
 ## Next Steps
 
-1. ⬜ Check API Gateway: Is authorizer attached to /groups GET but not /teams or /users?
-2. ⬜ Check proxy+ mapping: Is /groups included?
-3. ⬜ Check frontend: Is Authorization header sent for /groups?
-4. ⬜ Make /groups GET public in API Gateway if needed.
-5. ⬜ Create migration and update seed script with new roles (if not already done)
-6. ⬜ Implement LocationUser creation for LocationAdmins
-7. ⬜ Update data/reporting pages to filter by user's locations
-8. ⬜ Test the implementation on the EC2 server
-9. ⬜ Add documentation for the new features
+1. ✅ Fixed API Gateway authentication issue by adding Bearer token support in the controller
+2. ⬜ Enhance the Groups page UI with a LocationTable component similar to the reporting page
+3. ⬜ Create migration and update seed script with new roles (if not already done)
+4. ⬜ Implement LocationUser creation for LocationAdmins
+5. ⬜ Update data/reporting pages to filter by user's locations
+6. ⬜ Test the implementation on the EC2 server
+7. ⬜ Add documentation for the new features
 
-## Open Questions
+## Current Focus: Enhancing Groups UI
 
-- Why is API Gateway configured differently for /groups than for /teams or /users?
-- Is there a reason to require JWT for /groups GET?
-- How will the Cognito integration work for creating new LocationUsers?
-- Should we implement server-side filtering for location-based data access?
-- Do we need to add any additional indexes for performance optimization?
+We need to improve the location selection interface in the Groups page:
+1. Replace the current dropdown with a LocationTable component (like in the reporting page)
+2. Add the same "Selected Locations" display with Undo and Clear All buttons
+3. Implement the same location selection workflow that users are already familiar with
+4. Maintain the same styling and user experience as the reporting page
+
+## Technical Considerations
+
+- The LocationTable component is already available and can be reused
+- We need to adapt the state management to work with the Group creation/editing flow
+- The UI should maintain consistency with the reporting page for better user experience
+- We should preserve all existing functionality while enhancing the interface

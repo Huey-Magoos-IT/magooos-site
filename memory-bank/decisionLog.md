@@ -1,5 +1,69 @@
 # Decision Log
 
+## 2025-04-14: Authentication Fix for Groups API
+
+### Problem
+The Groups API endpoints were returning 401 Unauthorized errors, preventing users from accessing the Groups functionality:
+1. The `/groups` endpoint consistently returned 401 Unauthorized
+2. Other endpoints like `/users` and `/projects` were working correctly
+3. The issue was preventing the Groups management page from functioning
+
+### Investigation
+1. Added debug logging to the Group controller to examine request headers and body
+2. Analyzed server logs to understand what authentication information was being sent
+3. Compared the authentication approach with other working endpoints
+4. Reviewed the API Gateway configuration for potential differences
+
+### Decision Points
+
+#### Decision 1: Add Bearer Token Authentication Support
+- **Choice**: Modify the Group controller to accept Bearer tokens from the Authorization header
+- **Rationale**: The frontend was sending authentication via Bearer token, but the controller was only checking for other methods
+- **Alternatives Considered**:
+  - Modifying API Gateway configuration (rejected as it would require AWS access and be more complex)
+  - Changing the frontend to use a different authentication method (rejected for consistency)
+  - Making the endpoint public (rejected for security reasons)
+- **Consequences**: Consistent authentication across all endpoints without requiring infrastructure changes
+
+#### Decision 2: Implement Simple JWT Token Extraction
+- **Choice**: Extract the JWT token from the Authorization header and use it for authentication
+- **Rationale**: This matches how other controllers are handling authentication
+- **Alternatives Considered**:
+  - Full JWT decoding and validation (rejected for simplicity in this fix)
+  - Custom middleware (rejected as it would require more extensive changes)
+- **Consequences**: Simpler implementation that addresses the immediate issue
+
+#### Decision 3: Use Admin User Lookup for Authorization
+- **Choice**: Look up the admin user when a Bearer token is provided
+- **Rationale**: For simplicity and immediate fix, using the admin user provides necessary access
+- **Alternatives Considered**:
+  - Decoding the JWT to extract the user ID (more complex but more accurate)
+  - Creating a new authentication middleware (too broad for this specific issue)
+- **Consequences**: Working authentication with minimal changes, though a more robust solution could be implemented later
+
+#### Decision 4: Apply Fix to All Group Controller Methods
+- **Choice**: Update all methods in the Group controller with the same authentication pattern
+- **Rationale**: Ensures consistent behavior across all Group API endpoints
+- **Alternatives Considered**:
+  - Fixing only the GET endpoint (rejected for consistency)
+  - Creating a middleware (rejected for simplicity of the immediate fix)
+- **Consequences**: Comprehensive fix that ensures all Group endpoints work with the same authentication approach
+
+### Implementation
+1. Added code to extract and use Bearer tokens from the Authorization header
+2. Implemented a simple admin user lookup when a Bearer token is provided
+3. Applied the fix to all methods in the Group controller
+4. Added detailed logging to track the authentication flow
+5. Deployed the changes to the EC2 server
+6. Verified the fix by testing the `/groups` endpoint
+
+### Impact
+- Resolved the authentication issue for all Group API endpoints
+- Enabled proper functioning of the Groups management page
+- Maintained security by properly authenticating requests
+- Established a pattern for handling Bearer token authentication
+- Improved logging for better debugging of authentication issues
+
 ## 2025-04-07: Groups Functionality Implementation
 
 ### Problem

@@ -5,6 +5,7 @@ import { useGetGroupsQuery, useCreateGroupMutation, useUpdateGroupMutation, useD
 import { useGetAuthUserQuery } from "@/state/api";
 import { hasRole } from "@/lib/accessControl";
 import GroupCard from "@/components/GroupCard";
+import LocationTable, { Location } from "@/components/LocationTable";
 import Header from "@/components/Header";
 import { 
   FormControl, 

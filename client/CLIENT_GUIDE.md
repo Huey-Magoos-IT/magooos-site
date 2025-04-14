@@ -8,6 +8,7 @@ graph TD
     B --> C[Dashboard Layout]
     C --> D[Project Context Layer]
     D --> E[View Systems]
+    D --> F[Location-Based Access Control]
 ```
 
 ### Comprehensive File Structure
@@ -73,6 +74,8 @@ client/
 │   │   │   └── index.tsx
 │   │   ├── LocationTable/
 │   │   │   └── index.tsx
+│   │   ├── GroupCard/
+│   │   │   └── index.tsx
 │   │   ├── Modal/
 │   │   │   └── index.tsx
 │   │   ├── ModalNewTask/
@@ -128,7 +131,8 @@ client/
 5. Core Components:
 - `CSVDataTable/index.tsx`: Displays CSV data with sorting, pagination, search capabilities, and export functionality.
 - `Header/index.tsx`: Page header with breadcrumbs, actions, and contextual navigation.
-- `LocationTable/index.tsx`: Interactive table displaying locations from DynamoDB with sorting capabilities.
+- `LocationTable/index.tsx`: Interactive table displaying locations from DynamoDB with sorting capabilities and selection functionality.
+- `GroupCard/index.tsx`: Card component showing group details, locations, and user assignments with management actions.
 - `Modal/index.tsx`: Reusable modal dialog with backdrop and animation support.
 - `ModalNewTask/index.tsx`: Task creation form with rich text editor and file attachments.
 - `Navbar/index.tsx`: Top navigation bar with search, notifications, and user menu.
@@ -197,6 +201,12 @@ client/
   * Add or remove roles from existing teams
   * Role-based UI elements that adapt to user permissions
   * Improved validation with role-specific messaging
+- `groups/page.tsx`: Location-based access control management:
+  * Create and manage groups of locations
+  * Assign LocationAdmin users to groups
+  * View and edit location assignments
+  * Automatic synchronization of locations for group members
+  * Role-based access control for group management
 - `timeline/page.tsx`: Organization-wide timeline showing all project milestones.
 - `users/page.tsx`: User administration, role management, and team assignments.
 

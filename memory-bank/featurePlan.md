@@ -4,6 +4,25 @@
 
 This document outlines the implementation plan for adding Groups functionality to Magoo's Site. The feature will allow for location-based access control, where users can be assigned specific locations they can access.
 
+## Authentication Enhancement
+
+As part of the Groups functionality implementation, we've enhanced the authentication system to:
+
+1. Support multiple authentication methods in a single controller:
+   - Bearer token from Authorization header
+   - Custom x-user-cognito-id header
+   - User ID in request body
+
+2. Improve authentication debugging:
+   - Detailed logging of authentication attempts
+   - Clear error messages for authentication failures
+   - Tracing of request headers and parameters
+
+3. Maintain backward compatibility:
+   - Support existing authentication methods
+   - Special handling for admin users
+   - Fallback authentication paths
+
 ## Database Schema Changes
 
 ```prisma

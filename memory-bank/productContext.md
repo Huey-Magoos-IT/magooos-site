@@ -9,6 +9,7 @@ Magooos Site is a comprehensive project management platform designed to facilita
 3. Support specialized department workflows (Data, Reporting)
 4. Maintain high security standards with Cognito authentication
 5. Deliver performant AWS-based infrastructure without AWS SDK dependencies
+6. Implement location-based access control through Groups functionality
 
 ## User Personas
 
@@ -29,6 +30,18 @@ Magooos Site is a comprehensive project management platform designed to facilita
 - View and manipulate data relevant to their department
 - Generate reports based on department requirements
 - Limited by role-based permissions
+
+### Location Administrators
+- Manage specific groups of locations
+- Create and manage LocationUsers with access to specific locations
+- View data filtered by their assigned locations
+- Limited to their assigned group's locations
+
+### Location Users
+- Access data for specific locations only
+- View filtered reports based on location permissions
+- Limited to their assigned locations
+- Restricted functionality based on location access
 
 ### General Users
 - View and update assigned tasks
@@ -82,11 +95,19 @@ The application uses AWS Cognito for user authentication with the following flow
 - **Team Membership**: User-team associations
 - **Department Access**: Role-based access to specialized departments
 
+### Groups Management
+- **Groups Page**: Create and manage location groups
+- **Location Assignment**: Select locations for each group
+- **User Assignment**: Assign LocationAdmin users to groups
+- **Automatic Synchronization**: LocationAdmin users automatically get access to all locations in their group
+- **Permission Boundaries**: Enforce location-based access control
+
 ### Department Features
-- **Data Department**: 
+- **Data Department**:
   - Data analysis tools (planned)
   - CSV data visualization (planned)
   - S3 integration for data storage
+  - Location-based data filtering
   - Restricted to DATA role
   
 - **Reporting Department**:
@@ -100,6 +121,7 @@ The application uses AWS Cognito for user authentication with the following flow
   - CSV data parsing and manipulation in browser
   - Data export to CSV format
   - Sortable data tables with pagination
+  - Location-based access control
   - Analytics dashboards (planned)
   - Data visualization (planned)
   - Restricted to REPORTING role
