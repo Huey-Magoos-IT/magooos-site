@@ -36,9 +36,10 @@ type OrderBy = 'name' | 'id';
 interface LocationTableProps {
   selectedLocationIds: string[];
   onLocationSelect: (location: Location) => void;
+  userLocationIds?: string[]; // Add user's assigned location IDs
 }
 
-const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableProps) => {
+const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds }: LocationTableProps) => {
   const [order, setOrder] = useState<Order>('asc');
   const [orderBy, setOrderBy] = useState<OrderBy>('name');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
@@ -56,12 +57,23 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
     return String(error);
   }, [error]);
 
-  // Filter out already selected locations and apply search filter
+  // Filter out already selected locations, apply user location restrictions, and apply search filter
   const availableLocations = useMemo(() => {
     if (!data?.locations) return [];
     
-    // First filter out already selected locations
-    const unselectedLocations = data.locations.filter(location => !selectedLocationIds.includes(location.id));
+    // First filter by user's location access if provided
+    let accessibleLocations = data.locations;
+    if (userLocationIds && userLocationIds.length > 0) {
+      console.log("Filtering locations by user access:", userLocationIds);
+      accessibleLocations = data.locations.filter(location =>
+        userLocationIds.includes(location.id)
+      );
+    }
+    
+    // Then filter out already selected locations
+    const unselectedLocations = accessibleLocations.filter(location =>
+      !selectedLocationIds.includes(location.id)
+    );
     
     // If no search query, return all unselected locations
     if (!searchQuery.trim()) return unselectedLocations;
@@ -72,7 +84,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect }: LocationTableP
       location.name.toLowerCase().includes(query) ||
       location.id.toString().includes(query)
     );
-  }, [data, selectedLocationIds, searchQuery]);
+  }, [data, selectedLocationIds, userLocationIds, searchQuery]);
 
   // Sort locations based on current order and orderBy
   const sortedLocations = useMemo(() => {

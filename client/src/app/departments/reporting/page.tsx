@@ -49,6 +49,8 @@ const REPORT_TYPES = [
 const ReportingPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
   const userTeam = authData?.userDetails?.team;
+  const userLocationIds = authData?.userDetails?.locationIds || [];
+  const userIsAdmin = userTeam?.isAdmin || false;
 
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -139,12 +141,24 @@ const ReportingPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
       
-      // Apply filters if selected
+      // Apply filters - ALWAYS filter by user's location access unless they're an admin
       let filteredData = combinedData;
-      if (selectedLocationIds.length > 0 || discountIds.length > 0) {
+      
+      // Determine which location IDs to use for filtering
+      let effectiveLocationIds = selectedLocationIds;
+      
+      // If no locations are selected but user has assigned locations and is not an admin,
+      // use the user's assigned locations
+      if (selectedLocationIds.length === 0 && userLocationIds.length > 0 && !userIsAdmin) {
+        console.log("No locations selected, using user's assigned locations:", userLocationIds);
+        effectiveLocationIds = userLocationIds;
+      }
+      
+      // Apply location and discount filters
+      if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
         // Pass the full locations array for mapping IDs to names
-        filteredData = filterData(combinedData, selectedLocationIds, discountIds, selectedLocations);
+        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations);
       }
       
       // Fetch employee data and enhance CSV with employee names
@@ -365,7 +379,11 @@ const ReportingPage = () => {
                   <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
                     {selectedLocations.length === 0 ? (
                       <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
-                        Leave blank for all locations. Or select specific locations from the table.
+                        {userIsAdmin
+                          ? "Leave blank for all locations. Or select specific locations from the table."
+                          : userLocationIds.length > 0
+                            ? "Leave blank to use your assigned locations. Or select specific locations from the table."
+                            : "You don't have any assigned locations. Please select specific locations from the table."}
                       </Typography>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -385,7 +403,11 @@ const ReportingPage = () => {
                   <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
                     {selectedLocations.length > 0
                       ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
-                      : "All locations will be used"}
+                      : userIsAdmin
+                        ? "All locations will be used"
+                        : userLocationIds.length > 0
+                          ? `Your ${userLocationIds.length} assigned location${userLocationIds.length !== 1 ? 's' : ''} will be used`
+                          : "No locations selected"}
                   </Typography>
                 </div>
 
@@ -461,6 +483,7 @@ const ReportingPage = () => {
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
                 onLocationSelect={handleAddLocation}
+                userLocationIds={userIsAdmin ? undefined : userLocationIds}
               />
             </Grid>
           </Grid>

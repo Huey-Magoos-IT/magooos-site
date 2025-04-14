@@ -191,6 +191,65 @@ We've migrated the Reporting page from using a standalone S3 bucket to using a f
 - Implement a more robust folder structure within the data lake for different data types
 - Add monitoring for S3 access patterns to optimize data retrieval
 
+## Location-Based Access Control Enhancement
+
+### Overview
+Implemented critical security enhancements to enforce location-based access control in the reporting and data pages. Previously, users with specific location access could potentially see and access data for all locations, creating a security vulnerability. This update ensures users can only view and access data for their assigned locations.
+
+### Changes
+
+#### 1. LocationTable Component Enhancement
+- Modified the LocationTable component to filter available locations based on user access:
+  ```javascript
+  // Filter by user's location access if provided
+  if (userLocationIds && userLocationIds.length > 0) {
+    console.log("Filtering locations by user access:", userLocationIds);
+    accessibleLocations = data.locations.filter(location =>
+      userLocationIds.includes(location.id)
+    );
+  }
+  ```
+
+#### 2. Enforced Location Restrictions in Data Processing
+- Added logic to enforce location restrictions even when no locations are explicitly selected:
+  ```javascript
+  // If no locations are selected but user has assigned locations and is not an admin,
+  // use the user's assigned locations
+  if (selectedLocationIds.length === 0 && userLocationIds.length > 0 && !userIsAdmin) {
+    console.log("No locations selected, using user's assigned locations:", userLocationIds);
+    effectiveLocationIds = userLocationIds;
+  }
+  ```
+
+#### 3. Updated UI Text for Clarity
+- Changed UI text to clearly indicate which locations will be used:
+  ```javascript
+  {userIsAdmin
+    ? "Leave blank for all locations. Or select specific locations from the table."
+    : userLocationIds.length > 0
+      ? "Leave blank to use your assigned locations. Or select specific locations from the table."
+      : "You don't have any assigned locations. Please select specific locations from the table."}
+  ```
+
+### Technical Details
+- The system now properly respects the `locationIds` array in the user object
+- Admin users still have access to all locations
+- Non-admin users are restricted to their assigned locations
+- The LocationTable component only shows locations the user has access to
+- When no locations are selected, the system defaults to the user's assigned locations instead of all locations
+
+### Security Impact
+- Prevents unauthorized access to location data
+- Ensures users can only see and process data for their assigned locations
+- Maintains proper data segregation between different user groups
+- Closes a potential security vulnerability where users could access data for all locations
+
+### Testing Notes
+- Verified that users with specific location access can only see their assigned locations in the location table
+- Confirmed that when no locations are selected, the system defaults to the user's assigned locations
+- Tested that admin users still have access to all locations
+- Verified that the UI text correctly reflects the user's access level
+
 ## Reporting Page Date Extraction Fix
 
 ### Overview
