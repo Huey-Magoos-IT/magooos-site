@@ -51,6 +51,7 @@ const GroupsPage = () => {
   // Check if user is admin
   const userRoles = authData?.userDetails?.team?.teamRoles || [];
   const isAdmin = hasRole(userRoles, "ADMIN");
+  // Check if user is admin or location admin
   const isLocationAdmin = hasRole(userRoles, "LOCATION_ADMIN");
 
   // Get available locations from all groups
@@ -172,19 +173,43 @@ const GroupsPage = () => {
 
   // Filter users who can be assigned to groups (LocationAdmin role)
   const locationAdminUsers = users.filter(user => {
+    // Get the user's team roles
     const userTeamRoles = user.team?.teamRoles || [];
-    return userTeamRoles.some(tr => tr.role.name === "LOCATION_ADMIN");
+    
+    // Check if user has LOCATION_ADMIN role (case insensitive)
+    return userTeamRoles.some(tr =>
+      tr.role.name.toUpperCase() === "LOCATION_ADMIN"
+    );
   });
 
   // Filter out users already assigned to the current group
   const availableUsers = locationAdminUsers.filter(user => {
+    // A user can be assigned to multiple groups, so we only need to check
+    // if they're not already assigned to this specific group
     return user.groupId !== currentGroup?.id;
   });
+
+  // Debug log to see available users and their roles
+  console.log("Available users for group assignment:", locationAdminUsers.map(user => ({
+    username: user.username,
+    userId: user.userId,
+    teamRoles: user.team?.teamRoles?.map(tr => tr.role.name)
+  })));
+
+  // Debug log to see available users and their roles
+  console.log("Available users for group assignment:", availableUsers.map(user => ({
+    username: user.username,
+    userId: user.userId,
+    teamRoles: user.team?.teamRoles?.map(tr => tr.role.name)
+  })));
 
   if (isLoadingGroups || isLoadingUsers) {
     return <div className="p-6">Loading...</div>;
   }
 
+  // We already determined if the user is a LocationAdmin above
+  
+  // Only admins can see the Assign Admin dialog, LocationAdmins will have a different UI
   return (
     <div className="flex w-full flex-col p-8">
       <div className="flex flex-col space-y-4 mb-4">
@@ -376,50 +401,52 @@ const GroupsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Assign User Dialog */}
-      <Dialog open={openUserDialog} onClose={() => setOpenUserDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Assign User to {currentGroup?.name}
-        </DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mt: 1 }}>
-            <InputLabel id="user-label">Location Admin User</InputLabel>
-            <Select
-              labelId="user-label"
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value as number)}
-              label="Location Admin User"
-            >
-              <MenuItem value="">
-                <em>Select a user</em>
-              </MenuItem>
-              {availableUsers.map((user) => (
-                <MenuItem key={user.userId} value={user.userId}>
-                  {user.username}
+      {/* Assign Admin Dialog - Only shown to regular admins */}
+      {isAdmin && (
+        <Dialog open={openUserDialog} onClose={() => setOpenUserDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            Assign Admin to {currentGroup?.name}
+          </DialogTitle>
+          <DialogContent>
+            <FormControl fullWidth sx={{ mt: 1 }}>
+              <InputLabel id="user-label">Select Location Admin</InputLabel>
+              <Select
+                labelId="user-label"
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value as number)}
+                label="Location Admin User"
+              >
+                <MenuItem value="">
+                  <em>Select a user</em>
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {availableUsers.length === 0 && (
-            <p className="text-amber-600 mt-2 text-sm">
-              No available Location Admin users found. Users must have the LOCATION_ADMIN role to be assigned to a group.
-            </p>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenUserDialog(false)} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAssignUser}
-            color="primary"
-            variant="contained"
-            disabled={selectedUserId === ""}
-          >
-            Assign
-          </Button>
-        </DialogActions>
-      </Dialog>
+                {availableUsers.map((user) => (
+                  <MenuItem key={user.userId} value={user.userId}>
+                    {user.username}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {availableUsers.length === 0 && (
+              <p className="text-amber-600 mt-2 text-sm">
+                No available Location Admin users found. Users must have the LOCATION_ADMIN role assigned to their team to be assigned to a group.
+              </p>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenUserDialog(false)} color="primary">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignUser}
+              color="primary"
+              variant="contained"
+              disabled={selectedUserId === ""}
+            >
+              Assign
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </div>
   );
 };
