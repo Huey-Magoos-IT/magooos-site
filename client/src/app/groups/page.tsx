@@ -7,19 +7,22 @@ import { hasRole } from "@/lib/accessControl";
 import GroupCard from "@/components/GroupCard";
 import LocationTable, { Location } from "@/components/LocationTable";
 import Header from "@/components/Header";
-import { 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  TextField, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
+import { X } from "lucide-react";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   DialogActions,
   Chip,
   Box,
+  Typography,
+  Grid,
   OutlinedInput,
   SelectChangeEvent
 } from "@mui/material";
@@ -43,6 +46,7 @@ const GroupsPage = () => {
     locationIds: [] as string[]
   });
   const [selectedUserId, setSelectedUserId] = useState<number | "">("");
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
 
   // Check if user is admin
   const userRoles = authData?.userDetails?.team?.teamRoles || [];
@@ -65,6 +69,10 @@ const GroupsPage = () => {
         description: group.description || "",
         locationIds: group.locationIds || []
       });
+      // Convert location IDs to Location objects for the selected locations display
+      setSelectedLocations(
+        group.locationIds?.map(id => ({ id, name: id })) || []
+      );
     } else {
       setCurrentGroup(null);
       setFormData({
@@ -72,6 +80,7 @@ const GroupsPage = () => {
         description: "",
         locationIds: []
       });
+      setSelectedLocations([]);
     }
     setOpenDialog(true);
   };
@@ -91,12 +100,21 @@ const GroupsPage = () => {
     }));
   };
 
-  // Handle location selection
-  const handleLocationChange = (event: SelectChangeEvent<string[]>) => {
-    const { value } = event.target;
+  // Handle location selection from LocationTable
+  const handleAddLocation = (location: Location) => {
+    setSelectedLocations(prev => [...prev, location]);
     setFormData(prev => ({
       ...prev,
-      locationIds: typeof value === 'string' ? value.split(',') : value
+      locationIds: [...prev.locationIds, location.id]
+    }));
+  };
+
+  // Handle removing a location
+  const handleRemoveLocation = (locationId: string) => {
+    setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
+    setFormData(prev => ({
+      ...prev,
+      locationIds: prev.locationIds.filter(id => id !== locationId)
     }));
   };
 
@@ -222,68 +240,134 @@ const GroupsPage = () => {
       )}
 
       {/* Create/Edit Group Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
         <DialogTitle>
           {currentGroup ? "Edit Group" : "Create Group"}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="name"
-            label="Group Name"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={formData.name}
-            onChange={handleInputChange}
-            required
-            sx={{ mb: 2, mt: 1 }}
-          />
-          <TextField
-            margin="dense"
-            name="description"
-            label="Description"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={formData.description}
-            onChange={handleInputChange}
-            multiline
-            rows={3}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="locations-label">Locations</InputLabel>
-            <Select
-              labelId="locations-label"
-              multiple
-              value={formData.locationIds}
-              onChange={handleLocationChange}
-              input={<OutlinedInput id="select-multiple-locations" label="Locations" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} />
-                  ))}
+          <Grid container spacing={3}>
+            {/* Left column - Form inputs */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                autoFocus
+                margin="dense"
+                name="name"
+                label="Group Name"
+                type="text"
+                fullWidth
+                variant="outlined"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                sx={{ mb: 2, mt: 1 }}
+              />
+              <TextField
+                margin="dense"
+                name="description"
+                label="Description"
+                type="text"
+                fullWidth
+                variant="outlined"
+                value={formData.description}
+                onChange={handleInputChange}
+                multiline
+                rows={3}
+                sx={{ mb: 2 }}
+              />
+              
+              {/* Selected Locations Display */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                  {selectedLocations.length > 0 && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          // Remove the last added location (undo functionality)
+                          if (selectedLocations.length > 0) {
+                            const lastLocation = selectedLocations[selectedLocations.length - 1];
+                            handleRemoveLocation(lastLocation.id);
+                          }
+                        }}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                      >
+                        <span className="mr-1">Undo</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
+                          <path d="M9 14 4 9l5-5"/>
+                          <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                        </svg>
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          // Clear all selected locations
+                          setSelectedLocations([]);
+                          setFormData(prev => ({
+                            ...prev,
+                            locationIds: []
+                          }));
+                        }}
+                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                      >
+                        <span className="mr-1">Clear All</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
+                          <path d="M3 6h18"/>
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                          <line x1="10" x2="10" y1="11" y2="17"/>
+                          <line x1="14" x2="14" y1="11" y2="17"/>
+                        </svg>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                  {selectedLocations.length === 0 ? (
+                    <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                      Select locations from the table on the right.
+                    </Typography>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedLocations.map((location) => (
+                        <Chip
+                          key={location.id}
+                          label={`${location.name} (${location.id})`}
+                          onClick={() => handleRemoveLocation(location.id)}
+                          onDelete={() => handleRemoveLocation(location.id)}
+                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
+                          deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </Box>
-              )}
-            >
-              {allLocations.map((location) => (
-                <MenuItem key={location} value={location}>
-                  {location}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                  {selectedLocations.length > 0
+                    ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
+                    : "No locations selected"}
+                </Typography>
+              </div>
+            </Grid>
+            
+            {/* Right column - Location Table */}
+            <Grid item xs={12} md={6}>
+              <LocationTable
+                selectedLocationIds={formData.locationIds}
+                onLocationSelect={handleAddLocation}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="primary">
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            color="primary" 
+          <Button
+            onClick={handleSubmit}
+            color="primary"
             variant="contained"
             disabled={!formData.name.trim()}
           >
@@ -326,9 +410,9 @@ const GroupsPage = () => {
           <Button onClick={() => setOpenUserDialog(false)} color="primary">
             Cancel
           </Button>
-          <Button 
-            onClick={handleAssignUser} 
-            color="primary" 
+          <Button
+            onClick={handleAssignUser}
+            color="primary"
             variant="contained"
             disabled={selectedUserId === ""}
           >
