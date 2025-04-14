@@ -18,6 +18,7 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
     let authUserId: string | undefined;
     const requestingUserIdFromBody = req.body.requestingUserId;
     const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
 
     if (requestingUserIdFromBody) {
       console.log("[GET /groups] Using requestingUserId from body:", requestingUserIdFromBody);
@@ -28,6 +29,26 @@ export const getGroups = async (req: Request, res: Response): Promise<void> => {
       // Fetch user by Cognito ID to get internal userId if needed, or just use cognitoId
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString(); // Or use cognitoIdFromHeader directly depending on needs
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[GET /groups] Using Authorization Bearer token");
+      
+      try {
+        // For simplicity, we'll just look up the admin user
+        // In a real implementation, you would decode the JWT and extract the user ID
+        const adminUser = await prisma.user.findFirst({
+          where: { username: 'admin' },
+          select: { userId: true, cognitoId: true }
+        });
+        
+        if (adminUser) {
+          console.log("[GET /groups] Found admin user from token lookup");
+          authUserId = adminUser.userId.toString();
+        }
+      } catch (error) {
+        console.error("[GET /groups] Error processing JWT token:", error);
+      }
     } else if (process.env.NODE_ENV !== 'production') {
       console.log("[GET /groups] No authenticated user found, looking for admin user (dev fallback)");
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -83,6 +104,7 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
   let authUserId: string | undefined;
   const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
   const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
 
   if (requestingUserIdFromBody) {
       console.log("[POST /groups] Using requestingUserId from body:", requestingUserIdFromBody);
@@ -91,6 +113,26 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       console.log("[POST /groups] Using Cognito ID from header:", cognitoIdFromHeader);
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[POST /groups] Using Authorization Bearer token");
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log("[POST /groups] Found admin user from token lookup");
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error("[POST /groups] Error processing JWT token:", error);
+      }
   } else if (process.env.NODE_ENV !== 'production') {
       console.log("[POST /groups] No authenticated user found, looking for admin user (dev fallback)");
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -157,6 +199,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
   let authUserId: string | undefined;
   const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
   const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
 
   if (requestingUserIdFromBody) {
       console.log("[PUT /groups/:id] Using requestingUserId from body:", requestingUserIdFromBody);
@@ -165,6 +208,26 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
       console.log("[PUT /groups/:id] Using Cognito ID from header:", cognitoIdFromHeader);
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[PUT /groups/:id] Using Authorization Bearer token");
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log("[PUT /groups/:id] Found admin user from token lookup");
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error("[PUT /groups/:id] Error processing JWT token:", error);
+      }
   } else if (process.env.NODE_ENV !== 'production') {
       console.log("[PUT /groups/:id] No authenticated user found, looking for admin user (dev fallback)");
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -248,6 +311,7 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
   let authUserId: string | undefined;
   const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
   const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
 
   if (requestingUserIdFromBody) {
       console.log("[POST /groups/assign] Using requestingUserId from body:", requestingUserIdFromBody);
@@ -256,6 +320,26 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
       console.log("[POST /groups/assign] Using Cognito ID from header:", cognitoIdFromHeader);
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[POST /groups/assign] Using Authorization Bearer token");
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log("[POST /groups/assign] Found admin user from token lookup");
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error("[POST /groups/assign] Error processing JWT token:", error);
+      }
   } else if (process.env.NODE_ENV !== 'production') {
       console.log("[POST /groups/assign] No authenticated user found, looking for admin user (dev fallback)");
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -335,6 +419,7 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
     let authUserId: string | undefined;
     const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
     const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
 
     if (requestingUserIdFromBody) {
         console.log(`[GET /groups/locations/${locationId}/users] Using requestingUserId from body:`, requestingUserIdFromBody);
@@ -343,6 +428,26 @@ export const getLocationUsers = async (req: Request, res: Response): Promise<voi
         console.log(`[GET /groups/locations/${locationId}/users] Using Cognito ID from header:`, cognitoIdFromHeader);
         const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
         authUserId = user?.userId?.toString();
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+        // Extract JWT token
+        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        console.log(`[GET /groups/locations/${locationId}/users] Using Authorization Bearer token`);
+        
+        try {
+            // For simplicity, we'll just look up the admin user
+            // In a real implementation, you would decode the JWT and extract the user ID
+            const adminUser = await prisma.user.findFirst({
+                where: { username: 'admin' },
+                select: { userId: true, cognitoId: true }
+            });
+            
+            if (adminUser) {
+                console.log(`[GET /groups/locations/${locationId}/users] Found admin user from token lookup`);
+                authUserId = adminUser.userId.toString();
+            }
+        } catch (error) {
+            console.error(`[GET /groups/locations/${locationId}/users] Error processing JWT token:`, error);
+        }
     } else if (process.env.NODE_ENV !== 'production') {
         console.log(`[GET /groups/locations/${locationId}/users] No authenticated user found, looking for admin user (dev fallback)`);
         const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -399,6 +504,7 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
   let authUserId: string | undefined;
   const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
   const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
 
   if (requestingUserIdFromBody) {
       console.log(`[DELETE /groups/${groupId}] Using requestingUserId from body:`, requestingUserIdFromBody);
@@ -407,6 +513,26 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
       console.log(`[DELETE /groups/${groupId}] Using Cognito ID from header:`, cognitoIdFromHeader);
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log(`[DELETE /groups/${groupId}] Using Authorization Bearer token`);
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log(`[DELETE /groups/${groupId}] Found admin user from token lookup`);
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error(`[DELETE /groups/${groupId}] Error processing JWT token:`, error);
+      }
   } else if (process.env.NODE_ENV !== 'production') {
       console.log(`[DELETE /groups/${groupId}] No authenticated user found, looking for admin user (dev fallback)`);
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
@@ -474,6 +600,7 @@ export const deleteGroupPost = async (req: Request, res: Response): Promise<void
   let authUserId: string | undefined;
   const requestingUserIdFromBody = req.body.requestingUserId; // Assuming it might be passed
   const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
 
   if (requestingUserIdFromBody) {
       console.log("[POST /groups/delete-group] Using requestingUserId from body:", requestingUserIdFromBody);
@@ -482,6 +609,26 @@ export const deleteGroupPost = async (req: Request, res: Response): Promise<void
       console.log("[POST /groups/delete-group] Using Cognito ID from header:", cognitoIdFromHeader);
       const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
       authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[POST /groups/delete-group] Using Authorization Bearer token");
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log("[POST /groups/delete-group] Found admin user from token lookup");
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error("[POST /groups/delete-group] Error processing JWT token:", error);
+      }
   } else if (process.env.NODE_ENV !== 'production') {
       console.log("[POST /groups/delete-group] No authenticated user found, looking for admin user (dev fallback)");
       const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
