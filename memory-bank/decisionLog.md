@@ -1,5 +1,72 @@
 # Decision Log
 
+## 2025-04-14: Groups UI Enhancement and User Management
+
+### Problem
+The Groups functionality needed several enhancements to improve usability and management:
+1. The GroupCard component was too small and lacked visual appeal
+2. There was no way to remove users from groups once assigned
+3. The Groups page was not accessible from the sidebar, requiring manual URL entry
+4. The server had build issues with missing imports
+
+### Investigation
+1. Examined the existing GroupCard component and identified areas for improvement
+2. Analyzed the user removal process and determined necessary API endpoints
+3. Reviewed the sidebar navigation to find the best place to add the Groups link
+4. Identified build errors in the server code related to missing imports
+
+### Decision Points
+
+#### Decision 1: Enhance GroupCard Component
+- **Choice**: Redesign the GroupCard component with improved styling and larger size
+- **Rationale**: Better visual presentation and more efficient use of screen space
+- **Alternatives Considered**:
+  - Minor styling tweaks (rejected as insufficient)
+  - Complete redesign with new component structure (rejected as too complex)
+  - Using a third-party card component (rejected for consistency)
+- **Consequences**: More visually appealing and functional UI that better presents group information
+
+#### Decision 2: Implement User Removal Functionality
+- **Choice**: Add the ability to remove users from groups with a dedicated API endpoint
+- **Rationale**: Provides necessary management capability for group administrators
+- **Alternatives Considered**:
+  - Using the existing group deletion endpoint (rejected as too destructive)
+  - Implementing a group reassignment feature (rejected as more complex than needed)
+  - Client-side only removal (rejected for data integrity)
+- **Consequences**: Complete group management lifecycle with the ability to both add and remove users
+
+#### Decision 3: Add Groups to Sidebar Navigation
+- **Choice**: Add a Groups link to the sidebar for both admins and location admins
+- **Rationale**: Improves accessibility and discoverability of the Groups functionality
+- **Alternatives Considered**:
+  - Adding it only for admins (rejected as location admins also need access)
+  - Creating a dropdown under Teams (rejected for simplicity)
+  - Adding it to a different section (rejected for logical grouping)
+- **Consequences**: Better navigation and user experience with easier access to Groups management
+
+#### Decision 4: Fix Server Build Issues
+- **Choice**: Update import statements to include the new removeUserFromGroup function
+- **Rationale**: Ensures successful server builds and proper functionality
+- **Alternatives Considered**:
+  - Restructuring the controller exports (rejected as more complex than needed)
+  - Creating a separate controller file (rejected for code organization)
+- **Consequences**: Reliable server builds with proper function exports and imports
+
+### Implementation
+1. Enhanced the GroupCard component with improved styling, larger size, and better user management
+2. Added removeUserFromGroup controller function and API endpoint
+3. Added the corresponding Redux mutation in the client
+4. Added Groups link to the sidebar for both admins and location admins
+5. Fixed import statements in the server code
+6. Updated documentation to reflect all changes
+
+### Impact
+- Improved user experience with better visual presentation of groups
+- Enhanced group management with the ability to remove users
+- Better navigation with sidebar access to Groups
+- Reliable server builds with proper imports
+- Complete group management lifecycle from creation to user assignment and removal
+
 ## 2025-04-14: Authentication Fix for Groups API
 
 ### Problem

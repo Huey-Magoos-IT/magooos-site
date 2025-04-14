@@ -332,12 +332,15 @@ User -> Group Assignment -> Location Access -> Data Filtering -> Protected Resou
 
 ### Pattern Rules
 1. **Group-based location assignment**: Locations are assigned to groups, then users are assigned to groups
-2. **Automatic location synchronization**: LocationAdmin users automatically get access to all locations in their group
-3. **Cascading location updates**: When a group's locations change, update all associated users
-4. **Permission boundaries**: Users can only access data for their assigned locations
-5. **Multiple authentication methods**: Support various authentication approaches (headers, tokens, body parameters)
-6. **Consistent UI patterns**: Use the same location selection interface across the application
-7. **Clear visual feedback**: Show selected locations with options to undo or clear all
-8. **Efficient array storage**: Use array fields for location IDs to simplify queries
-9. **Proper error handling**: Provide clear error messages for permission boundaries
-10. **Documentation**: Clearly document the location-based access control model
+2. **User removal with access revocation**: When users are removed from groups, their location access is automatically cleared
+3. **Automatic location synchronization**: LocationAdmin users automatically get access to all locations in their group
+4. **Cascading location updates**: When a group's locations change, update all associated users
+5. **Permission boundaries**: Users can only access data for their assigned locations
+6. **Multiple authentication methods**: Support various authentication approaches (headers, tokens, body parameters)
+7. **Consistent UI patterns**: Use the same location selection interface across the application
+8. **Clear visual feedback**: Show selected locations with options to undo or clear all
+9. **Enhanced group visualization**: Use visually appealing GroupCard components with proper spacing and styling
+10. **Efficient array storage**: Use array fields for location IDs to simplify queries
+11. **Proper error handling**: Provide clear error messages for permission boundaries
+12. **Documentation**: Clearly document the location-based access control model
+13. **Navigation integration**: Include Groups in the sidebar navigation for both admins and location admins

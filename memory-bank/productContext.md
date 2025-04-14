@@ -99,8 +99,11 @@ The application uses AWS Cognito for user authentication with the following flow
 - **Groups Page**: Create and manage location groups
 - **Location Assignment**: Select locations for each group
 - **User Assignment**: Assign LocationAdmin users to groups
+- **User Removal**: Remove users from groups with automatic location access revocation
 - **Automatic Synchronization**: LocationAdmin users automatically get access to all locations in their group
 - **Permission Boundaries**: Enforce location-based access control
+- **Sidebar Navigation**: Quick access to Groups page for admins and location admins
+- **Enhanced UI**: Visually appealing GroupCard component with improved user management
 
 ### Department Features
 - **Data Department**:

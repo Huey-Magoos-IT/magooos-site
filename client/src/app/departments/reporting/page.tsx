@@ -36,7 +36,8 @@ import {
   DEFAULT_LOCATION_IDS 
 } from "@/lib/legacyLambdaProcessing";
 
-const S3_DATA_BUCKET = process.env.NEXT_PUBLIC_S3_REPORTING_BUCKET_URL || "https://redflag-reporting.s3.us-east-2.amazonaws.com";
+const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
+const REPORTING_DATA_FOLDER = process.env.NEXT_PUBLIC_REPORTING_DATA_FOLDER || "reporting-data-pool/";
 
 // Report types
 const REPORT_TYPES = [
@@ -91,7 +92,10 @@ const ReportingPage = () => {
   const fetchFiles = async () => {
     try {
       // Use the fetchS3Files utility from csvProcessing
-      const fileList = await fetchS3Files(S3_DATA_BUCKET);
+      // Use the fetchS3Files utility from csvProcessing with the folder path
+      console.log("REPORTING PAGE - Fetching files from:", S3_DATA_LAKE, REPORTING_DATA_FOLDER);
+      const fileList = await fetchS3Files(S3_DATA_LAKE, REPORTING_DATA_FOLDER);
+      console.log("REPORTING PAGE - Files found:", fileList);
       setAllS3Files(fileList);
     } catch (err) {
       console.error("File fetch failed:", err);
@@ -129,7 +133,8 @@ const ReportingPage = () => {
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
 
       // Create full URLs for the files
-      const fileUrls = matchingFiles.map(filename => `${S3_DATA_BUCKET}/${filename}`);
+      // Create full URLs for the files including the folder path
+      const fileUrls = matchingFiles.map(filename => `${S3_DATA_LAKE}/${REPORTING_DATA_FOLDER}${filename}`);
 
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
