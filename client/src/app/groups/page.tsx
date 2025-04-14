@@ -170,37 +170,54 @@ const GroupsPage = () => {
       }
     }
   };
-
-  // Filter users who can be assigned to groups (LocationAdmin role)
+  // Find users who can be assigned to groups
+  // First, find teams that have the LOCATION_ADMIN role
+  const teamsWithLocationAdminRole = users.reduce((teams, user) => {
+    if (user.team && user.team.teamRoles) {
+      const hasLocationAdminRole = user.team.teamRoles.some(tr =>
+        tr.role.name.toUpperCase() === "LOCATION_ADMIN"
+      );
+      
+      if (hasLocationAdminRole && !teams.includes(user.team.id)) {
+        teams.push(user.team.id);
+      }
+    }
+    return teams;
+  }, [] as number[]);
+  
+  // Then find all users in those teams
   const locationAdminUsers = users.filter(user => {
-    // Get the user's team roles
-    const userTeamRoles = user.team?.teamRoles || [];
-    
-    // Check if user has LOCATION_ADMIN role (case insensitive)
-    return userTeamRoles.some(tr =>
-      tr.role.name.toUpperCase() === "LOCATION_ADMIN"
-    );
+    return user.team && teamsWithLocationAdminRole.includes(user.team.id);
   });
 
   // Filter out users already assigned to the current group
   const availableUsers = locationAdminUsers.filter(user => {
-    // A user can be assigned to multiple groups, so we only need to check
-    // if they're not already assigned to this specific group
     return user.groupId !== currentGroup?.id;
   });
 
-  // Debug log to see available users and their roles
-  console.log("Available users for group assignment:", locationAdminUsers.map(user => ({
+  // Debug logs to help troubleshoot
+  console.log("All users:", users.map(user => ({
     username: user.username,
     userId: user.userId,
+    teamId: user.team?.id,
+    teamName: user.team?.teamName,
     teamRoles: user.team?.teamRoles?.map(tr => tr.role.name)
   })));
-
-  // Debug log to see available users and their roles
+  
+  console.log("Teams with LOCATION_ADMIN role:", teamsWithLocationAdminRole);
+  
+  console.log("Users in teams with LOCATION_ADMIN role:", locationAdminUsers.map(user => ({
+    username: user.username,
+    userId: user.userId,
+    teamId: user.team?.id,
+    teamName: user.team?.teamName
+  })));
+  
   console.log("Available users for group assignment:", availableUsers.map(user => ({
     username: user.username,
     userId: user.userId,
-    teamRoles: user.team?.teamRoles?.map(tr => tr.role.name)
+    teamId: user.team?.id,
+    teamName: user.team?.teamName
   })));
 
   if (isLoadingGroups || isLoadingUsers) {
@@ -428,7 +445,7 @@ const GroupsPage = () => {
             </FormControl>
             {availableUsers.length === 0 && (
               <p className="text-amber-600 mt-2 text-sm">
-                No available Location Admin users found. Users must have the LOCATION_ADMIN role assigned to their team to be assigned to a group.
+                No available Location Admin users found. Users must be in a team that has the LOCATION_ADMIN role to be assigned to a group.
               </p>
             )}
           </DialogContent>
