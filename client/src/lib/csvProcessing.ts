@@ -283,6 +283,16 @@ export const extractDateFromFilename = (filename: string): Date | null => {
     return new Date(`${month}/${day}/${year}`);
   }
   
+  // Look for pattern of any-prefix-MM-DD-YYYY.csv (for reporting page files)
+  dateMatch = filename.match(/.*?-(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  if (dateMatch) {
+    const month = dateMatch[1];
+    const day = dateMatch[2];
+    const year = dateMatch[3];
+    console.log(`Extracted date from reporting file: ${month}/${day}/${year}`);
+    return new Date(`${month}/${day}/${year}`);
+  }
+  
   // Look for pattern of 8 digits in a row which would be MMDDYYYY (legacy format)
   dateMatch = filename.match(/(\d{8})\.csv$/);
   if (dateMatch) {
@@ -293,6 +303,7 @@ export const extractDateFromFilename = (filename: string): Date | null => {
     return new Date(`${month}/${day}/${year}`);
   }
   
+  console.log(`Could not extract date from filename: ${filename}`);
   return null;
 };
 

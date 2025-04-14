@@ -190,3 +190,47 @@ We've migrated the Reporting page from using a standalone S3 bucket to using a f
 - Consider migrating other standalone S3 buckets to the centralized data lake
 - Implement a more robust folder structure within the data lake for different data types
 - Add monitoring for S3 access patterns to optimize data retrieval
+
+## Reporting Page Date Extraction Fix
+
+### Overview
+Fixed an issue where the reporting page couldn't find files for April dates, even though March dates worked fine. The problem was in the date extraction function that didn't properly handle the reporting page file format.
+
+### Changes
+
+#### 1. Enhanced Date Extraction from Filenames
+- Updated the `extractDateFromFilename` function to handle the reporting page file format:
+  ```javascript
+  // Look for pattern of any-prefix-MM-DD-YYYY.csv (for reporting page files)
+  dateMatch = filename.match(/.*?-(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  if (dateMatch) {
+    const month = dateMatch[1];
+    const day = dateMatch[2];
+    const year = dateMatch[3];
+    console.log(`Extracted date from reporting file: ${month}/${day}/${year}`);
+    return new Date(`${month}/${day}/${year}`);
+  }
+  ```
+
+#### 2. Added Debug Logging
+- Added logging to help diagnose date extraction issues:
+  ```javascript
+  console.log(`Could not extract date from filename: ${filename}`);
+  ```
+
+### Technical Details
+The issue was that the `extractDateFromFilename` function only handled two file naming patterns:
+1. `loyalty_data_MM-DD-YYYY.csv` (for the data page)
+2. `MMDDYYYY.csv` (legacy format without hyphens)
+
+But it didn't handle the reporting page file format like `redflag-report-MM-DD-YYYY.csv` or `no-loyalty-discount-MM-DD-YYYY.csv`. The updated function now handles all three formats.
+
+### Testing Notes
+- Verified that the reporting page can now find and process April data
+- Confirmed that the function still works correctly for March data and other months
+- Added debug logging to help diagnose any future issues with date extraction
+
+### Future Considerations
+- Consider standardizing file naming conventions across all data sources
+- Add more robust date parsing with fallback mechanisms
+- Implement automated tests for date extraction from various filename formats
