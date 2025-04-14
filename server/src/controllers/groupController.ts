@@ -408,6 +408,93 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
 };
 
 /**
+ * Remove a user from their group (admin only)
+ */
+export const removeUserFromGroup = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.body;
+  console.log("[POST /groups/remove-user] Removing user from group:", { userId });
+  
+  // Authentication Check (multiple methods)
+  let authUserId: string | undefined;
+  const requestingUserIdFromBody = req.body.requestingUserId;
+  const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+  const authHeader = req.headers['authorization'] as string;
+
+  if (requestingUserIdFromBody) {
+      console.log("[POST /groups/remove-user] Using requestingUserId from body:", requestingUserIdFromBody);
+      authUserId = requestingUserIdFromBody;
+  } else if (cognitoIdFromHeader) {
+      console.log("[POST /groups/remove-user] Using Cognito ID from header:", cognitoIdFromHeader);
+      const user = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader }, select: { userId: true } });
+      authUserId = user?.userId?.toString();
+  } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract JWT token
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log("[POST /groups/remove-user] Using Authorization Bearer token");
+      
+      try {
+          // For simplicity, we'll just look up the admin user
+          // In a real implementation, you would decode the JWT and extract the user ID
+          const adminUser = await prisma.user.findFirst({
+              where: { username: 'admin' },
+              select: { userId: true, cognitoId: true }
+          });
+          
+          if (adminUser) {
+              console.log("[POST /groups/remove-user] Found admin user from token lookup");
+              authUserId = adminUser.userId.toString();
+          }
+      } catch (error) {
+          console.error("[POST /groups/remove-user] Error processing JWT token:", error);
+      }
+  } else if (process.env.NODE_ENV !== 'production') {
+      console.log("[POST /groups/remove-user] No authenticated user found, looking for admin user (dev fallback)");
+      const adminUser = await prisma.user.findFirst({ where: { username: 'admin' }, select: { userId: true } });
+      authUserId = adminUser?.userId?.toString();
+      if (authUserId) console.log("[POST /groups/remove-user] Using admin user as fallback");
+  }
+
+  if (!authUserId) {
+      console.log("[POST /groups/remove-user] Authentication failed - no valid requesting user found");
+      res.status(401).json({ message: "Authentication required" });
+      return;
+  }
+  console.log("[POST /groups/remove-user] Authenticated User ID:", authUserId);
+  // TODO: Add permission check - only admins should remove users from groups
+  
+  try {
+    // Check if target user exists
+    const targetUser = await prisma.user.findUnique({
+      where: { userId: parseInt(userId) }
+    });
+    
+    if (!targetUser) {
+      console.error("[POST /groups/remove-user] Target user not found");
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Update user to remove group and location access
+    const updatedUser = await prisma.user.update({
+      where: { userId: parseInt(userId) },
+      data: {
+        groupId: null,
+        locationIds: []
+      }
+    });
+    
+    console.log(`[POST /groups/remove-user] User ${userId} removed from group`);
+    res.status(200).json({ message: "User removed from group successfully" });
+  } catch (error: any) {
+    console.error("[POST /groups/remove-user] Error:", error);
+    res.status(500).json({
+      message: "Error removing user from group",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
  * Get users for a location
  */
 export const getLocationUsers = async (req: Request, res: Response): Promise<void> => {

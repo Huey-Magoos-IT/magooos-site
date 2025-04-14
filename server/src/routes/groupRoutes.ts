@@ -20,6 +20,7 @@ router.post("/", createGroup);
 router.put("/:id", updateGroup);
 router.delete("/:id", deleteGroup);
 router.post("/assign", assignGroupToUser);
+router.post("/remove-user", removeUserFromGroup);
 
 // Alternative endpoints for API Gateway compatibility
 router.post("/:id/delete", deleteGroupPost);

@@ -12,6 +12,7 @@ import {
   Briefcase,
   ChevronDown,
   ChevronUp,
+  FolderKanban,
   Home,
   Layers3,
   LockIcon,
@@ -90,6 +91,10 @@ const Sidebar = () => {
           <SidebarLink icon={Settings} label="Settings" href="/settings" />
           <SidebarLink icon={User} label="Users" href="/users" />
           <SidebarLink icon={Users} label="Teams" href="/teams" />
+          {/* Only show Groups link to admins and location admins */}
+          {(isAdmin || hasRole(teamRoles, 'LOCATION_ADMIN')) && (
+            <SidebarLink icon={FolderKanban} label="Groups" href="/groups" />
+          )}
         </nav>
 
         {/* PROJECTS SECTION HIDDEN AS REQUESTED */}

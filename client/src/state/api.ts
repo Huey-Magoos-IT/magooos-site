@@ -370,6 +370,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["Groups", "Users"]
     }),
+    removeUserFromGroup: build.mutation<void, { userId: number }>({
+      query: ({ userId }) => ({
+        url: "groups/remove-user",
+        method: "POST",
+        body: { userId }
+      }),
+      invalidatesTags: ["Groups", "Users"]
+    }),
     updateUserLocations: build.mutation<void, { userId: number; locationIds: string[] }>({
       query: ({ userId, locationIds }) => ({
         url: `users/${userId}/locations`,
@@ -415,6 +423,7 @@ export const {
   useUpdateGroupMutation,
   useDeleteGroupMutation,
   useAssignGroupToUserMutation,
+  useRemoveUserFromGroupMutation,
   useUpdateUserLocationsMutation,
   useCreateLocationUserMutation,
 } = api;
