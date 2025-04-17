@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, User } from "lucide-react";
+import { ChevronDown, ChevronUp, User, X } from "lucide-react";
 import RoleBadge from "../RoleBadge";
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
-import { Location } from "@/components/LocationTable";
+import { useUpdateUserLocationsMutation } from "@/state/api";
+import LocationTable, { Location } from "@/components/LocationTable";
 
 interface UserCardProps {
   user: {
@@ -50,9 +51,15 @@ const UserCard: React.FC<UserCardProps> = ({
   updateStatus = {},
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [openLocationDialog, setOpenLocationDialog] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
+  const [lastAction, setLastAction] = useState<string>("");
+  const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
   
   // Get locations data
   const { data: locationsData } = useGetLocationsQuery();
+  const [updateUserLocations] = useUpdateUserLocationsMutation();
   
   // Find current team
   const currentTeam = teams.find(team => team.id === user.teamId);
@@ -70,11 +77,105 @@ const UserCard: React.FC<UserCardProps> = ({
     return [];
   }, [locationsData, user.locationIds]);
   
+  // Initialize selected locations when opening the dialog
+  useEffect(() => {
+    if (openLocationDialog && userLocations) {
+      setSelectedLocations(userLocations);
+    }
+  }, [openLocationDialog, userLocations]);
+  
   // Handle team change
   const handleTeamChange = (event: SelectChangeEvent<number | string>) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     onTeamChange(user.userId, newTeamId);
     // Note: Page reload is handled in the parent component after the API call completes
+  };
+  
+  // Handle location selection from LocationTable
+  const handleAddLocation = (location: Location) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("add");
+    
+    // Add the location
+    setSelectedLocations(prev => [...prev, location]);
+  };
+  
+  // Handle removing a location
+  const handleRemoveLocation = (locationId: string) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("remove");
+    
+    // Remove the location
+    setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
+  };
+  
+  // Handle adding all available locations
+  const handleAddAllLocations = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("addAll");
+    
+    if (locationsData?.locations) {
+      // Add all available locations
+      setSelectedLocations(locationsData.locations);
+    }
+  };
+  
+  // Handle clearing all locations
+  const handleClearAll = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("clearAll");
+    
+    // Clear all locations
+    setSelectedLocations([]);
+  };
+  
+  // Handle undo action
+  const handleUndo = () => {
+    if (lastAction) {
+      // Restore previous state
+      setSelectedLocations(previousLocations);
+      
+      // Reset last action
+      setLastAction("");
+    }
+  };
+  
+  // Handle saving locations
+  const handleSaveLocations = async () => {
+    try {
+      setLocationUpdateStatus("pending");
+      
+      await updateUserLocations({
+        userId: user.userId,
+        locationIds: selectedLocations.map(loc => loc.id)
+      }).unwrap();
+      
+      setLocationUpdateStatus("success");
+      
+      // Close dialog after a short delay to show success message
+      setTimeout(() => {
+        setLocationUpdateStatus(null);
+        setOpenLocationDialog(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Error updating user locations:", error);
+      setLocationUpdateStatus("error");
+    }
+  };
+  
+  // Handle opening the location dialog
+  const handleOpenLocationDialog = () => {
+    setOpenLocationDialog(true);
+  };
+  
+  // Handle closing the location dialog
+  const handleCloseLocationDialog = () => {
+    setOpenLocationDialog(false);
+    setLocationUpdateStatus(null);
   };
 
   return (
@@ -180,14 +281,17 @@ const UserCard: React.FC<UserCardProps> = ({
               </span>
             </div>
             
-            {/* Locations Section - Read-only display */}
+            {/* Locations Section */}
             <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Locations:</span>
                 {isAdmin && (
-                  <div className="text-xs text-blue-600 dark:text-blue-400">
-                    Managed via Groups
-                  </div>
+                  <button 
+                    onClick={handleOpenLocationDialog}
+                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800 px-2 py-1 rounded"
+                  >
+                    Edit
+                  </button>
                 )}
               </div>
               
@@ -205,16 +309,136 @@ const UserCard: React.FC<UserCardProps> = ({
                   <span className="text-sm text-gray-500 dark:text-gray-400">No locations assigned</span>
                 )}
               </div>
-              
-              {isAdmin && (
-                <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  <p>Note: Locations are assigned through Groups. To modify a user's locations, assign them to the appropriate Group.</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
       )}
+      
+      {/* Location Selection Dialog */}
+      <Dialog open={openLocationDialog} onClose={handleCloseLocationDialog} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          Edit Locations for {user.username}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={3}>
+            {/* Left column - Selected Locations */}
+            <Grid item xs={12} md={6}>
+              {/* Selected Locations Display */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                  <div className="flex gap-2">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handleUndo}
+                      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                      disabled={!lastAction}
+                    >
+                      <span className="mr-1">Undo</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
+                        <path d="M9 14 4 9l5-5"/>
+                        <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                      </svg>
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handleClearAll}
+                      className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                      disabled={selectedLocations.length === 0}
+                    >
+                      <span className="mr-1">Clear All</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        <line x1="10" x2="10" y1="11" y2="17"/>
+                        <line x1="14" x2="14" y1="11" y2="17"/>
+                      </svg>
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handleAddAllLocations}
+                      className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                    >
+                      <span className="mr-1">Add All</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+                <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                  {selectedLocations.length === 0 ? (
+                    <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                      Please select at least one location.
+                    </Typography>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedLocations.map((location) => (
+                        <Chip
+                          key={location.id}
+                          label={`${location.name} (${location.id})`}
+                          onClick={() => handleRemoveLocation(location.id)}
+                          onDelete={() => handleRemoveLocation(location.id)}
+                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
+                          deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </Box>
+                <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                  {selectedLocations.length > 0
+                    ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
+                    : "No locations selected"}
+                </Typography>
+                
+                {/* Status Messages */}
+                {locationUpdateStatus === "success" && (
+                  <div className="mt-2 p-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 rounded text-sm">
+                    Locations updated successfully!
+                  </div>
+                )}
+                {locationUpdateStatus === "error" && (
+                  <div className="mt-2 p-2 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 rounded text-sm">
+                    Error updating locations. Please try again.
+                  </div>
+                )}
+                {locationUpdateStatus === "pending" && (
+                  <div className="mt-2 p-2 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 rounded text-sm">
+                    Updating locations...
+                  </div>
+                )}
+              </div>
+            </Grid>
+            
+            {/* Right column - Location Table */}
+            <Grid item xs={12} md={6}>
+              <LocationTable
+                selectedLocationIds={selectedLocations.map(loc => loc.id)}
+                onLocationSelect={handleAddLocation}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLocationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveLocations}
+            color="primary"
+            variant="contained"
+            disabled={locationUpdateStatus === "pending"}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
