@@ -59,6 +59,8 @@ const DataPage = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
+  const [lastAction, setLastAction] = useState<string>("");
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
   
@@ -86,15 +88,29 @@ const DataPage = () => {
   };
 
   const handleAddLocation = (location: Location) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("add");
+    
+    // Add the location
     setSelectedLocations(prev => [...prev, location]);
   };
 
   const handleRemoveLocation = (locationId: string) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("remove");
+    
+    // Remove the location
     setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
   };
 
   // Handle adding all available locations
   const handleAddAllLocations = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("addAll");
+    
     if (locationsData?.locations) {
       // Filter to only include locations the user has access to
       let availableLocations = locationsData.locations;
@@ -105,6 +121,26 @@ const DataPage = () => {
       }
       // Add all available locations
       setSelectedLocations(availableLocations);
+    }
+  };
+
+  // Handle clearing all locations
+  const handleClearAll = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("clearAll");
+    
+    // Clear all locations
+    setSelectedLocations([]);
+  };
+
+  // Handle undo action
+  const handleUndo = () => {
+    if (lastAction) {
+      // Restore previous state
+      setSelectedLocations(previousLocations);
+      // Reset last action
+      setLastAction("");
     }
   };
 
@@ -356,12 +392,9 @@ const DataPage = () => {
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => {
-                          // Undo the last action (clear all after Add All)
-                          setSelectedLocations([]);
-                        }}
+                        onClick={handleUndo}
                         className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
-                        disabled={selectedLocations.length === 0}
+                        disabled={!lastAction}
                       >
                         <span className="mr-1">Undo</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
@@ -372,10 +405,7 @@ const DataPage = () => {
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => {
-                          // Clear all selected locations
-                          setSelectedLocations([]);
-                        }}
+                        onClick={handleClearAll}
                         className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                         disabled={selectedLocations.length === 0}
                       >

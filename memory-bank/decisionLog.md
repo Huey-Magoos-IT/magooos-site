@@ -1,6 +1,69 @@
 # Decision Log
 
-## 2025-04-14: Groups UI Enhancement and User Management
+## 2025-04-17: Location Selection Functionality Enhancement
+
+### Problem
+The location selection functionality across the application had several issues that needed to be addressed:
+1. The submit button was enabled even when no locations were selected, automatically running for all available locations
+2. There was a "Clear All" button for locations but no "Add All" button
+3. The undo functionality needed to properly track and revert the last action performed
+
+### Investigation
+1. Examined the location selection implementation in data, reporting, and groups pages
+2. Analyzed the LocationTable component to understand how it interacts with the parent components
+3. Reviewed the current behavior of the submit button and location selection
+4. Identified the need for proper state tracking to implement true undo functionality
+
+### Decision Points
+
+#### Decision 1: Require Location Selection for Submit
+- **Choice**: Make the submit button unavailable until at least one location is chosen
+- **Rationale**: Provides clearer user intent and prevents accidental processing of all locations
+- **Alternatives Considered**:
+  - Keeping the current behavior (rejected for clarity)
+  - Adding a confirmation dialog (rejected for simplicity)
+  - Using a different UI pattern (rejected for consistency)
+- **Consequences**: More intentional user interaction with explicit location selection required
+
+#### Decision 2: Add "Add All" Button
+- **Choice**: Implement an "Add All" button next to the "Clear All" button
+- **Rationale**: Provides a quick way to select all available locations
+- **Alternatives Considered**:
+  - Adding a checkbox for "Select All" (rejected for consistency)
+  - Using a dropdown with a "Select All" option (rejected for simplicity)
+- **Consequences**: Improved user experience with balanced options for both selecting all and clearing all locations
+
+#### Decision 3: Implement True Undo Functionality
+- **Choice**: Track the previous state and last action type to enable proper undo functionality
+- **Rationale**: Allows users to undo any action (add, remove, clear all, add all) with a single button
+- **Alternatives Considered**:
+  - Simple undo that only clears all (rejected for limited functionality)
+  - Multiple undo buttons for different actions (rejected for complexity)
+  - History-based undo with multiple steps (rejected for simplicity)
+- **Consequences**: More intuitive and powerful undo capability that follows standard application patterns
+
+#### Decision 4: Consistent Implementation Across Pages
+- **Choice**: Apply the same changes to all three pages (data, reporting, and groups)
+- **Rationale**: Maintains consistency across the application
+- **Alternatives Considered**:
+  - Implementing only on specific pages (rejected for consistency)
+  - Using different approaches per page (rejected for user experience)
+- **Consequences**: Consistent user experience across all location selection interfaces
+
+### Implementation
+1. Updated the data, reporting, and groups pages to disable the submit button when no locations are selected
+2. Added an "Add All" button to each page
+3. Implemented state tracking for previous locations and last action type
+4. Created dedicated handler functions for each action type (add, remove, clear all, add all)
+5. Implemented a proper undo function that restores the previous state based on the last action
+6. Ensured consistent behavior across all three pages
+
+### Impact
+- Improved user experience with more intuitive location selection controls
+- Enhanced clarity by requiring explicit location selection before submission
+- Added convenience with the ability to quickly select all locations
+- Provided powerful undo functionality that follows standard application patterns
+- Maintained consistency across all parts of the application
 
 ### Problem
 The Groups functionality needed several enhancements to improve usability and management:

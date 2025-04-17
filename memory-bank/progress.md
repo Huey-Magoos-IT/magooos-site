@@ -19,10 +19,12 @@
 - ✅ Added user removal functionality to groups
 - ✅ Added Groups link to the sidebar for admins and location admins
 - ✅ Fixed build issues with proper imports in the server code
+- ✅ Enhanced location selection functionality across data, reporting, and groups pages
 
 #### In Progress
 - ✅ Enhancing Groups UI with improved styling and user management
 - ✅ Adding user removal functionality
+- ✅ Improving location selection functionality
 
 #### Pending
 - ⏳ Implement LocationUser creation flow
@@ -32,9 +34,10 @@
 1. ✅ Enhanced the GroupCard UI with better styling and user management
 2. ✅ Implemented user removal functionality for groups
 3. ✅ Added Groups to the sidebar navigation for easier access
-4. Create migration and update seed script with new roles (if not already done)
-5. Implement LocationUser creation for LocationAdmins
-6. Update data/reporting pages to filter by user's locations
+4. ✅ Enhanced location selection with required selection, Add All button, and proper undo functionality
+5. Create migration and update seed script with new roles (if not already done)
+6. Implement LocationUser creation for LocationAdmins
+7. Update data/reporting pages to filter by user's locations
 
 ### Authentication Fix Details
 We identified and fixed an authentication issue in the Group controller:
@@ -90,6 +93,7 @@ model User {
 - Enhanced GroupCard component with improved styling and user management
 - Added user removal functionality to groups
 - Added Groups link to the sidebar for admins and location admins
+- Enhanced location selection with required selection, Add All button, and proper undo functionality
 
 #### New Roles
 - `LOCATION_ADMIN`: Can manage users within their assigned group
@@ -103,6 +107,7 @@ model User {
 - User removal from groups with automatic location access revocation
 - Improved UI for group management
 - Sidebar navigation for quick access to Groups
+- Enhanced location selection with required selection, Add All button, and proper undo functionality
 
 ### Dependencies
 - Existing LocationTable component for location selection

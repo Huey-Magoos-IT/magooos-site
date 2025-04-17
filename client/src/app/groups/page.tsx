@@ -61,6 +61,8 @@ const GroupsPage = () => {
   });
   const [selectedUserId, setSelectedUserId] = useState<number | "">("");
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
+  const [lastAction, setLastAction] = useState<string>("");
 
   // Check if user is admin
   const userRoles = authData?.userDetails?.team?.teamRoles || [];
@@ -117,6 +119,11 @@ const GroupsPage = () => {
 
   // Handle location selection from LocationTable
   const handleAddLocation = (location: Location) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    setLastAction("add");
+    
+    // Add the location
     setSelectedLocations(prev => [...prev, location]);
     setFormData(prev => ({
       ...prev,
@@ -126,6 +133,12 @@ const GroupsPage = () => {
 
   // Handle removing a location
   const handleRemoveLocation = (locationId: string) => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    const previousLocationIds = [...formData.locationIds];
+    setLastAction("remove");
+    
+    // Remove the location
     setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
     setFormData(prev => ({
       ...prev,
@@ -135,6 +148,11 @@ const GroupsPage = () => {
 
   // Handle adding all available locations
   const handleAddAllLocations = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    const previousLocationIds = [...formData.locationIds];
+    setLastAction("addAll");
+    
     if (locationsData?.locations) {
       // Add all available locations
       setSelectedLocations(locationsData.locations);
@@ -142,6 +160,36 @@ const GroupsPage = () => {
         ...prev,
         locationIds: locationsData.locations.map(loc => loc.id)
       }));
+    }
+  };
+
+  // Handle clearing all locations
+  const handleClearAll = () => {
+    // Save current state for undo
+    setPreviousLocations([...selectedLocations]);
+    const previousLocationIds = [...formData.locationIds];
+    setLastAction("clearAll");
+    
+    // Clear all locations
+    setSelectedLocations([]);
+    setFormData(prev => ({
+      ...prev,
+      locationIds: []
+    }));
+  };
+
+  // Handle undo action
+  const handleUndo = () => {
+    if (lastAction) {
+      // Restore previous state
+      setSelectedLocations(previousLocations);
+      setFormData(prev => ({
+        ...prev,
+        locationIds: previousLocations.map(loc => loc.id)
+      }));
+      
+      // Reset last action
+      setLastAction("");
     }
   };
 
@@ -340,16 +388,9 @@ const GroupsPage = () => {
                     <Button
                       size="small"
                       variant="outlined"
-                      onClick={() => {
-                        // Undo the last action (clear all after Add All)
-                        setSelectedLocations([]);
-                        setFormData(prev => ({
-                          ...prev,
-                          locationIds: []
-                        }));
-                      }}
+                      onClick={handleUndo}
                       className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
-                      disabled={selectedLocations.length === 0}
+                      disabled={!lastAction}
                     >
                       <span className="mr-1">Undo</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
@@ -360,14 +401,7 @@ const GroupsPage = () => {
                     <Button
                       size="small"
                       variant="outlined"
-                      onClick={() => {
-                        // Clear all selected locations
-                        setSelectedLocations([]);
-                        setFormData(prev => ({
-                          ...prev,
-                          locationIds: []
-                        }));
-                      }}
+                      onClick={handleClearAll}
                       className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                       disabled={selectedLocations.length === 0}
                     >
