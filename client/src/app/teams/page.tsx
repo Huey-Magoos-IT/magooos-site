@@ -48,10 +48,11 @@ const TeamsPage = () => {
     authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'ADMIN');
     
   // Filter teams based on user role
-  // If user is admin, show all teams
+  // If user is admin or username is "admin", show all teams
   // Otherwise, only show teams the user is a part of
   const teams = useMemo(() => {
-    if (isUserAdmin) {
+    // Check if user is admin or has username "admin"
+    if (isUserAdmin || authData?.userDetails?.username === 'admin') {
       return allTeams;
     } else {
       // Get the user's team ID
@@ -59,7 +60,7 @@ const TeamsPage = () => {
       // Only show the team the user is a part of
       return allTeams.filter(team => team.id === userTeamId);
     }
-  }, [allTeams, isUserAdmin, authData?.userDetails?.teamId]);
+  }, [allTeams, isUserAdmin, authData?.userDetails?.teamId, authData?.userDetails?.username]);
 
   const handleRoleToggle = (roleId: number) => {
     setSelectedRoleIds(prevSelected =>

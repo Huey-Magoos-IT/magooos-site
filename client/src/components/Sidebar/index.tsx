@@ -88,7 +88,8 @@ const Sidebar = () => {
           {/* Home link hidden as requested */}
           {/* <SidebarLink icon={Home} label="Home" href="/" /> */}
           {/* Timeline link hidden as requested */}
-          <SidebarLink icon={Search} label="Search" href="/search" />
+          {/* Search link hidden as requested */}
+          {/* <SidebarLink icon={Search} label="Search" href="/search" /> */}
           {/* Settings link hidden as requested */}
           {/* <SidebarLink icon={Settings} label="Settings" href="/settings" /> */}
           {/* Only show Users link to admins and location admins */}
