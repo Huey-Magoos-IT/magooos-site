@@ -73,8 +73,8 @@ const Users = () => {
   // Redirect if user is not an admin or location admin
   useEffect(() => {
     if (authData && !isUserAdmin && !isLocationAdmin) {
-      // Redirect to home or another appropriate page
-      window.location.href = '/';
+      // Redirect to teams page instead of home
+      window.location.href = '/teams';
     }
   }, [authData, isUserAdmin, isLocationAdmin]);
   
