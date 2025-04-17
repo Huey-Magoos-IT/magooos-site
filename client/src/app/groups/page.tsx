@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useGetLocationsQuery } from "@/state/lambdaApi";
 import {
   useGetGroupsQuery,
   useCreateGroupMutation,
@@ -44,6 +45,7 @@ const GroupsPage = () => {
   const { data: authData } = useGetAuthUserQuery({});
   const { data: groups = [], isLoading: isLoadingGroups } = useGetGroupsQuery();
   const { data: users = [], isLoading: isLoadingUsers } = useGetUsersQuery();
+  const { data: locationsData } = useGetLocationsQuery();
   const [createGroup] = useCreateGroupMutation();
   const [updateGroup] = useUpdateGroupMutation();
   const [deleteGroup] = useDeleteGroupMutation();
@@ -129,6 +131,18 @@ const GroupsPage = () => {
       ...prev,
       locationIds: prev.locationIds.filter(id => id !== locationId)
     }));
+  };
+
+  // Handle adding all available locations
+  const handleAddAllLocations = () => {
+    if (locationsData?.locations) {
+      // Add all available locations
+      setSelectedLocations(locationsData.locations);
+      setFormData(prev => ({
+        ...prev,
+        locationIds: locationsData.locations.map(loc => loc.id)
+      }));
+    }
   };
 
   // Handle form submission
@@ -322,55 +336,69 @@ const GroupsPage = () => {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
-                  {selectedLocations.length > 0 && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          // Remove the last added location (undo functionality)
-                          if (selectedLocations.length > 0) {
-                            const lastLocation = selectedLocations[selectedLocations.length - 1];
-                            handleRemoveLocation(lastLocation.id);
-                          }
-                        }}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
-                      >
-                        <span className="mr-1">Undo</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
-                          <path d="M9 14 4 9l5-5"/>
-                          <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
-                        </svg>
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          // Clear all selected locations
-                          setSelectedLocations([]);
-                          setFormData(prev => ({
-                            ...prev,
-                            locationIds: []
-                          }));
-                        }}
-                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
-                      >
-                        <span className="mr-1">Clear All</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
-                          <path d="M3 6h18"/>
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                          <line x1="10" x2="10" y1="11" y2="17"/>
-                          <line x1="14" x2="14" y1="11" y2="17"/>
-                        </svg>
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    {selectedLocations.length > 0 && (
+                      <>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Remove the last added location (undo functionality)
+                            if (selectedLocations.length > 0) {
+                              const lastLocation = selectedLocations[selectedLocations.length - 1];
+                              handleRemoveLocation(lastLocation.id);
+                            }
+                          }}
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                        >
+                          <span className="mr-1">Undo</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
+                            <path d="M9 14 4 9l5-5"/>
+                            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                          </svg>
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Clear all selected locations
+                            setSelectedLocations([]);
+                            setFormData(prev => ({
+                              ...prev,
+                              locationIds: []
+                            }));
+                          }}
+                          className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        >
+                          <span className="mr-1">Clear All</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
+                            <path d="M3 6h18"/>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            <line x1="10" x2="10" y1="11" y2="17"/>
+                            <line x1="14" x2="14" y1="11" y2="17"/>
+                          </svg>
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={handleAddAllLocations}
+                      className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                    >
+                      <span className="mr-1">Add All</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                      </svg>
+                    </Button>
+                  </div>
                 </div>
                 <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
                   {selectedLocations.length === 0 ? (
                     <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
-                      Select locations from the table on the right.
+                      Please select at least one location.
                     </Typography>
                   ) : (
                     <div className="flex flex-wrap gap-2">
@@ -412,7 +440,7 @@ const GroupsPage = () => {
             onClick={handleSubmit}
             color="primary"
             variant="contained"
-            disabled={!formData.name.trim()}
+            disabled={!formData.name.trim() || formData.locationIds.length === 0}
           >
             {currentGroup ? "Update" : "Create"}
           </Button>

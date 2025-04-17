@@ -1,6 +1,7 @@
 "use client";
 
 import { useGetAuthUserQuery } from "@/state/api";
+import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import Link from "next/link";
@@ -49,6 +50,7 @@ const DATA_TYPES = [
 
 const DataPage = () => {
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
+  const { data: locationsData } = useGetLocationsQuery();
   const userTeam = authData?.userDetails?.team;
   const userLocationIds = authData?.userDetails?.locationIds || [];
   const userIsAdmin = userTeam?.isAdmin || false;
@@ -89,6 +91,21 @@ const DataPage = () => {
 
   const handleRemoveLocation = (locationId: string) => {
     setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
+  };
+
+  // Handle adding all available locations
+  const handleAddAllLocations = () => {
+    if (locationsData?.locations) {
+      // Filter to only include locations the user has access to
+      let availableLocations = locationsData.locations;
+      if (!userIsAdmin && userLocationIds.length > 0) {
+        availableLocations = locationsData.locations.filter((location: Location) =>
+          userLocationIds.includes(location.id)
+        );
+      }
+      // Add all available locations
+      setSelectedLocations(availableLocations);
+    }
   };
 
   // Fetch S3 files for client-side processing
@@ -333,15 +350,41 @@ const DataPage = () => {
                 />
 
                 <div>
-                  <Typography className="font-medium mb-2 text-gray-800 dark:text-white">Selected Locations</Typography>
+                  <div className="flex justify-between items-center mb-2">
+                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    <div className="flex gap-2">
+                      {selectedLocations.length > 0 && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            // Clear all selected locations
+                            setSelectedLocations([]);
+                          }}
+                          className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        >
+                          <span className="mr-1">Clear All</span>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleAddAllLocations}
+                        className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                      >
+                        <span className="mr-1">Add All</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                          <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                      </Button>
+                    </div>
+                  </div>
                   <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
                     {selectedLocations.length === 0 ? (
                       <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
-                        {userIsAdmin
-                          ? "Leave blank for all locations. Or select specific locations from the table."
-                          : userLocationIds.length > 0
-                            ? "Leave blank to use your assigned locations. Or select specific locations from the table."
-                            : "You don't have any assigned locations. Please select specific locations from the table."}
+                        Please select a location.
                       </Typography>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -405,7 +448,7 @@ const DataPage = () => {
                   <Button
                     variant="contained"
                     onClick={processCSVData}
-                    disabled={csvLoading || !startDate || !endDate}
+                    disabled={csvLoading || !startDate || !endDate || selectedLocations.length === 0}
                     fullWidth
                     className="bg-blue-500 hover:bg-blue-600 text-white py-3 shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                   >

@@ -75,6 +75,10 @@ S3 Buckets:
    - Automatic synchronization of locations for group members
    - Location-based data filtering in reporting and data pages
    - Permission boundaries enforced at controller level
+   - Multi-level permission hierarchy (Admin → LocationAdmin → LocationUser)
+   - Direct DynamoDB integration for efficient location data access
+   - Array fields (locationIds) for optimal performance with current scale
+   - Comprehensive authentication with multiple methods for reliability
 
 2. Priority System (Legacy):
    - client/src/app/priority/[level]/page.tsx
