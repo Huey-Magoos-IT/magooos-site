@@ -356,43 +356,41 @@ const ReportingPage = () => {
                   <div className="flex justify-between items-center mb-2">
                     <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
                     <div className="flex gap-2">
-                      {selectedLocations.length > 0 && (
-                        <>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => {
-                              // Remove the last added location (undo functionality)
-                              setSelectedLocations(prev => prev.slice(0, -1));
-                            }}
-                            className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
-                          >
-                            <span className="mr-1">Undo</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
-                              <path d="M9 14 4 9l5-5"/>
-                              <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
-                            </svg>
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => {
-                              // Clear all selected locations
-                              setSelectedLocations([]);
-                            }}
-                            className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
-                          >
-                            <span className="mr-1">Clear All</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
-                              <path d="M3 6h18"/>
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                              <line x1="10" x2="10" y1="11" y2="17"/>
-                              <line x1="14" x2="14" y1="11" y2="17"/>
-                            </svg>
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          // Undo the last action (clear all after Add All)
+                          setSelectedLocations([]);
+                        }}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                        disabled={selectedLocations.length === 0}
+                      >
+                        <span className="mr-1">Undo</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
+                          <path d="M9 14 4 9l5-5"/>
+                          <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                        </svg>
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          // Clear all selected locations
+                          setSelectedLocations([]);
+                        }}
+                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        disabled={selectedLocations.length === 0}
+                      >
+                        <span className="mr-1">Clear All</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
+                          <path d="M3 6h18"/>
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                          <line x1="10" x2="10" y1="11" y2="17"/>
+                          <line x1="14" x2="14" y1="11" y2="17"/>
+                        </svg>
+                      </Button>
                       <Button
                         size="small"
                         variant="outlined"
