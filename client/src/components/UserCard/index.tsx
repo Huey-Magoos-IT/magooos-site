@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, User } from "lucide-react";
 import RoleBadge from "../RoleBadge";
@@ -12,6 +12,8 @@ interface UserCardProps {
     username: string;
     profilePictureUrl?: string;
     teamId?: number | null;
+    locationIds?: string[];
+    groupId?: number;
   };
   teams: Array<{
     id: number;
@@ -37,6 +39,10 @@ interface UserCardProps {
   };
 }
 
+import { useGetLocationsQuery } from "@/state/lambdaApi";
+import { useUpdateUserLocationsMutation } from "@/state/api";
+import { Location } from "@/components/LocationTable";
+
 const UserCard: React.FC<UserCardProps> = ({
   user,
   teams,
@@ -46,6 +52,14 @@ const UserCard: React.FC<UserCardProps> = ({
   updateStatus = {},
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [newLocationInput, setNewLocationInput] = useState("");
+  const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
+  
+  // Get locations data
+  const { data: locationsData } = useGetLocationsQuery();
+  const [updateUserLocations] = useUpdateUserLocationsMutation();
   
   // Find current team
   const currentTeam = teams.find(team => team.id === user.teamId);
@@ -53,11 +67,74 @@ const UserCard: React.FC<UserCardProps> = ({
   // Get roles from current team
   const userRoles = currentTeam?.teamRoles?.map(tr => tr.role) || [];
   
+  // Initialize selected locations when user data changes
+  useEffect(() => {
+    if (locationsData?.locations && user.locationIds) {
+      const userLocations = locationsData.locations.filter(
+        location => user.locationIds?.includes(location.id)
+      );
+      setSelectedLocations(userLocations);
+    }
+  }, [locationsData, user.locationIds]);
+  
   // Handle team change
   const handleTeamChange = (event: SelectChangeEvent<number | string>) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     onTeamChange(user.userId, newTeamId);
     // Note: Page reload is handled in the parent component after the API call completes
+  };
+  
+  // Handle location selection
+  const handleLocationSelect = (location: Location) => {
+    if (!selectedLocations.some(loc => loc.id === location.id)) {
+      setSelectedLocations([...selectedLocations, location]);
+    }
+  };
+  
+  // Handle location removal
+  const handleRemoveLocation = (locationId: string) => {
+    setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
+  };
+  
+  // Handle manual location input
+  const handleAddManualLocation = () => {
+    if (newLocationInput.trim() && locationsData?.locations) {
+      // Check if location exists in the available locations
+      const existingLocation = locationsData.locations.find(
+        loc => loc.name.toLowerCase() === newLocationInput.trim().toLowerCase() ||
+              loc.id === newLocationInput.trim()
+      );
+      
+      if (existingLocation && !selectedLocations.some(loc => loc.id === existingLocation.id)) {
+        setSelectedLocations([...selectedLocations, existingLocation]);
+        setNewLocationInput("");
+      } else if (!existingLocation) {
+        // Show error or message that location doesn't exist
+        alert("Location not found. Please enter a valid location name or ID.");
+      }
+    }
+  };
+  
+  // Save updated locations
+  const handleSaveLocations = async () => {
+    try {
+      setLocationUpdateStatus("pending");
+      await updateUserLocations({
+        userId: user.userId,
+        locationIds: selectedLocations.map(loc => loc.id)
+      }).unwrap();
+      setLocationUpdateStatus("success");
+      setTimeout(() => {
+        setLocationUpdateStatus(null);
+        setShowLocationSelector(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating user locations:", error);
+      setLocationUpdateStatus("error");
+      setTimeout(() => {
+        setLocationUpdateStatus(null);
+      }, 3000);
+    }
   };
 
   return (
@@ -161,6 +238,105 @@ const UserCard: React.FC<UserCardProps> = ({
               <span className="text-sm text-gray-800 dark:text-gray-200">
                 {userRoles.some(r => r.name === "REPORTING" || r.name === "ADMIN") ? "Yes" : "No"}
               </span>
+            </div>
+            
+            {/* Locations Section */}
+            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Locations:</span>
+                {isAdmin && !showLocationSelector && (
+                  <button
+                    onClick={() => setShowLocationSelector(true)}
+                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800 px-2 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              
+              {!showLocationSelector ? (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedLocations.length > 0 ? (
+                    selectedLocations.map(location => (
+                      <span
+                        key={location.id}
+                        className="px-2 py-1 text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full"
+                      >
+                        {location.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">No locations assigned</span>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-2 space-y-3">
+                  {/* Selected Locations */}
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {selectedLocations.map(location => (
+                      <div
+                        key={location.id}
+                        className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs rounded-full"
+                      >
+                        <span>{location.name}</span>
+                        <button
+                          onClick={() => handleRemoveLocation(location.id)}
+                          className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Location Search Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newLocationInput}
+                      onChange={(e) => setNewLocationInput(e.target.value)}
+                      placeholder="Enter location name or ID"
+                      className="flex-grow p-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    <button
+                      onClick={handleAddManualLocation}
+                      disabled={!newLocationInput.trim()}
+                      className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {/* Save/Cancel Buttons */}
+                  <div className="flex justify-end gap-2 mt-3">
+                    <button
+                      onClick={() => setShowLocationSelector(false)}
+                      className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveLocations}
+                      disabled={locationUpdateStatus === "pending"}
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded disabled:opacity-50"
+                    >
+                      {locationUpdateStatus === "pending" ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                  
+                  {/* Status Messages */}
+                  {locationUpdateStatus === "success" && (
+                    <div className="text-xs text-green-600 dark:text-green-400">
+                      Locations updated successfully!
+                    </div>
+                  )}
+                  {locationUpdateStatus === "error" && (
+                    <div className="text-xs text-red-600 dark:text-red-400">
+                      Error updating locations. Please try again.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

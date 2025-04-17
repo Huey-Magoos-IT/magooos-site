@@ -370,7 +370,9 @@ const Users = () => {
                   userId: user.userId as number,
                   username: user.username as string,
                   profilePictureUrl: user.profilePictureUrl,
-                  teamId: user.teamId
+                  teamId: user.teamId,
+                  locationIds: user.locationIds,
+                  groupId: user.groupId
                 }}
                 teams={teams}
                 roles={availableRoles}
