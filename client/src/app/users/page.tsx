@@ -64,9 +64,19 @@ const Users = () => {
     localStorage.setItem("usersViewType", viewType);
   }, [viewType]);
   
-  // Check if current user is an admin
+  // Check if current user is an admin or location admin
   const isUserAdmin = authData?.userDetails?.team?.isAdmin ||
     authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'ADMIN') || false;
+  
+  const isLocationAdmin = authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'LOCATION_ADMIN') || false;
+  
+  // Redirect if user is not an admin or location admin
+  useEffect(() => {
+    if (authData && !isUserAdmin && !isLocationAdmin) {
+      // Redirect to home or another appropriate page
+      window.location.href = '/';
+    }
+  }, [authData, isUserAdmin, isLocationAdmin]);
   
   // Extract teams and roles from teamsData using useMemo to prevent re-renders
   const teams = useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
@@ -236,7 +246,7 @@ const Users = () => {
     }
   ], [teams, isUserAdmin, updateStatus, handleTeamChangeEvent]);
 
-  // Filter users based on search query and team filter
+  // Filter users based on search query, team filter, and user role
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     
@@ -250,9 +260,17 @@ const Users = () => {
         (teamFilter === "none" && !user.teamId) ||
         (user.teamId === teamFilter);
       
+      // For location admins, only show users from their group
+      if (isLocationAdmin && !isUserAdmin) {
+        // Get the current user's group ID
+        const adminGroupId = authData?.userDetails?.groupId;
+        // Only show users that belong to the same group
+        return matchesSearch && matchesTeam && user.groupId === adminGroupId;
+      }
+      
       return matchesSearch && matchesTeam;
     });
-  }, [users, searchQuery, teamFilter]);
+  }, [users, searchQuery, teamFilter, isLocationAdmin, isUserAdmin, authData?.userDetails?.groupId]);
   
   if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
   if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;

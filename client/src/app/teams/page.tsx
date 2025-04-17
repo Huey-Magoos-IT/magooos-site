@@ -11,7 +11,7 @@ import {
   useUpdateTeamMutation
 } from "@/state/api";
 import Header from "@/components/Header";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Modal from "@/components/Modal";
 import { Settings, Trash2, Edit, Plus } from "lucide-react";
 
@@ -20,7 +20,7 @@ const TeamsPage = () => {
   const { data: authData } = useGetAuthUserQuery({});
   
   // Extract teams and roles from the response
-  const teams = teamsData?.teams || [];
+  const allTeams = teamsData?.teams || [];
   const availableRoles = teamsData?.availableRoles || [];
   
   // We no longer need a separate roles query as it's included in the teams response
@@ -46,6 +46,20 @@ const TeamsPage = () => {
 
   const isUserAdmin = authData?.userDetails?.team?.isAdmin ||
     authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'ADMIN');
+    
+  // Filter teams based on user role
+  // If user is admin, show all teams
+  // Otherwise, only show teams the user is a part of
+  const teams = useMemo(() => {
+    if (isUserAdmin) {
+      return allTeams;
+    } else {
+      // Get the user's team ID
+      const userTeamId = authData?.userDetails?.teamId;
+      // Only show the team the user is a part of
+      return allTeams.filter(team => team.id === userTeamId);
+    }
+  }, [allTeams, isUserAdmin, authData?.userDetails?.teamId]);
 
   const handleRoleToggle = (roleId: number) => {
     setSelectedRoleIds(prevSelected =>
@@ -308,13 +322,13 @@ const TeamsPage = () => {
       </Modal>
       {/* Team list with roles display */}
       <div className="mt-4 grid grid-cols-1 gap-4">
-        {teams?.map((team) => (
+        {teams?.map((team: any) => (
           <div key={team.id} className="bg-white p-4 rounded shadow dark:bg-dark-secondary">
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h3 className="text-lg font-semibold dark:text-white">{team.teamName}</h3>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {team.teamRoles?.map(teamRole => (
+                  {team.teamRoles?.map((teamRole: any) => (
                     <span key={teamRole.id} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-100">
                       {teamRole.role.name}
                     </span>
@@ -387,7 +401,7 @@ const TeamsPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                   {availableRoles && availableRoles.length > 0 ? (
                     availableRoles.map(role => {
-                      const hasRole = team.teamRoles?.some(tr => tr.role.id === role.id);
+                      const hasRole = team.teamRoles?.some((tr: any) => tr.role.id === role.id);
                       return (
                         <div key={role.id} className="flex items-center justify-between p-1 border rounded dark:border-gray-700">
                           <span className="text-sm dark:text-gray-300">{role.name}</span>

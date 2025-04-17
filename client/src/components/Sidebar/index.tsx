@@ -85,11 +85,16 @@ const Sidebar = () => {
         </div>
         {/* NAVBAR LINKS */}
         <nav className="z-10 w-full">
-          <SidebarLink icon={Home} label="Home" href="/" />
+          {/* Home link hidden as requested */}
+          {/* <SidebarLink icon={Home} label="Home" href="/" /> */}
           {/* Timeline link hidden as requested */}
           <SidebarLink icon={Search} label="Search" href="/search" />
-          <SidebarLink icon={Settings} label="Settings" href="/settings" />
-          <SidebarLink icon={User} label="Users" href="/users" />
+          {/* Settings link hidden as requested */}
+          {/* <SidebarLink icon={Settings} label="Settings" href="/settings" /> */}
+          {/* Only show Users link to admins and location admins */}
+          {(isAdmin || hasRole(teamRoles, 'LOCATION_ADMIN') || hasRole(teamRoles, 'ADMIN')) && (
+            <SidebarLink icon={User} label="Users" href="/users" />
+          )}
           <SidebarLink icon={Users} label="Teams" href="/teams" />
           {/* Only show Groups link to admins and location admins */}
           {(isAdmin || hasRole(teamRoles, 'LOCATION_ADMIN')) && (
