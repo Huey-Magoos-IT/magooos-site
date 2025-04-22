@@ -1,5 +1,86 @@
 # Decision Log
 
+## 2025-04-22: UI/UX Improvements & Location Update Bug Fix
+
+### Problem
+Several UI/UX inconsistencies and a critical bug needed addressing:
+1.  Sidebar contained non-essential links (Home, Settings, Search).
+2.  Users page was accessible to all users, not just admins/location admins.
+3.  Users page didn't filter users correctly for Location Admins.
+4.  Teams page showed all teams instead of just the user's teams.
+5.  Default application route was `/home` instead of a more relevant page like `/teams`.
+6.  Updating user locations via the `UserCard` failed with a 500 error due to server-side authentication issues.
+7.  The user list order was inconsistent after updates.
+
+### Investigation
+1.  Reviewed sidebar component (`Sidebar/index.tsx`) and identified links to hide.
+2.  Analyzed Users page (`users/page.tsx`) logic for access control and data fetching.
+3.  Examined Teams page (`teams/page.tsx`) data fetching and filtering.
+4.  Checked root page (`app/page.tsx`) for default redirect logic.
+5.  Inspected `UserCard` component (`UserCard/index.tsx`) and the `updateUserLocations` mutation call.
+6.  Analyzed server logs, identifying the 500 error originating from `updateUserLocations` in `userController.ts` due to missing authentication context (`req.user?.userId` being undefined).
+7.  Compared authentication logic in `updateUserLocations` with working controllers like `updateUserTeam`.
+8.  Checked the `getUsers` function in `userController.ts` for sorting logic.
+
+### Decision Points
+
+#### Decision 1: Clean Up Sidebar
+-   **Choice**: Hide Home, Settings, Search links. Restrict Users link to Admins/Location Admins.
+-   **Rationale**: Streamline navigation, focus on core features, enforce role-based access.
+-   **Alternatives**: Disabling links (less clean), using feature flags (overkill).
+-   **Consequences**: Cleaner UI, improved security.
+
+#### Decision 2: Implement Users Page Access Control & Filtering
+-   **Choice**: Add redirect for unauthorized users. Filter user list based on `authData` (Admin sees all, Location Admin sees their group).
+-   **Rationale**: Enforce correct permissions and show relevant data.
+-   **Alternatives**: Server-side filtering only (less responsive), complex permission component (overkill).
+-   **Consequences**: Secure and relevant Users page view.
+
+#### Decision 3: Implement Teams Page Filtering
+-   **Choice**: Filter teams based on `authData.userDetails.teamId`, with exceptions for Admin role and 'admin' username.
+-   **Rationale**: Show users only relevant teams by default.
+-   **Alternatives**: No filtering (confusing for users), separate "My Teams" page (redundant).
+-   **Consequences**: More focused Teams page for non-admins.
+
+#### Decision 4: Change Default Route
+-   **Choice**: Update root page redirect to `/teams`. Update unauthorized redirects to `/teams`.
+-   **Rationale**: `/teams` is a more logical landing page than `/home`.
+-   **Alternatives**: Redirect to `/users` (less relevant for non-admins), keep `/home` (empty page).
+-   **Consequences**: More sensible default user flow.
+
+#### Decision 5: Fix Location Update Authentication
+-   **Choice**:
+    1.  Update client API definition (`api.ts`) for `updateUserLocations` to accept `requestingUserId`.
+    2.  Modify `UserCard` to send `authData.userDetails.userId` as `requestingUserId` in the mutation body.
+    3.  Refactor server controller (`userController.ts`) `updateUserLocations` to use robust authentication (check body `requestingUserId`, headers `x-user-cognito-id`, Bearer token) similar to `updateUserTeam`.
+-   **Rationale**: Align server authentication with client capabilities and fix the root cause of the 500 error.
+-   **Alternatives**: Passing Cognito ID via header (less direct), modifying middleware (more complex).
+-   **Consequences**: Functional location updates, consistent server authentication pattern.
+
+#### Decision 6: Implement User List Sorting
+-   **Choice**: Add `orderBy: { username: 'asc' }` to the `getUsers` Prisma query in `userController.ts`.
+-   **Rationale**: Ensure consistent, predictable user list order.
+-   **Alternatives**: Client-side sorting (less efficient), sorting by ID (less user-friendly).
+-   **Consequences**: Improved UX with alphabetically sorted user list.
+
+### Implementation
+1.  Modified `Sidebar/index.tsx` to hide links and add role checks.
+2.  Updated `users/page.tsx` with redirects and filtering logic.
+3.  Updated `teams/page.tsx` with filtering logic.
+4.  Updated `app/page.tsx` redirect target.
+5.  Modified `UserCard/index.tsx` location saving logic.
+6.  Updated `api.ts` mutation definition.
+7.  Refactored `userController.ts` (`updateUserLocations` and `getUsers`).
+
+### Impact
+-   Streamlined UI and navigation.
+-   Correct permissions enforced.
+-   Relevant data displayed based on user role/membership.
+-   Critical bug fix for location management.
+-   Consistent user list presentation.
+
+---
+
 ## 2025-04-17: Location Selection Functionality Enhancement
 
 ### Problem

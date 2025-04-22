@@ -130,10 +130,12 @@ The application uses AWS Cognito for user authentication with the following flow
   - Restricted to REPORTING role
 
 ### User Management
-- **User Profile**: Personal settings and information
-- **Team Assignment**: Join and leave teams
-- **Role Visibility**: Display current permissions
-- **Profile Picture**: S3-hosted user images
+- **User Profile**: Personal settings and information.
+- **Team Assignment**: Join and leave teams (Admin controlled).
+- **Role Visibility**: Display current permissions via badges.
+- **Profile Picture**: S3-hosted user images.
+- **Location Assignment**: Admins can assign specific `locationIds` to users via a modal dialog in the `UserCard`. Backend authentication fixed to support this.
+- **User List Sorting**: Users page now consistently sorts users by username.
 
 ## AWS Infrastructure
 
@@ -199,6 +201,14 @@ The application uses AWS Cognito for user authentication with the following flow
    - AWS best practices
    - No AWS SDK dependencies (HTTP/API Gateway only)
    - Proper error handling and logging
+
+## UI/UX Principles (Updated April 22, 2025)
+- **Role-Based Visibility**: Hide UI elements (like sidebar links or pages) if the user lacks the required role (e.g., Users page hidden for non-admins).
+- **Contextual Filtering**: Filter data displayed based on user context (e.g., Teams page shows only user's teams, Users page filters for Location Admins).
+- **Consistent Navigation**: Maintain logical navigation flow and provide clear access points (e.g., Groups link in sidebar).
+- **Clear Default States**: Define sensible default views or redirects (e.g., redirecting to `/teams` by default).
+- **User-Friendly Editing**: Use modals and familiar components (like `LocationTable`) for complex data editing (e.g., user location assignment).
+- **Consistent Sorting**: Ensure lists are sorted predictably (e.g., Users list sorted by username).
 
 ## Architecture & Development Principles
 

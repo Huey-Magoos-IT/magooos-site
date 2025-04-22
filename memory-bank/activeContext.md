@@ -1,98 +1,40 @@
 # Active Context
 
-## Current Task: Implementing Groups Functionality
+## Current Task: UI/UX Improvements & Bug Fixes (April 22, 2025)
 
-We are implementing a new Groups functionality for Magoo's Site that will allow for location-based access control. This feature will enable:
+We implemented several UI/UX improvements and fixed a critical bug related to user location management.
 
-1. Admins to create groups of locations
-2. Admins to assign LocationAdmin users to manage these groups
-3. LocationAdmins to create LocationUsers with access to specific locations within their group
-4. Location-based filtering of data in reporting and data pages
-
-## Implementation Approach
-
-We've chosen a balanced approach that:
-- Uses array fields for storing location IDs in both Group and User models
-- Maintains proper relationships between entities
-- Reuses existing components like LocationTable
-- Enforces proper permission boundaries
-
-## Key Components
-
-1. **Database Schema**:
-   - New Group model with locationIds array
-   - Updated User model with groupId and locationIds fields
-   - New roles: LOCATION_ADMIN and LOCATION_USER
-
-2. **Backend**:
-   - Group controller for CRUD operations
-   - User controller extensions for location management
-   - Permission checks and validation
-
-3. **Frontend**:
-   - Groups management page
-   - Location selection interface
-   - User creation flow for LocationAdmins
+**Key Changes:**
+1.  **Sidebar Cleanup**: Hid non-essential links (Home, Settings, Search).
+2.  **Users Page Access**: Restricted access to Admins/Location Admins and implemented filtering for Location Admins.
+3.  **Teams Page Filtering**: Show only teams the user is part of (admins see all).
+4.  **Default Route**: Changed default route to `/teams`.
+5.  **Location Management Fix**: Implemented a modal for editing user locations in `UserCard` and fixed the server-side authentication bug (`updateUserLocations` controller) causing 500 errors.
+6.  **User Sorting**: Ensured users are consistently sorted by username in the Users list.
 
 ## Current Status
 
-- ✅ Updated Prisma schema with Group model and User model changes
-- ✅ Implemented Group controller and routes (now architecturally identical to Teams)
-- ✅ Updated User controller with location management functions
-- ✅ Created GroupCard component for UI
-- ✅ Created Groups management page
-- ✅ Updated API slice with new endpoints
-- ✅ Added access control utilities for location-based permissions
-- ✅ Fixed authentication issue in Group controller by adding Bearer token support
-- ✅ Enhanced GroupCard component with improved styling and user management
-- ✅ Added user removal functionality to groups
-- ✅ Added Groups link to the sidebar for admins and location admins
+- ✅ Cleaned up sidebar navigation.
+- ✅ Implemented role-based access control and filtering on the Users page.
+- ✅ Implemented user-membership filtering on the Teams page.
+- ✅ Changed default application route to `/teams`.
+- ✅ Implemented modal-based location editing in `UserCard`.
+- ✅ Fixed client-side API definition and call for `updateUserLocations`.
+- ✅ Fixed server-side authentication logic in `updateUserLocations` controller.
+- ✅ Added username sorting to the `getUsers` backend endpoint.
 
-## Authentication Fix Details
+## Location Update Authentication Fix Details (April 22, 2025)
 
-We identified and fixed an authentication issue in the Group controller:
-
-1. The frontend was sending authentication via the `Authorization` header with a Bearer token
-2. The backend was only checking for `x-user-cognito-id` header or `requestingUserId` in the body
-3. We added code to all group controller methods to also check for and use the Bearer token
-4. The fix was successful, and the `/groups` endpoint now properly authenticates requests
+- **Problem**: `PATCH /users/:id/locations` failed with 500 error.
+- **Root Cause**: Server controller (`updateUserLocations`) didn't correctly identify the requesting user (missing `requestingUserId` or other auth methods).
+- **Solution**:
+    - Updated client API definition (`client/src/state/api.ts`) for `updateUserLocations` to include `requestingUserId`.
+    - Updated `UserCard` component (`client/src/components/UserCard/index.tsx`) to send `requestingUserId` in the mutation body.
+    - Refactored `updateUserLocations` in `server/src/controllers/userController.ts` to use robust authentication logic (checking body, headers).
+- **Result**: Location updates now authenticate correctly and succeed.
 
 ## Next Steps
 
-1. ✅ Fixed API Gateway authentication issue by adding Bearer token support in the controller
-2. ✅ Enhanced the GroupCard UI with better styling and user management
-3. ✅ Implemented user removal functionality for groups
-4. ✅ Added Groups to the sidebar navigation for easier access
-5. ✅ Enhanced location selection with required selection, Add All button, and proper undo functionality
-6. ⬜ Implement LocationUser creation for LocationAdmins
-7. ⬜ Update data/reporting pages to filter by user's locations
-8. ⬜ Test the implementation on the EC2 server
-
-## Current Focus: Location Selection Enhancement
-
-We have enhanced the location selection functionality across the application:
-1. Made the submit button unavailable until at least one location is chosen
-2. Added an "Add All" button next to the "Clear All" button for quick selection
-3. Implemented proper undo functionality that tracks the last action and can revert it
-4. Maintained consistent behavior across data, reporting, and groups pages
-
-These enhancements improve the user experience for location selection:
-- Users must now explicitly select at least one location before submitting
-- The "Add All" button provides a quick way to select all available locations
-- The undo functionality allows users to revert any action (add, remove, clear all, add all)
-- Consistent behavior across all pages provides a unified user experience
-
-Previous Focus: User Management in Groups
-- Improved GroupCard component with larger, more visually appealing design
-- Added user removal functionality to allow admins to remove users from groups
-- Added Groups link to the sidebar for both admins and location admins
-- Fixed build issues with proper imports in the server code
-
-## Technical Considerations
-
-- The LocationTable component is already available and can be reused
-- We need to adapt the state management to work with the Group creation/editing flow
-- The UI should maintain consistency with the reporting page for better user experience
-- We should preserve all existing functionality while enhancing the interface
-- Location selection now requires at least one location to be selected before submission
-- Proper undo functionality tracks the last action and previous state for better user experience
+- ⬜ Implement LocationUser creation for LocationAdmins (if still required).
+- ⬜ Update data/reporting pages to filter by user's locations (if still required).
+- ⬜ Further testing on EC2 server.

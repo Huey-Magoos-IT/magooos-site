@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Authenticator } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
+import { Hub } from 'aws-amplify/utils'; // Import Hub
+import { useDispatch } from 'react-redux'; // Import useDispatch
+import { api } from '../state/api'; // Import your api slice
 import "@aws-amplify/ui-react/styles.css";
 
 Amplify.configure({
@@ -43,6 +46,30 @@ const formFields = {
 };
 
 const AuthProvider = ({ children }: any) => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const listener = (data: any) => {
+      switch (data.payload.event) {
+        case 'signedIn':
+          console.log('User signed in, resetting API state.');
+          dispatch(api.util.resetApiState());
+          break;
+        case 'signedOut':
+          console.log('User signed out, resetting API state.');
+          dispatch(api.util.resetApiState());
+          break;
+        // Add other auth events if needed
+      }
+    };
+
+    // Listen for auth events
+    const unsubscribe = Hub.listen('auth', listener);
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [dispatch]); // Dependency array includes dispatch
+
   return (
     <div>
       <Authenticator formFields={formFields}>

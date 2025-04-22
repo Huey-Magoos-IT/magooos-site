@@ -1,5 +1,86 @@
 # Progress Tracking
 
+## Current Implementation: UI/UX Improvements & Bug Fixes (April 22, 2025)
+
+### Status: Implementation Phase
+
+#### Completed (April 22, 2025)
+- ✅ Cleaned up sidebar navigation (hid Home, Settings, Search).
+- ✅ Restricted Users link visibility to Admins/Location Admins.
+- ✅ Implemented role-based access control and filtering on the Users page.
+- ✅ Implemented user-membership filtering on the Teams page.
+- ✅ Changed default application route to `/teams`.
+- ✅ Implemented modal-based location editing in `UserCard`.
+- ✅ Fixed client-side API definition and call for `updateUserLocations` (added `requestingUserId`).
+- ✅ Fixed server-side authentication logic in `updateUserLocations` controller (using robust auth checks).
+- ✅ Added username sorting to the `getUsers` backend endpoint.
+
+### Location Update Authentication Fix Details (April 22, 2025)
+
+- **Problem**: `PATCH /users/:id/locations` failed with 500 error.
+- **Root Cause**: Server controller (`updateUserLocations`) didn't correctly identify the requesting user (missing `requestingUserId` or other auth methods).
+- **Solution**:
+    - Updated client API definition (`client/src/state/api.ts`) for `updateUserLocations` to include `requestingUserId`.
+    - Updated `UserCard` component (`client/src/components/UserCard/index.tsx`) to send `requestingUserId` in the mutation body.
+    - Refactored `updateUserLocations` in `server/src/controllers/userController.ts` to use robust authentication logic (checking body, headers).
+- **Result**: Location updates now authenticate correctly and succeed.
+
+---
+
+
+## Current Implementation: UI/UX Improvements & Bug Fixes (April 22, 2025)
+
+### Status: Implementation Phase
+
+#### Completed (April 22, 2025)
+- ✅ Cleaned up sidebar navigation (hid Home, Settings, Search).
+- ✅ Restricted Users link visibility to Admins/Location Admins.
+- ✅ Implemented role-based access control and filtering on the Users page.
+- ✅ Implemented user-membership filtering on the Teams page.
+- ✅ Changed default application route to `/teams`.
+- ✅ Implemented modal-based location editing in `UserCard`.
+- ✅ Fixed client-side API definition and call for `updateUserLocations` (added `requestingUserId`).
+- ✅ Fixed server-side authentication logic in `updateUserLocations` controller (using robust auth checks).
+- ✅ Added username sorting to the `getUsers` backend endpoint.
+
+#### Previously Completed (Groups Functionality & Enhancements)
+- ✅ Backend and frontend for Groups architecturally aligned with Teams.
+- ✅ Group model, controller, routes, and API slice implemented.
+- ✅ GroupCard component created and enhanced.
+- ✅ Groups management page created.
+- ✅ Access control utilities for location-based permissions added.
+- ✅ Authentication fix for Group controller (Bearer token support).
+- ✅ User removal functionality for groups implemented.
+- ✅ Groups link added to sidebar.
+- ✅ Location selection enhancements (required selection, Add All, Undo).
+
+#### In Progress
+*No items currently in progress.*
+
+#### Pending
+- ⏳ Implement LocationUser creation flow (if still required).
+- ⏳ Update data/reporting pages with location filtering (if still required).
+
+### Next Steps
+1. Implement LocationUser creation for LocationAdmins (if still required).
+2. Update data/reporting pages to filter by user's locations (if still required).
+3. Further testing on EC2 server.
+
+### Authentication Fix Details
+### Location Update Authentication Fix Details (April 22, 2025)
+
+- **Problem**: `PATCH /users/:id/locations` failed with 500 error.
+- **Root Cause**: Server controller (`updateUserLocations`) didn't correctly identify the requesting user (missing `requestingUserId` or other auth methods).
+- **Solution**:
+    - Updated client API definition (`client/src/state/api.ts`) for `updateUserLocations` to include `requestingUserId`.
+    - Updated `UserCard` component (`client/src/components/UserCard/index.tsx`) to send `requestingUserId` in the mutation body.
+    - Refactored `updateUserLocations` in `server/src/controllers/userController.ts` to use robust authentication logic (checking body, headers).
+- **Result**: Location updates now authenticate correctly and succeed.
+
+*(Previous implementation details for Groups functionality remain below)*
+
+# Progress Tracking
+
 ## Current Implementation: Groups Functionality
 
 ### Status: Implementation Phase
