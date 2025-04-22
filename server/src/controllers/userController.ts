@@ -244,7 +244,12 @@ export const createLocationUser = async (req: Request, res: Response): Promise<v
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const users = await prisma.user.findMany();
+    // Fetch users and order them by username alphabetically
+    const users = await prisma.user.findMany({
+      orderBy: {
+        username: 'asc',
+      },
+    });
     res.json(users);
   } catch (error: any) {
     res
