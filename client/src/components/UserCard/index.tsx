@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, User, X } from "lucide-react";
 import RoleBadge from "../RoleBadge";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
-import { useUpdateUserLocationsMutation } from "@/state/api";
+import { useUpdateUserLocationsMutation, useGetAuthUserQuery } from "@/state/api";
 import LocationTable, { Location } from "@/components/LocationTable";
 
 interface UserCardProps {
@@ -56,17 +56,20 @@ const UserCard: React.FC<UserCardProps> = ({
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
   const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
-  
+
+  // Get authenticated user data
+  const { data: authData } = useGetAuthUserQuery({});
+
   // Get locations data
   const { data: locationsData } = useGetLocationsQuery();
   const [updateUserLocations] = useUpdateUserLocationsMutation();
-  
+
   // Find current team
   const currentTeam = teams.find(team => team.id === user.teamId);
-  
+
   // Get roles from current team
   const userRoles = currentTeam?.teamRoles?.map(tr => tr.role) || [];
-  
+
   // Get user's locations from the locations data
   const userLocations = useMemo(() => {
     if (locationsData?.locations && user.locationIds) {
@@ -76,86 +79,97 @@ const UserCard: React.FC<UserCardProps> = ({
     }
     return [];
   }, [locationsData, user.locationIds]);
-  
+
   // Initialize selected locations when opening the dialog
   useEffect(() => {
     if (openLocationDialog && userLocations) {
       setSelectedLocations(userLocations);
     }
   }, [openLocationDialog, userLocations]);
-  
+
   // Handle team change
   const handleTeamChange = (event: SelectChangeEvent<number | string>) => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     onTeamChange(user.userId, newTeamId);
     // Note: Page reload is handled in the parent component after the API call completes
   };
-  
+
   // Handle location selection from LocationTable
   const handleAddLocation = (location: Location) => {
     // Save current state for undo
     setPreviousLocations([...selectedLocations]);
     setLastAction("add");
-    
+
     // Add the location
     setSelectedLocations(prev => [...prev, location]);
   };
-  
+
   // Handle removing a location
   const handleRemoveLocation = (locationId: string) => {
     // Save current state for undo
     setPreviousLocations([...selectedLocations]);
     setLastAction("remove");
-    
+
     // Remove the location
     setSelectedLocations(prev => prev.filter(loc => loc.id !== locationId));
   };
-  
+
   // Handle adding all available locations
   const handleAddAllLocations = () => {
     // Save current state for undo
     setPreviousLocations([...selectedLocations]);
     setLastAction("addAll");
-    
+
     if (locationsData?.locations) {
       // Add all available locations
       setSelectedLocations(locationsData.locations);
     }
   };
-  
+
   // Handle clearing all locations
   const handleClearAll = () => {
     // Save current state for undo
     setPreviousLocations([...selectedLocations]);
     setLastAction("clearAll");
-    
+
     // Clear all locations
     setSelectedLocations([]);
   };
-  
+
   // Handle undo action
   const handleUndo = () => {
     if (lastAction) {
       // Restore previous state
       setSelectedLocations(previousLocations);
-      
+
       // Reset last action
       setLastAction("");
     }
   };
-  
+
   // Handle saving locations
   const handleSaveLocations = async () => {
     try {
       setLocationUpdateStatus("pending");
-      
+
+      // Get the authenticated user's ID to include in the request
+      const requestingUserId = authData?.userDetails?.userId;
+
+      if (!requestingUserId) {
+        console.error("Authenticated user ID not found.");
+        setLocationUpdateStatus("error");
+        return;
+      }
+
+      // Include the requestingUserId in the request body
       await updateUserLocations({
         userId: user.userId,
-        locationIds: selectedLocations.map(loc => loc.id)
+        locationIds: selectedLocations.map(loc => loc.id),
+        requestingUserId: requestingUserId // Pass the authenticated user's ID
       }).unwrap();
-      
+
       setLocationUpdateStatus("success");
-      
+
       // Close dialog after a short delay to show success message
       setTimeout(() => {
         setLocationUpdateStatus(null);
@@ -166,12 +180,12 @@ const UserCard: React.FC<UserCardProps> = ({
       setLocationUpdateStatus("error");
     }
   };
-  
+
   // Handle opening the location dialog
   const handleOpenLocationDialog = () => {
     setOpenLocationDialog(true);
   };
-  
+
   // Handle closing the location dialog
   const handleCloseLocationDialog = () => {
     setOpenLocationDialog(false);
@@ -209,7 +223,7 @@ const UserCard: React.FC<UserCardProps> = ({
             {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
         </div>
-        
+
         <div className="mt-4 flex flex-wrap gap-2">
           {userRoles.length > 0 ? (
             userRoles.map(role => (
@@ -223,7 +237,7 @@ const UserCard: React.FC<UserCardProps> = ({
             <span className="text-sm text-gray-500 dark:text-gray-400">No roles assigned</span>
           )}
         </div>
-        
+
         <div className="mt-4">
           <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Team</div>
           {isAdmin ? (
@@ -251,7 +265,7 @@ const UserCard: React.FC<UserCardProps> = ({
           )}
         </div>
       </div>
-      
+
       {expanded && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Information</h4>
@@ -280,13 +294,13 @@ const UserCard: React.FC<UserCardProps> = ({
                 {userRoles.some(r => r.name === "REPORTING" || r.name === "ADMIN") ? "Yes" : "No"}
               </span>
             </div>
-            
+
             {/* Locations Section */}
             <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Locations:</span>
                 {isAdmin && (
-                  <button 
+                  <button
                     onClick={handleOpenLocationDialog}
                     className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800 px-2 py-1 rounded"
                   >
@@ -294,12 +308,12 @@ const UserCard: React.FC<UserCardProps> = ({
                   </button>
                 )}
               </div>
-              
+
               <div className="flex flex-wrap gap-1 mt-1">
                 {userLocations.length > 0 ? (
                   userLocations.map(location => (
-                    <span 
-                      key={location.id} 
+                    <span
+                      key={location.id}
                       className="px-2 py-1 text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full"
                     >
                       {location.name}
@@ -313,7 +327,7 @@ const UserCard: React.FC<UserCardProps> = ({
           </div>
         </div>
       )}
-      
+
       {/* Location Selection Dialog */}
       <Dialog open={openLocationDialog} onClose={handleCloseLocationDialog} maxWidth="lg" fullWidth>
         <DialogTitle>
@@ -396,7 +410,7 @@ const UserCard: React.FC<UserCardProps> = ({
                     ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
                     : "No locations selected"}
                 </Typography>
-                
+
                 {/* Status Messages */}
                 {locationUpdateStatus === "success" && (
                   <div className="mt-2 p-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 rounded text-sm">
@@ -415,7 +429,7 @@ const UserCard: React.FC<UserCardProps> = ({
                 )}
               </div>
             </Grid>
-            
+
             {/* Right column - Location Table */}
             <Grid item xs={12} md={6}>
               <LocationTable

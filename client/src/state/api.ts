@@ -378,11 +378,11 @@ export const api = createApi({
       }),
       invalidatesTags: ["Groups", "Users"]
     }),
-    updateUserLocations: build.mutation<void, { userId: number; locationIds: string[] }>({
-      query: ({ userId, locationIds }) => ({
+    updateUserLocations: build.mutation<void, { userId: number; locationIds: string[]; requestingUserId?: number }>({
+      query: ({ userId, locationIds, requestingUserId }) => ({
         url: `users/${userId}/locations`,
         method: "PATCH",
-        body: { locationIds }
+        body: { locationIds, requestingUserId } // Pass requestingUserId in the body
       }),
       invalidatesTags: ["Users"]
     }),
