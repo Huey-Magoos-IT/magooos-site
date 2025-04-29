@@ -42,8 +42,8 @@ const REPORTING_DATA_FOLDER = process.env.NEXT_PUBLIC_REPORTING_DATA_FOLDER || "
 
 // Report types
 const REPORT_TYPES = [
-  { value: 'redflag-report', label: 'Red Flag Report' },
-  { value: 'no-loyalty-discount', label: 'No Loyalty Discount' }
+  { value: 'redflag-report', label: 'Rewards Red Flag Transactions' },
+  { value: 'no-loyalty-discount', label: 'Rewards Discount without Rewards ID' }
   // { value: 'redflag-summary', label: 'Red Flag Summary' } // Hidden per requirements
 ];
 
