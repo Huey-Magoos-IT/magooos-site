@@ -53,3 +53,16 @@ This update focused on implementing several UI/UX improvements based on user fee
 - Functional and user-friendly location management via the UserCard modal.
 - Resolved critical 500 error related to location updates.
 - Consistent and predictable user list sorting.
+### 7. Authentication Refresh Fix
+- **Problem**: Stale user data (permissions, details) persisted in the client-side UI after logging out and logging back in as a different user. This required a manual page refresh to see the correct information.
+- **Root Cause**: The RTK Query cache, managed via `client/src/state/api.ts`, was not being automatically cleared when the user's authentication state changed via Amplify's `Authenticator` component.
+- **Fix**:
+    - Modified `client/src/app/authProvider.tsx` to utilize Amplify's `Hub` utility.
+    - Added a `useEffect` hook to listen for `auth` channel events.
+    - When `signedIn` or `signedOut` events are detected, the listener now dispatches `api.util.resetApiState()` using `useDispatch` from `react-redux`.
+- **Result**: The entire RTK Query cache is now cleared upon user sign-in and sign-out, forcing the application to refetch all necessary data (including user details and permissions) for the new session, thus resolving the stale data issue.
+- **Files Modified**:
+    - `client/src/app/authProvider.tsx`
+- **Benefits**:
+    - Ensures UI consistency by displaying fresh data after authentication changes.
+    - Improves user experience by eliminating the need for manual refreshes after login/logout.

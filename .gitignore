@@ -5,3 +5,11 @@ server/dist/
 client/.env
 server/.env
 client/.next/
+.roo/
+.ruru/
+(OLD)_memory-bank/
+CHANGELOGS/
+changelog.md
+.roomodes
+extras/
+README.md
