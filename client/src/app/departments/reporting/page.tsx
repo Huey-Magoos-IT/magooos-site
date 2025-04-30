@@ -65,6 +65,7 @@ const ReportingPage = () => {
   const [lastAction, setLastAction] = useState<string>("");
   const [discountIds, setDiscountIds] = useState<number[]>(DEFAULT_DISCOUNT_IDS);
   const [newDiscountId, setNewDiscountId] = useState("");
+  const [dailyUsageCountFilter, setDailyUsageCountFilter] = useState<string>(''); // Added state for usage count filter
   
   // Client-side processing state
   const [reportType, setReportType] = useState<string>(REPORT_TYPES[0].value);
@@ -214,7 +215,14 @@ const ReportingPage = () => {
       if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
         // Pass the full locations array for mapping IDs to names
-        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations);
+        // Pass the daily usage count filter value
+        filteredData = filterData(
+          combinedData,
+          effectiveLocationIds,
+          discountIds,
+          selectedLocations,
+          dailyUsageCountFilter // Pass the new filter value
+        );
       }
       
       // Fetch employee data and enhance CSV with employee names
@@ -504,9 +512,32 @@ const ReportingPage = () => {
                           : "No locations selected"}
                   </Typography>
                 </div>
+                
+                {/* Daily Usage Count Filter - Added */}
+                {reportType === 'redflag-report' && ( // Only show for the relevant report
+                  <div className="mt-4">
+                    <TextField
+                      label="Min Daily Usage Count"
+                      type="number"
+                      value={dailyUsageCountFilter}
+                      onChange={(e) => setDailyUsageCountFilter(e.target.value)}
+                      variant="outlined"
+                      fullWidth
+                      className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                      InputProps={{
+                        inputProps: { min: 0 }, // Prevent negative numbers
+                        className: "dark:text-white"
+                      }}
+                      InputLabelProps={{
+                        className: "dark:text-gray-300"
+                      }}
+                      helperText="Show transactions with usage count >= this value"
+                    />
+                  </div>
+                )}
 
                 {(userTeam?.isAdmin || hasRole(userTeam.teamRoles, 'ADMIN')) && (
-                  <div>
+                  <div className="mt-4"> {/* Added mt-4 for spacing */}
                     <div className="mb-2">
                       <TextField
                         label="Add Discount ID"

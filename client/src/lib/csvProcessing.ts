@@ -384,26 +384,36 @@ export const enhanceCSVWithLocationNames = (
 };
 
 /**
- * Filter data by location and discount IDs
+ * Filter data by location, discount IDs, and daily usage count
  * @param data Array of data objects
  * @param locationIds Array of location IDs to filter by
  * @param discountIds Array of discount IDs to filter by
  * @param locations Array of location objects with id and name properties for mapping IDs to names
+ * @param dailyUsageCountFilter String representing the minimum daily usage count
  * @returns Filtered data
  */
 export const filterData = (
   data: any[],
   locationIds: string[] = [],
   discountIds: number[] = [],
-  locations: { id: string; name: string }[] = []
+  locations: { id: string; name: string }[] = [],
+  dailyUsageCountFilter: string = '' // Added parameter for usage count filter
 ): any[] => {
   // Debug info
   console.log("FILTER DATA - Starting with rows:", data.length);
   console.log("FILTER DATA - Selected location IDs:", locationIds);
   console.log("FILTER DATA - Selected discount IDs:", discountIds);
-  
-  // If no filters applied, return all data
-  if (locationIds.length === 0 && discountIds.length === 0) {
+  console.log("FILTER DATA - Daily Usage Count Filter:", dailyUsageCountFilter); // Log the new filter value
+
+  // Parse the usage count filter value once
+  const minUsageCount = dailyUsageCountFilter ? parseInt(dailyUsageCountFilter, 10) : null;
+  const isUsageFilterActive = minUsageCount !== null && !isNaN(minUsageCount) && minUsageCount >= 0;
+
+  console.log("FILTER DATA - Parsed Min Usage Count:", minUsageCount);
+  console.log("FILTER DATA - Usage Filter Active:", isUsageFilterActive);
+
+  // If no filters applied (including the new one), return all data
+  if (locationIds.length === 0 && discountIds.length === 0 && !isUsageFilterActive) {
     console.log("FILTER DATA - No filters applied, returning all data");
     return data;
   }
@@ -425,6 +435,7 @@ export const filterData = (
   if (data.length > 0) {
     console.log("FILTER DATA - Sample row columns:", Object.keys(data[0]));
     console.log("FILTER DATA - Sample Store value:", data[0]['Store']);
+    console.log("FILTER DATA - Sample Daily Usage Count value:", data[0]['Daily Usage Count']); // Log sample usage count
   }
   
   const filteredData = data.filter(row => {
@@ -444,7 +455,7 @@ export const filterData = (
       if (!locationMatch) {
         locationMatch = locationIds.some(id => storeValueStr === id);
         if (locationMatch) {
-          console.log(`FILTER DATA - Direct ID match: ${storeValueStr} === ${locationIds.find(id => storeValueStr === id)}`);
+          // console.log(`FILTER DATA - Direct ID match: ${storeValueStr} === ${locationIds.find(id => storeValueStr === id)}`); // Optional logging
         }
       }
       
@@ -461,7 +472,7 @@ export const filterData = (
           );
           
           if (matches) {
-            console.log(`FILTER DATA - Name match: ${storeValueStr} includes ${nameStr}`);
+            // console.log(`FILTER DATA - Name match: ${storeValueStr} includes ${nameStr}`); // Optional logging
           }
           
           return matches;
@@ -474,7 +485,7 @@ export const filterData = (
         // that match our locationIds
         locationMatch = locationIds.includes(storeValueStr);
         if (locationMatch) {
-          console.log(`FILTER DATA - Numeric code match: ${storeValueStr} in locationIds`);
+          // console.log(`FILTER DATA - Numeric code match: ${storeValueStr} in locationIds`); // Optional logging
         }
       }
       
@@ -504,7 +515,7 @@ export const filterData = (
         discountIds.includes(135739) &&
         discountIds.includes(135910);
       
-      console.log("FILTER DATA - Using default discounts:", usingDefaultDiscounts);
+      // console.log("FILTER DATA - Using default discounts:", usingDefaultDiscounts); // Optional logging
       
       // Only apply discount filtering if the user has changed the defaults
       if (!usingDefaultDiscounts) {
@@ -517,9 +528,9 @@ export const filterData = (
             const discountId3 = row['DISCL ID'] ? Number(row['DISCL ID']) : null;
             
             // Log the discount IDs found in the row
-            if (discountId1 !== null || discountId2 !== null || discountId3 !== null) {
-              console.log(`FILTER DATA - Row discount IDs: ${discountId1}, ${discountId2}, ${discountId3}`);
-            }
+            // if (discountId1 !== null || discountId2 !== null || discountId3 !== null) {
+            //   console.log(`FILTER DATA - Row discount IDs: ${discountId1}, ${discountId2}, ${discountId3}`); // Optional logging
+            // }
             
             const matches = (
               (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
@@ -535,6 +546,27 @@ export const filterData = (
         })();
         
         if (!discountIdMatches) return false;
+      }
+    }
+    
+    // Apply Daily Usage Count filter if active
+    if (isUsageFilterActive && minUsageCount !== null) {
+      // Assume the column name is exactly "Daily Usage Count"
+      const usageCountValue = row['Daily Usage Count'];
+      
+      // Check if the value exists and is a number
+      if (usageCountValue === undefined || usageCountValue === null || isNaN(Number(usageCountValue))) {
+        // If the column is missing or not a number, exclude the row when filtering is active
+        // console.log(`FILTER DATA - Row excluded due to missing/invalid 'Daily Usage Count':`, row); // Optional logging
+        return false; 
+      }
+      
+      const rowUsageCount = Number(usageCountValue);
+      
+      // Apply the filter condition
+      if (rowUsageCount < minUsageCount) {
+        // console.log(`FILTER DATA - Row excluded by usage count: ${rowUsageCount} < ${minUsageCount}`); // Optional: Log excluded rows
+        return false;
       }
     }
     
@@ -578,7 +610,7 @@ export const enhanceCSVWithEmployeeNames = (
     
     if (!loyaltyId) {
       missingLoyaltyIdRows++;
-      console.log(`DEBUG - Row ${totalRows}: Missing loyalty ID`);
+      // console.log(`DEBUG - Row ${totalRows}: Missing loyalty ID`); // Optional logging
       return newRow;
     }
     
