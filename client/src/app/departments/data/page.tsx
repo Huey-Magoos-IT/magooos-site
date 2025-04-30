@@ -19,7 +19,8 @@ import {
   Select,
   FormControl,
   InputLabel,
-  FormHelperText
+  FormHelperText,
+  SelectChangeEvent
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import LocationTable, { Location } from "@/components/LocationTable";
@@ -37,6 +38,7 @@ import {
   DEFAULT_DISCOUNT_IDS,
   DEFAULT_LOCATION_IDS
 } from "@/lib/legacyLambdaProcessing";
+import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils"; // Added import
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const LOYALTY_DATA_FOLDER = process.env.NEXT_PUBLIC_LOYALTY_DATA_FOLDER || "loyalty-data-pool/";
@@ -58,6 +60,7 @@ const DataPage = () => {
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<DatePreset | ''>(''); // Added state for preset
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
@@ -261,6 +264,18 @@ const DataPage = () => {
     }
   };
 
+  // Handler for preset dropdown change
+  const handlePresetChange = (event: SelectChangeEvent<DatePreset | ''>) => {
+    const preset = event.target.value as DatePreset | '';
+    setSelectedPreset(preset);
+    if (preset) {
+      const { startDate: newStartDate, endDate: newEndDate } = getDateRangeForPreset(preset);
+      setStartDate(newStartDate);
+      setEndDate(newEndDate);
+    }
+  };
+
+
   useEffect(() => {
     // Fetch available files on component mount
     fetchFiles();
@@ -341,10 +356,32 @@ const DataPage = () => {
                   <FormHelperText className="dark:text-gray-300">Select the type of data to generate</FormHelperText>
                 </FormControl>
 
+                {/* Date Preset Dropdown */}
+                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
+                  <InputLabel className="text-gray-700 dark:text-gray-300">Date Range Preset</InputLabel>
+                  <Select
+                    value={selectedPreset}
+                    onChange={handlePresetChange}
+                    label="Date Range Preset"
+                    className="border-gray-200 dark:border-stroke-dark dark:text-white"
+                  >
+                    <MenuItem value="" className="dark:text-gray-200"><em>Custom Range</em></MenuItem>
+                    {datePresets.map((preset) => (
+                      <MenuItem key={preset} value={preset} className="dark:text-gray-200">
+                        {preset}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText className="dark:text-gray-300">Select a preset or choose dates manually</FormHelperText>
+                </FormControl>
+
                 <DatePicker
                   label="Start Date"
                   value={startDate}
-                  onChange={(newValue) => setStartDate(newValue)}
+                  onChange={(newValue) => {
+                      setStartDate(newValue);
+                      setSelectedPreset(''); // Clear preset on manual change
+                  }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
                   minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
@@ -366,7 +403,10 @@ const DataPage = () => {
                 <DatePicker
                   label="End Date"
                   value={endDate}
-                  onChange={(newValue) => setEndDate(newValue)}
+                  onChange={(newValue) => {
+                      setEndDate(newValue);
+                      setSelectedPreset(''); // Clear preset on manual change
+                  }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
                   minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
