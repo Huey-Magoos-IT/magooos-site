@@ -328,11 +328,12 @@ const ReportingPage = () => {
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
           
-          <Grid container spacing={4} className="items-stretch"> {/* Added items-stretch */}
+          {/* Replaced MUI Grid with Tailwind CSS Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left column - Form inputs */}
-            <Grid item xs={12} md={6}>
-              {/* Removed h-full and justify-center */}
-              <div className="space-y-4 flex flex-col">
+            {/* Removed Grid item wrapper */}
+            <div>
+              <div className="space-y-4 flex flex-col h-full"> {/* Added h-full back to inner div to help height calculation */}
                 {/* Report Type Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
                   <InputLabel className="text-gray-700 dark:text-gray-300">Report Type</InputLabel>
@@ -602,17 +603,20 @@ const ReportingPage = () => {
                   )}
                 </div>
               </div>
-            </Grid>
+            </div>
             
             {/* Right column - Location Table */}
-            <Grid item xs={12} md={6}>
+            {/* Removed Grid item wrapper */}
+            {/* Added wrapper div with h-full */}
+            <div className="h-full">
+              {/* Removed className from LocationTable */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
                 onLocationSelect={handleAddLocation}
                 userLocationIds={userIsAdmin ? undefined : userLocationIds}
               />
-            </Grid>
-          </Grid>
+            </div>
+          </div>
         </div>
 
         {/* Data Table */}
