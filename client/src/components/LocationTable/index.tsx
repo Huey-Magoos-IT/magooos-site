@@ -142,7 +142,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
         />
       </div>
       
-      <TableContainer className="flex-grow" style={{ maxHeight: '400px' }}>
+      {/* Removed maxHeight: '400px' to allow full stretching */}
+      <TableContainer className="flex-grow">
         <Table stickyHeader>
           <TableHead>
             <TableRow>
