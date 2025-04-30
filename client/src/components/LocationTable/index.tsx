@@ -143,8 +143,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       </div>
       
       {/* Removed maxHeight: '400px' to allow full stretching */}
-      {/* Use sx prop for flexGrow and overflow */}
-      <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
+      {/* Set explicit fixed height */}
+      <TableContainer sx={{ height: '400px', overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
