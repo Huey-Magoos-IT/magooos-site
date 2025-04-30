@@ -333,7 +333,8 @@ const ReportingPage = () => {
             {/* Left column - Form inputs */}
             {/* Removed Grid item wrapper */}
             <div>
-              <div className="space-y-4 flex flex-col h-full"> {/* Added h-full back to inner div to help height calculation */}
+              {/* Removed h-full from inner div */}
+              <div className="space-y-4 flex flex-col">
                 {/* Report Type Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
                   <InputLabel className="text-gray-700 dark:text-gray-300">Report Type</InputLabel>
@@ -607,8 +608,8 @@ const ReportingPage = () => {
             
             {/* Right column - Location Table */}
             {/* Removed Grid item wrapper */}
-            {/* Added wrapper div with h-full */}
-            <div className="h-full">
+            {/* Added wrapper div with h-full flex flex-col */}
+            <div className="h-full flex flex-col">
               {/* Removed className from LocationTable */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}

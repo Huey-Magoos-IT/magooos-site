@@ -113,7 +113,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       elevation={2}
       className="rounded-lg overflow-hidden dark:bg-dark-secondary border border-gray-100 dark:border-stroke-dark"
       sx={{
-        height: '100%',
+        // Removed height: '100%' - relying on parent flex context
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
