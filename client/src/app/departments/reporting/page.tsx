@@ -328,10 +328,11 @@ const ReportingPage = () => {
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
           
-          <Grid container spacing={4}>
+          <Grid container spacing={4} className="items-stretch"> {/* Added items-stretch */}
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
-              <div className="space-y-4 flex flex-col h-full justify-center">
+              {/* Removed h-full and justify-center */}
+              <div className="space-y-4 flex flex-col">
                 {/* Report Type Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
                   <InputLabel className="text-gray-700 dark:text-gray-300">Report Type</InputLabel>
