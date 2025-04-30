@@ -325,15 +325,16 @@ const ReportingPage = () => {
         </div>
 
         {/* Data Generation Form */}
+        {/* Reverted outer div */}
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
           
-          {/* Replaced MUI Grid with Tailwind CSS Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Restored MUI Grid container */}
+          <Grid container spacing={4}>
             {/* Left column - Form inputs */}
-            {/* Removed Grid item wrapper */}
-            <div>
-              {/* Removed h-full from inner div */}
+            {/* Restored Grid item */}
+            <Grid item xs={12} md={6}>
+              {/* Restored original inner div */}
               <div className="space-y-4 flex flex-col">
                 {/* Report Type Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
@@ -604,20 +605,19 @@ const ReportingPage = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </Grid> {/* Added missing closing tag */}
             
             {/* Right column - Location Table */}
-            {/* Removed Grid item wrapper */}
-            {/* Added wrapper div with h-full flex flex-col */}
-            <div className="h-full flex flex-col">
-              {/* Removed className from LocationTable */}
+            {/* Restored Grid item */}
+            <Grid item xs={12} md={6}>
+              {/* Removed wrapper div */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
                 onLocationSelect={handleAddLocation}
                 userLocationIds={userIsAdmin ? undefined : userLocationIds}
               />
-            </div>
-          </div>
+            </Grid>
+          </Grid>
         </div>
 
         {/* Data Table */}

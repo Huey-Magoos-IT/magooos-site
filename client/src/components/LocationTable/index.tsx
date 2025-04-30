@@ -113,7 +113,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       elevation={2}
       className="rounded-lg overflow-hidden dark:bg-dark-secondary border border-gray-100 dark:border-stroke-dark"
       sx={{
-        // Removed height: '100%' - relying on parent flex context
+        flexGrow: 1, // Changed from height: '100%'
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -143,8 +143,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       </div>
       
       {/* Removed maxHeight: '400px' to allow full stretching */}
-      {/* Added overflow-y-auto */}
-      <TableContainer className="flex-grow overflow-y-auto">
+      {/* Use sx prop for flexGrow and overflow */}
+      <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
