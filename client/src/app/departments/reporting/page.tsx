@@ -329,11 +329,11 @@ const ReportingPage = () => {
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
           
-          {/* Restored MUI Grid container */}
-          <Grid container spacing={4}>
+          {/* Restored MUI Grid container with align-items: stretch to ensure bottom alignment */}
+          <Grid container spacing={4} sx={{ alignItems: 'stretch', display: 'flex' }}>
             {/* Left column - Form inputs */}
-            {/* Restored Grid item */}
-            <Grid item xs={12} md={6}>
+            {/* Restored Grid item with height 100% to match right column */}
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {/* Restored original inner div */}
               <div className="space-y-4 flex flex-col">
                 {/* Report Type Selector */}
@@ -608,8 +608,8 @@ const ReportingPage = () => {
             </Grid> {/* Added missing closing tag */}
             
             {/* Right column - Location Table */}
-            {/* Restored Grid item */}
-            <Grid item xs={12} md={6}>
+            {/* Restored Grid item with height 100% to ensure full stretching */}
+            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {/* Removed wrapper div */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
