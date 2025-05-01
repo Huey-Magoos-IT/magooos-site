@@ -326,14 +326,25 @@ const ReportingPage = () => {
 
         {/* Data Generation Form */}
         {/* Reverted outer div */}
-        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
+        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark" style={{ overflow: 'visible' }}>
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
           
           {/* Restored MUI Grid container with align-items: stretch to ensure bottom alignment */}
           <Grid container spacing={4} sx={{ alignItems: 'stretch', display: 'flex' }}>
             {/* Left column - Form inputs */}
-            {/* Restored Grid item with height 100% to match right column */}
-            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Updated Grid item to match the right column's height */}
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '800px', // Match the right column's minimum height
+                height: 'auto',
+                overflow: 'visible'
+              }}
+            >
               {/* Restored original inner div */}
               <div className="space-y-4 flex flex-col">
                 {/* Report Type Selector */}
@@ -608,8 +619,19 @@ const ReportingPage = () => {
             </Grid> {/* Added missing closing tag */}
             
             {/* Right column - Location Table */}
-            {/* Restored Grid item with height 100% to ensure full stretching */}
-            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Updated Grid item to allow for increased height */}
+            <Grid
+              item
+              xs={12}
+              md={6}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '800px', // Force a taller minimum height
+                height: 'auto',
+                overflow: 'visible'
+              }}
+            >
               {/* Removed wrapper div */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
