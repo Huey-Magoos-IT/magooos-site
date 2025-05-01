@@ -25,13 +25,14 @@ interface ModalCreateUserProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (formData: {
+    username: string; // Added username
     email: string;
     tempPassword: string;
-    teamId: number; // Added teamId
-    locationIds: string[]; // Added locationIds
+    teamId: number;
+    locationIds: string[];
   }) => Promise<void>;
-  teams: Team[]; // Added teams prop
-  locations: Location[]; // Added locations prop
+  teams: Team[];
+  locations: Location[];
 }
 
 const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
@@ -42,10 +43,11 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
   locations,
 }) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
+  const [username, setUsername] = useState(""); // Added state for username
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
-  const [selectedTeamId, setSelectedTeamId] = useState<number | "">(""); // Added state for team
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]); // Added state for locations
+  const [selectedTeamId, setSelectedTeamId] = useState<number | "">("");
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,10 +76,11 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
     }
     try {
       await onSubmit({
+        username, // Pass username
         email,
         tempPassword,
-        teamId: selectedTeamId as number, // Pass selected teamId
-        locationIds: selectedLocationIds, // Pass selected locationIds
+        teamId: selectedTeamId as number,
+        locationIds: selectedLocationIds,
       });
       // Let parent handle close/clear
     } catch (err: any) {
@@ -89,10 +92,11 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
 
   const handleClose = () => {
     if (!isLoading) {
+      setUsername(""); // Reset username state
       setEmail("");
       setTempPassword("");
-      setSelectedTeamId(""); // Reset team state
-      setSelectedLocationIds([]); // Reset locations state
+      setSelectedTeamId("");
+      setSelectedLocationIds([]);
       setError(null);
       onClose();
     }
@@ -115,11 +119,30 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             margin="normal"
             required
             fullWidth
+            id="username"
+            label="Username"
+            name="username"
+            autoComplete="username"
+            autoFocus // Focus username first
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={isLoading}
+            InputLabelProps={{
+              style: { color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined },
+            }}
+            InputProps={{
+              style: { color: isDarkMode ? 'white' : undefined },
+            }}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
             id="email"
             label="Email Address"
             name="email"
             autoComplete="email"
-            autoFocus
+            // autoFocus // Removed autofocus from email
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
@@ -210,7 +233,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             <Button
               type="submit"
               variant="contained"
-              disabled={isLoading || !email || !tempPassword || selectedTeamId === ""} // Updated disabled check
+              disabled={isLoading || !username || !email || !tempPassword || selectedTeamId === ""} // Add username to disabled check
               startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
             >
               {isLoading ? "Creating..." : "Create User"}

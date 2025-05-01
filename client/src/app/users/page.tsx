@@ -126,20 +126,21 @@ const Users = () => {
 
   // Function for handling user creation submission using Amplify signUp
   const handleCreateUserSubmit = useCallback(async (formData: {
+    username: string; // Added username
     email: string;
     tempPassword: string;
     teamId: number;
     locationIds: string[];
   }) => {
     try {
-      console.log("Creating user via Amplify signUp:", formData.email);
+      console.log("Creating user via Amplify signUp:", formData.username, formData.email);
 
       // Step 1: Create the user in Cognito using signUp
       // Note: We cannot directly set custom attributes like teamId/locationIds here.
       // These need to be handled post-confirmation, ideally by the Lambda trigger
       // or a separate update mechanism.
       const { isSignUpComplete, userId, nextStep } = await signUp({
-        username: formData.email, // Use email as username
+        username: formData.username, // Use the collected username
         password: formData.tempPassword,
         options: {
           userAttributes: {
@@ -160,11 +161,12 @@ const Users = () => {
         teamId: formData.teamId,
         locationIds: formData.locationIds || []
       };
-      localStorage.setItem(`pending-user-${formData.email}`, JSON.stringify(pendingUserData));
-      console.log(`Stored pending data for ${formData.email} in localStorage.`);
+      // Use username as key for localStorage as it must be unique, email might not be.
+      localStorage.setItem(`pending-user-${formData.username}`, JSON.stringify(pendingUserData));
+      console.log(`Stored pending data for ${formData.username} in localStorage.`);
 
       // Step 3: Show success message and close modal
-      alert(`User ${formData.email} created. They must verify their email and log in. Team/Location assignments will be applied by the system post-confirmation (using stored data).`);
+      alert(`User ${formData.username} created. They must verify their email (${formData.email}) and log in. Team/Location assignments will be applied by the system post-confirmation (using stored data).`);
       setIsModalOpen(false);
 
       // Step 4: Refetch users (User won't appear until confirmed & Lambda runs)
@@ -176,7 +178,7 @@ const Users = () => {
     } catch (error: any) {
       console.error("Error creating user via Amplify signUp:", error);
       // Store pending data even if signUp fails? No, probably not.
-      localStorage.removeItem(`pending-user-${formData.email}`); // Clean up potentially stored data on error
+      localStorage.removeItem(`pending-user-${formData.username}`); // Clean up potentially stored data on error
       throw new Error(error.message || "Failed to initiate user creation");
     }
   }, []); // Removed refetchUsers dependency
