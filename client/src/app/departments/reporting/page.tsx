@@ -608,8 +608,8 @@ const ReportingPage = () => {
             </Grid> {/* Added missing closing tag */}
             
             {/* Right column - Location Table */}
-            {/* Add flex properties to allow child (LocationTable) to stretch */}
-            <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Restored Grid item */}
+            <Grid item xs={12} md={6}>
               {/* Removed wrapper div */}
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
