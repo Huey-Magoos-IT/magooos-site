@@ -1,12 +1,14 @@
 "use client";
 import {
   useGetUsersQuery,
-  useGetTeamsQuery,
+  useGetTeamsQuery, // Already imported
   useUpdateUserTeamMutation,
-  useGetAuthUserQuery
+  useGetAuthUserQuery,
 } from "@/state/api";
+import { useGetLocationsQuery } from "@/state/lambdaApi"; // Import locations query
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useAppSelector } from "../redux";
+import { signUp } from 'aws-amplify/auth'; // Import Amplify signUp
 import Header from "@/components/Header";
 import {
   DataGrid,
@@ -25,12 +27,14 @@ import {
   Select,
   SelectChangeEvent,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  Button // Added Button import
 } from "@mui/material";
-import { AlertCircle, Check, User } from "lucide-react";
+import { AlertCircle, Check, User, UserPlus } from "lucide-react"; // Added UserPlus import
 import ViewToggle, { ViewType } from "@/components/ViewToggle";
 import RoleBadge from "@/components/RoleBadge";
 import UserCard from "@/components/UserCard";
+import ModalCreateUser from "@/components/ModalCreateUser"; // Added Modal import
 
 const CustomToolbar = () => (
   <GridToolbarContainer className="toolbar flex gap-2">
@@ -42,6 +46,7 @@ const CustomToolbar = () => (
 const Users = () => {
   const { data: users, isLoading: isUsersLoading, isError: isUsersError, refetch: refetchUsers } = useGetUsersQuery();
   const { data: teamsData, isLoading: isTeamsLoading } = useGetTeamsQuery();
+  const { data: locationsData, isLoading: isLocationsLoading } = useGetLocationsQuery(); // Fetch locations
   const { data: authData } = useGetAuthUserQuery({});
   const [updateUserTeam, { isLoading: isUpdating }] = useUpdateUserTeamMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
@@ -50,6 +55,7 @@ const Users = () => {
   const [viewType, setViewType] = useState<ViewType>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState<string | number>("");
+  const [isModalOpen, setIsModalOpen] = useState(false); // Added modal state
   
   // Load view preference from localStorage on component mount
   useEffect(() => {
@@ -78,9 +84,10 @@ const Users = () => {
     }
   }, [authData, isUserAdmin, isLocationAdmin]);
   
-  // Extract teams and roles from teamsData using useMemo to prevent re-renders
+  // Extract teams, roles, and locations using useMemo to prevent re-renders
   const teams = useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
   const availableRoles = useMemo(() => teamsData?.availableRoles || [], [teamsData?.availableRoles]);
+  const locations = useMemo(() => locationsData?.locations || [], [locationsData?.locations]); // Extract locations
   
   // Handle team change
   const handleTeamChange = useCallback(async (userId: number, newTeamId: number | null) => {
@@ -116,6 +123,63 @@ const Users = () => {
     const newTeamId = event.target.value === "" ? null : Number(event.target.value);
     handleTeamChange(userId, newTeamId);
   }, [handleTeamChange]);
+
+  // Function for handling user creation submission using Amplify signUp
+  const handleCreateUserSubmit = useCallback(async (formData: {
+    email: string;
+    tempPassword: string;
+    teamId: number;
+    locationIds: string[];
+  }) => {
+    try {
+      console.log("Creating user via Amplify signUp:", formData.email);
+
+      // Step 1: Create the user in Cognito using signUp
+      // Note: We cannot directly set custom attributes like teamId/locationIds here.
+      // These need to be handled post-confirmation, ideally by the Lambda trigger
+      // or a separate update mechanism.
+      const { isSignUpComplete, userId, nextStep } = await signUp({
+        username: formData.email, // Use email as username
+        password: formData.tempPassword,
+        options: {
+          userAttributes: {
+            email: formData.email,
+            // We cannot reliably set custom attributes here that the Lambda can read
+            // during the PostConfirmation trigger. Cognito doesn't pass all attributes.
+          },
+          // autoSignIn: false // Keep default behavior (usually true)
+        }
+      });
+
+      console.log("Cognito signUp response:", { isSignUpComplete, userId, nextStep });
+
+      // Step 2: Store admin-selected attributes temporarily (e.g., localStorage)
+      // This is a workaround because we can't pass them reliably to the Lambda trigger.
+      // A more robust solution involves a separate backend endpoint/DB table for pending users.
+      const pendingUserData = {
+        teamId: formData.teamId,
+        locationIds: formData.locationIds || []
+      };
+      localStorage.setItem(`pending-user-${formData.email}`, JSON.stringify(pendingUserData));
+      console.log(`Stored pending data for ${formData.email} in localStorage.`);
+
+      // Step 3: Show success message and close modal
+      alert(`User ${formData.email} created. They must verify their email and log in. Team/Location assignments will be applied by the system post-confirmation (using stored data).`);
+      setIsModalOpen(false);
+
+      // Step 4: Refetch users (User won't appear until confirmed & Lambda runs)
+      // refetchUsers(); // Optional: refetch if UI should update immediately, though user won't be fully ready
+
+      // No return value needed as onSubmit expects Promise<void>
+      // return { success: true, message: "User creation initiated successfully. Email verification required." };
+
+    } catch (error: any) {
+      console.error("Error creating user via Amplify signUp:", error);
+      // Store pending data even if signUp fails? No, probably not.
+      localStorage.removeItem(`pending-user-${formData.email}`); // Clean up potentially stored data on error
+      throw new Error(error.message || "Failed to initiate user creation");
+    }
+  }, []); // Removed refetchUsers dependency
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -272,15 +336,28 @@ const Users = () => {
     });
   }, [users, searchQuery, teamFilter, isLocationAdmin, isUserAdmin, authData?.userDetails?.groupId]);
   
-  if (isUsersLoading || isTeamsLoading) return <div className="p-8">Loading...</div>;
+  // Update loading check
+  if (isUsersLoading || isTeamsLoading || isLocationsLoading) return <div className="p-8">Loading...</div>;
   if (isUsersError || !users) return <div className="p-8">Error fetching users data</div>;
+  // Add error check for locations? Optional, as it's less critical than users/teams.
 
   return (
     <div className="flex w-full flex-col p-8">
       <div className="flex flex-col space-y-4 mb-4">
         <div className="flex justify-between items-center">
           <Header name="Users" />
-          <ViewToggle currentView={viewType} onChange={setViewType} />
+          <div className="flex items-center gap-2"> {/* Added wrapper div */}
+            {isUserAdmin && (
+              <Button
+                variant="contained"
+                startIcon={<UserPlus size={18} />}
+                onClick={() => setIsModalOpen(true)} // Open modal on click
+              >
+                Create User
+              </Button>
+            )}
+            <ViewToggle currentView={viewType} onChange={setViewType} />
+          </div>
         </div>
         
         {/* Search and Filter Bar */}
@@ -384,6 +461,15 @@ const Users = () => {
           </div>
         )
       )}
+
+      {/* Create User Modal */}
+      <ModalCreateUser
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateUserSubmit}
+        teams={teams} // Pass teams
+        locations={locations} // Pass locations
+      />
     </div>
   );
 };

@@ -142,8 +142,14 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
         />
       </div>
       
-      {/* Removed maxHeight: '400px' to allow full stretching */}
-      {/* Set height to 540px (original 400px + 35%) */}
+      {/*
+        CONTROLLING TABLE HEIGHT:
+        The `height` property below directly controls the visible height of the scrollable "Available Locations" table.
+        Adjust this value (e.g., '540px', '600px', '70vh') to change how many locations are visible before scrolling is required.
+        Do NOT try to control the height by styling the parent Paper or Grid components in the reporting page, as those attempts were ineffective.
+        Focus modifications *here* in the TableContainer.
+        Current height: 540px (original 400px + 35% increase requested in TASK-NEXTJS-...)
+      */}
       <TableContainer sx={{ height: '540px', overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
