@@ -113,11 +113,10 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       elevation={2}
       className="rounded-lg overflow-hidden dark:bg-dark-secondary border border-gray-100 dark:border-stroke-dark"
       sx={{
-        flexGrow: 1,
+        flexGrow: 1, // Changed from height: '100%'
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        height: 'calc(100% + 200px)', // Force a significant height increase
       }}
     >
       <div className="p-4 bg-blue-50 dark:bg-dark-tertiary border-b border-blue-100 dark:border-blue-900/30">
@@ -144,8 +143,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
       </div>
       
       {/* Removed maxHeight: '400px' to allow full stretching */}
-      {/* Set explicit fixed height */}
-      <TableContainer sx={{ height: '100%', minHeight: '540px', overflow: 'auto' }}> {/* Use 100% height to fill the Paper container */}
+      {/* Set height to 540px (original 400px + 35%) */}
+      <TableContainer sx={{ height: '540px', overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
