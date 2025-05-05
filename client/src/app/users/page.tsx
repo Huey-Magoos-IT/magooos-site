@@ -5,10 +5,10 @@ import {
   useUpdateUserTeamMutation,
   useGetAuthUserQuery,
 } from "@/state/api";
-import { useGetLocationsQuery } from "@/state/lambdaApi"; // Import locations query
+import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useAppSelector } from "../redux";
-import { signUp } from 'aws-amplify/auth'; // Import Amplify signUp
+import { signUp } from 'aws-amplify/auth'; // Revert back to signUp
 import Header from "@/components/Header";
 import {
   DataGrid,
@@ -125,8 +125,9 @@ const Users = () => {
   }, [handleTeamChange]);
 
   // Function for handling user creation submission using Amplify signUp
+  // NOTE: This requires the user to verify their email before the DB record is created by the Lambda.
   const handleCreateUserSubmit = useCallback(async (formData: {
-    username: string; // Added username
+    username: string;
     email: string;
     tempPassword: string;
     teamId: number;
@@ -136,52 +137,39 @@ const Users = () => {
       console.log("Creating user via Amplify signUp:", formData.username, formData.email);
 
       // Step 1: Create the user in Cognito using signUp
-      // Note: We cannot directly set custom attributes like teamId/locationIds here.
-      // These need to be handled post-confirmation, ideally by the Lambda trigger
-      // or a separate update mechanism.
       const { isSignUpComplete, userId, nextStep } = await signUp({
-        username: formData.username, // Use the collected username
+        username: formData.username,
         password: formData.tempPassword,
         options: {
           userAttributes: {
             email: formData.email,
-            // We cannot reliably set custom attributes here that the Lambda can read
-            // during the PostConfirmation trigger. Cognito doesn't pass all attributes.
           },
-          // autoSignIn: false // Keep default behavior (usually true)
+          // autoSignIn: false // Let user sign in after confirmation
         }
       });
-
       console.log("Cognito signUp response:", { isSignUpComplete, userId, nextStep });
 
-      // Step 2: Store admin-selected attributes temporarily (e.g., localStorage)
-      // This is a workaround because we can't pass them reliably to the Lambda trigger.
-      // A more robust solution involves a separate backend endpoint/DB table for pending users.
+      // Step 2: Store admin-selected attributes temporarily (localStorage workaround)
+      // The Lambda trigger needs enhancement to read this and apply it post-confirmation.
       const pendingUserData = {
         teamId: formData.teamId,
         locationIds: formData.locationIds || []
       };
-      // Use username as key for localStorage as it must be unique, email might not be.
       localStorage.setItem(`pending-user-${formData.username}`, JSON.stringify(pendingUserData));
       console.log(`Stored pending data for ${formData.username} in localStorage.`);
 
       // Step 3: Show success message and close modal
-      alert(`User ${formData.username} created. They must verify their email (${formData.email}) and log in. Team/Location assignments will be applied by the system post-confirmation (using stored data).`);
+      alert(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created and they will appear in the list. Team/Location assignments depend on backend processing of stored data.`);
       setIsModalOpen(false);
 
-      // Step 4: Refetch users (User won't appear until confirmed & Lambda runs)
-      // refetchUsers(); // Optional: refetch if UI should update immediately, though user won't be fully ready
-
-      // No return value needed as onSubmit expects Promise<void>
-      // return { success: true, message: "User creation initiated successfully. Email verification required." };
+      // Step 4: No refetch needed immediately.
 
     } catch (error: any) {
       console.error("Error creating user via Amplify signUp:", error);
-      // Store pending data even if signUp fails? No, probably not.
-      localStorage.removeItem(`pending-user-${formData.username}`); // Clean up potentially stored data on error
+      localStorage.removeItem(`pending-user-${formData.username}`); // Clean up stored data on error
       throw new Error(error.message || "Failed to initiate user creation");
     }
-  }, []); // Removed refetchUsers dependency
+  }, []);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
