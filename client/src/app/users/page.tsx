@@ -143,30 +143,23 @@ const Users = () => {
         options: {
           userAttributes: {
             email: formData.email,
+            'custom:teamId': String(formData.teamId),
+            'custom:locationIds': JSON.stringify(formData.locationIds || [])
           },
           // autoSignIn: false // Let user sign in after confirmation
         }
       });
       console.log("Cognito signUp response:", { isSignUpComplete, userId, nextStep });
 
-      // Step 2: Store admin-selected attributes temporarily (localStorage workaround)
-      // The Lambda trigger needs enhancement to read this and apply it post-confirmation.
-      const pendingUserData = {
-        teamId: formData.teamId,
-        locationIds: formData.locationIds || []
-      };
-      localStorage.setItem(`pending-user-${formData.username}`, JSON.stringify(pendingUserData));
-      console.log(`Stored pending data for ${formData.username} in localStorage.`);
-
-      // Step 3: Show success message and close modal
-      alert(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created and they will appear in the list. Team/Location assignments depend on backend processing of stored data.`);
+      // Step 2: Show success message and close modal
+      alert(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created with the assigned team and locations, and they will appear in the list.`);
       setIsModalOpen(false);
 
-      // Step 4: No refetch needed immediately.
+      // Step 3: No refetch needed immediately.
 
     } catch (error: any) {
       console.error("Error creating user via Amplify signUp:", error);
-      localStorage.removeItem(`pending-user-${formData.username}`); // Clean up stored data on error
+      // localStorage.removeItem(`pending-user-${formData.username}`); // Clean up stored data on error - No longer needed
       throw new Error(error.message || "Failed to initiate user creation");
     }
   }, []);

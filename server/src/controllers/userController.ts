@@ -321,6 +321,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 
 export const postUser = async (req: Request, res: Response) => {
   try {
+    console.log("[postUser] Received request body:", JSON.stringify(req.body, null, 2));
     const {
       username,
       cognitoId,
@@ -328,6 +329,8 @@ export const postUser = async (req: Request, res: Response) => {
       teamId = 1, // Default teamId if not provided
       locationIds = [], // Default to empty array if not provided
     } = req.body;
+
+    console.log("[postUser] Extracted data:", { username, cognitoId, profilePictureUrl, teamId, locationIds });
 
     // Ensure locationIds are strings if Prisma expects String[] and receives numbers
     const processedLocationIds = Array.isArray(locationIds) ? locationIds.map(id => String(id)) : [];
@@ -341,6 +344,7 @@ export const postUser = async (req: Request, res: Response) => {
         locationIds: processedLocationIds, // Add locationIds
       },
     });
+    console.log("[postUser] Successfully created user:", JSON.stringify(newUser, null, 2));
     res.json({ message: "User Created Successfully", newUser });
   } catch (error: any) {
     res

@@ -2,6 +2,7 @@ import https from "node:https";
 
 export const handler = async (event) => {
     console.log("Lambda triggered with event:", JSON.stringify(event, null, 2));
+    console.log("User Attributes from event.request.userAttributes:", JSON.stringify(event.request.userAttributes, null, 2));
 
     // Extract username from Cognito event (username first, then fall back to email)
     const username = event.userName || 
@@ -45,6 +46,9 @@ export const handler = async (event) => {
         }
     }
 
+    console.log("Lambda: Parsed teamIdToUse:", teamIdToUse);
+    console.log("Lambda: Parsed locationIdsToUse:", JSON.stringify(locationIdsToUse, null, 2));
+
     const postData = JSON.stringify({
         username: username,
         cognitoId: cognitoId,
@@ -52,6 +56,8 @@ export const handler = async (event) => {
         teamId: teamIdToUse,
         locationIds: locationIdsToUse // Add locationIds
     });
+
+    console.log("Lambda: Sending postData:", postData);
 
     const options = {
         hostname: "puvzjk01yl.execute-api.us-east-2.amazonaws.com", // Ensure this is correct
