@@ -325,15 +325,20 @@ export const postUser = async (req: Request, res: Response) => {
       username,
       cognitoId,
       profilePictureUrl = "i1.jpg",
-      teamId = 1,
+      teamId = 1, // Default teamId if not provided
+      locationIds = [], // Default to empty array if not provided
     } = req.body;
-    
+
+    // Ensure locationIds are strings if Prisma expects String[] and receives numbers
+    const processedLocationIds = Array.isArray(locationIds) ? locationIds.map(id => String(id)) : [];
+
     const newUser = await prisma.user.create({
       data: {
         username,
         cognitoId,
         profilePictureUrl,
-        teamId,
+        teamId: Number(teamId), // Ensure teamId is a number
+        locationIds: processedLocationIds, // Add locationIds
       },
     });
     res.json({ message: "User Created Successfully", newUser });

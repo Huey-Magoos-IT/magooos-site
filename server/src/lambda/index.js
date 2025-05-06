@@ -16,17 +16,47 @@ export const handler = async (event) => {
         return event;
     }
 
+    // Attempt to read admin-selected attributes. These might not exist for non-admin created users.
+    // Assuming teamId is passed as a string, and locationIds as a JSON stringified array.
+    const adminSelectedTeamId = event.request.userAttributes['custom:teamId'];
+    const adminSelectedLocationIdsString = event.request.userAttributes['custom:locationIds'];
+
+    let teamIdToUse = 1; // Default teamId
+    if (adminSelectedTeamId) {
+        const parsedTeamId = parseInt(adminSelectedTeamId, 10);
+        if (!isNaN(parsedTeamId)) {
+            teamIdToUse = parsedTeamId;
+        } else {
+            console.warn(`Could not parse custom:teamId: ${adminSelectedTeamId}. Using default.`);
+        }
+    }
+
+    let locationIdsToUse = []; // Default to empty array
+    if (adminSelectedLocationIdsString) {
+        try {
+            const parsedLocationIds = JSON.parse(adminSelectedLocationIdsString);
+            if (Array.isArray(parsedLocationIds) && parsedLocationIds.every(id => typeof id === 'number')) {
+                locationIdsToUse = parsedLocationIds;
+            } else {
+                console.warn(`custom:locationIds is not an array of numbers: ${adminSelectedLocationIdsString}. Using default.`);
+            }
+        } catch (parseError) {
+            console.warn(`Error parsing custom:locationIds: ${adminSelectedLocationIdsString}`, parseError);
+        }
+    }
+
     const postData = JSON.stringify({
         username: username,
         cognitoId: cognitoId,
-        profilePictureUrl: "i1.jpg",
-        teamId: 1
+        profilePictureUrl: "i1.jpg", // Default profile picture
+        teamId: teamIdToUse,
+        locationIds: locationIdsToUse // Add locationIds
     });
 
     const options = {
-        hostname: "puvzjk01yl.execute-api.us-east-2.amazonaws.com",
+        hostname: "puvzjk01yl.execute-api.us-east-2.amazonaws.com", // Ensure this is correct
         port: 443,
-        path: "/prod/users",
+        path: "/prod/users", // Ensure this endpoint can handle the new attributes
         method: "POST",
         headers: {
             "Content-Type": "application/json",
