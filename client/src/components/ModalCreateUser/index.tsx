@@ -8,31 +8,32 @@ import {
   Button,
   CircularProgress,
   Alert,
-  FormControl, // Added
-  InputLabel,  // Added
-  Select,      // Added
-  MenuItem,    // Added
-  Checkbox,    // Added for multi-select locations
-  ListItemText,// Added for multi-select locations
-  OutlinedInput// Added for multi-select locations
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  // Checkbox,    // No longer needed for multi-select dropdown
+  // ListItemText,// No longer needed for multi-select dropdown
+  // OutlinedInput// No longer needed for multi-select dropdown
+  Chip // For displaying selected locations
 } from "@mui/material";
-import { dataGridSxStyles } from "@/lib/utils"; // Reusing styles for consistency
+// import { dataGridSxStyles } from "@/lib/utils"; // Not directly used now
 import { useAppSelector } from "@/app/redux";
-import { Team } from "@/state/api"; // Added Team import
-import { Location } from "@/state/lambdaApi"; // Added Location import
+import { Team } from "@/state/api";
+import LocationTable, { Location } from "@/components/LocationTable"; // Import LocationTable and its Location type
 
 interface ModalCreateUserProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (formData: {
-    username: string; // Added username
+    username: string;
     email: string;
     tempPassword: string;
     teamId: number;
     locationIds: string[];
   }) => Promise<void>;
   teams: Team[];
-  locations: Location[];
+  // locations: Location[]; // LocationTable fetches its own data
 }
 
 const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
@@ -40,10 +41,10 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
   onClose,
   onSubmit,
   teams,
-  locations,
+  // locations, // LocationTable fetches its own data
 }) => {
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
-  const [username, setUsername] = useState(""); // Added state for username
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<number | "">("");
@@ -56,8 +57,10 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 400,
-    bgcolor: isDarkMode ? "rgb(31 41 55)" : "background.paper", // dark:bg-gray-800 equivalent
+    width: 700, // Increased width for the table
+    maxHeight: '90vh', // Add maxHeight to prevent overflow
+    overflowY: 'auto', // Allow modal content to scroll if needed
+    bgcolor: isDarkMode ? "rgb(31 41 55)" : "background.paper",
     border: "2px solid #000",
     boxShadow: 24,
     p: 4,
@@ -102,6 +105,19 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
     }
   };
 
+  const handleLocationSelect = (locationToAdd: Location) => {
+    setSelectedLocationIds((prevIds) => {
+      if (!prevIds.includes(locationToAdd.id)) {
+        return [...prevIds, locationToAdd.id];
+      }
+      return prevIds;
+    });
+  };
+
+  const handleLocationDeselect = (locationIdToRemove: string) => {
+    setSelectedLocationIds((prevIds) => prevIds.filter(id => id !== locationIdToRemove));
+  };
+
   return (
     <Modal
       open={open}
@@ -123,7 +139,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             label="Username"
             name="username"
             autoComplete="username"
-            autoFocus // Focus username first
+            autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={isLoading}
@@ -142,7 +158,6 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             label="Email Address"
             name="email"
             autoComplete="email"
-            // autoFocus // Removed autofocus from email
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
@@ -152,7 +167,6 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             InputProps={{
               style: { color: isDarkMode ? 'white' : undefined },
             }}
-            // sx={dataGridSxStyles(isDarkMode).root} // Removed incorrect sx prop
           />
           <TextField
             margin="normal"
@@ -172,7 +186,6 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             InputProps={{
               style: { color: isDarkMode ? 'white' : undefined },
             }}
-            // sx={dataGridSxStyles(isDarkMode).root} // Removed incorrect sx prop
           />
 
           {/* Team Select */}
@@ -197,34 +210,45 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             </Select>
           </FormControl>
 
-          {/* Location Multi-Select */}
-          <FormControl fullWidth margin="normal" disabled={isLoading}>
-            <InputLabel id="location-select-label" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined }}>Locations (Optional)</InputLabel>
-            <Select
-              labelId="location-select-label"
-              id="location-select"
-              multiple
-              value={selectedLocationIds}
-              onChange={(e) => setSelectedLocationIds(e.target.value as string[])}
-              input={<OutlinedInput label="Locations (Optional)" />}
-              renderValue={(selected) => selected.map(id => locations.find(loc => loc.id === id)?.name || id).join(', ')}
-              sx={{ color: isDarkMode ? 'white' : undefined }}
-              MenuProps={{
-                PaperProps: {
-                  style: {
-                    maxHeight: 224, // Limit dropdown height
-                  },
-                },
-              }}
-            >
-              {locations.map((location) => (
-                <MenuItem key={location.id} value={location.id}>
-                  <Checkbox checked={selectedLocationIds.indexOf(location.id) > -1} />
-                  <ListItemText primary={location.name} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* Selected Locations Display */}
+          {selectedLocationIds.length > 0 && (
+            <Box sx={{ my: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}>
+                Selected Locations:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {selectedLocationIds.map((id) => (
+                  <Chip
+                    key={id}
+                    label={id} // Ideally, we'd show names here. Needs access to full location objects.
+                               // For now, showing IDs. This can be improved later.
+                    onDelete={() => handleLocationDeselect(id)}
+                    size="small"
+                    sx={{
+                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
+                        color: isDarkMode ? 'white' : 'inherit',
+                        '.MuiChip-deleteIcon': {
+                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.54)',
+                            '&:hover': {
+                                color: isDarkMode ? 'white' : 'rgba(0,0,0,0.87)',
+                            }
+                        }
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Location Table */}
+          <Box sx={{ mt: 2, mb: 2, maxHeight: 300, overflowY: 'auto', border: isDarkMode ? '1px solid rgba(255,255,255,0.23)' : '1px solid rgba(0,0,0,0.23)', borderRadius: '4px' }}>
+            <LocationTable
+              selectedLocationIds={selectedLocationIds}
+              onLocationSelect={handleLocationSelect}
+              // userLocationIds={[]} // Not applicable for create user mode
+            />
+          </Box>
+
 
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
             <Button onClick={handleClose} disabled={isLoading} color="secondary">

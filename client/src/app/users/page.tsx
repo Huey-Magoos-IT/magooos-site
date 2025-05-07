@@ -518,7 +518,7 @@ const Users = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateUserSubmit}
         teams={teams} // Pass teams
-        locations={locations} // Pass locations
+        // locations={locations} // This prop is no longer needed as LocationTable fetches its own data
       />
     </div>
   );
