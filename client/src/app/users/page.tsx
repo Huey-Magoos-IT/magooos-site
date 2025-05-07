@@ -195,7 +195,7 @@ const Users = () => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
       }, 3000);
     }
-  }, [refetchUsers, users]); // Removed disableUser from deps for now
+  }, [refetchUsers, setUpdateStatus]); // Removed users from deps as it's not directly used in the active logic
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [

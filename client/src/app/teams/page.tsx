@@ -20,7 +20,7 @@ const TeamsPage = () => {
   const { data: authData } = useGetAuthUserQuery({});
   
   // Extract teams and roles from the response
-  const allTeams = teamsData?.teams || [];
+  // const allTeams = teamsData?.teams || []; // Moved inside useMemo
   const availableRoles = teamsData?.availableRoles || [];
   
   // We no longer need a separate roles query as it's included in the teams response
@@ -51,6 +51,7 @@ const TeamsPage = () => {
   // If user is admin or username is "admin", show all teams
   // Otherwise, only show teams the user is a part of
   const teams = useMemo(() => {
+    const allTeams = teamsData?.teams || []; // Moved initialization here
     // Check if user is admin or has username "admin"
     if (isUserAdmin || authData?.userDetails?.username === 'admin') {
       return allTeams;
@@ -60,7 +61,7 @@ const TeamsPage = () => {
       // Only show the team the user is a part of
       return allTeams.filter(team => team.id === userTeamId);
     }
-  }, [allTeams, isUserAdmin, authData?.userDetails?.teamId, authData?.userDetails?.username]);
+  }, [teamsData?.teams, isUserAdmin, authData?.userDetails?.teamId, authData?.userDetails?.username]);
 
   const handleRoleToggle = (roleId: number) => {
     setSelectedRoleIds(prevSelected =>
