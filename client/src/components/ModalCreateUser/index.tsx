@@ -17,10 +17,13 @@ import {
   // OutlinedInput// No longer needed for multi-select dropdown
   Chip // For displaying selected locations
 } from "@mui/material";
+import { Grid } from "@mui/material"; // Import Grid for layout
+import { Undo2, Trash2, CheckCircle, X } from "lucide-react"; // Import icons
 // import { dataGridSxStyles } from "@/lib/utils"; // Not directly used now
 import { useAppSelector } from "@/app/redux";
 import { Team } from "@/state/api";
-import LocationTable, { Location } from "@/components/LocationTable"; // Import LocationTable and its Location type
+import { useGetLocationsQuery } from "@/state/lambdaApi"; // Import the query hook from the API slice
+import LocationTable, { Location } from "@/components/LocationTable"; // Import LocationTable and Location type
 
 interface ModalCreateUserProps {
   open: boolean;
@@ -51,13 +54,16 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previousLocationIds, setPreviousLocationIds] = useState<string[]>([]); // State for undo
+  const [lastAction, setLastAction] = useState<string>(""); // State for undo action type
 
   const modalStyle = {
     position: "absolute" as "absolute",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 700, // Increased width for the table
+    width: 900, // Increased width for the split layout
+    maxWidth: '95vw', // Ensure it doesn't exceed viewport width
     maxHeight: '90vh', // Add maxHeight to prevent overflow
     overflowY: 'auto', // Allow modal content to scroll if needed
     bgcolor: isDarkMode ? "rgb(31 41 55)" : "background.paper",
@@ -100,12 +106,18 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
       setTempPassword("");
       setSelectedTeamId("");
       setSelectedLocationIds([]);
+      setPreviousLocationIds([]); // Reset undo state
+      setLastAction(""); // Reset undo state
       setError(null);
       onClose();
     }
   };
 
   const handleLocationSelect = (locationToAdd: Location) => {
+    // Save current state for undo
+    setPreviousLocationIds([...selectedLocationIds]);
+    setLastAction("add");
+
     setSelectedLocationIds((prevIds) => {
       if (!prevIds.includes(locationToAdd.id)) {
         return [...prevIds, locationToAdd.id];
@@ -115,8 +127,45 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
   };
 
   const handleLocationDeselect = (locationIdToRemove: string) => {
+    // Save current state for undo
+    setPreviousLocationIds([...selectedLocationIds]);
+    setLastAction("remove");
+
     setSelectedLocationIds((prevIds) => prevIds.filter(id => id !== locationIdToRemove));
   };
+
+  // Handle adding all available locations (requires fetching all locations first)
+  // This will need to be implemented carefully, possibly by getting all locations from the table component or a separate query.
+  // For now, let's assume we have access to all locations (e.g., passed as a prop or fetched here).
+  // Since LocationTable fetches its own, we might need to adjust its props or fetch here.
+  // Let's fetch locations here for simplicity in this modal.
+  const { data: allLocationsData } = useGetLocationsQuery(); // Use the query hook directly
+
+  const handleAddAllLocations = () => {
+    if (allLocationsData?.locations) {
+      // Save current state for undo
+      setPreviousLocationIds([...selectedLocationIds]);
+      setLastAction("addAll");
+      setSelectedLocationIds(allLocationsData.locations.map((loc: Location) => loc.id)); // Explicitly type loc
+    }
+  };
+
+  const handleClearAll = () => {
+    // Save current state for undo
+    setPreviousLocationIds([...selectedLocationIds]);
+    setLastAction("clearAll");
+    setSelectedLocationIds([]);
+  };
+
+  const handleUndo = () => {
+    if (lastAction) {
+      // Restore previous state
+      setSelectedLocationIds(previousLocationIds);
+      // Reset last action (optional, depending on desired undo depth)
+      setLastAction("");
+    }
+  };
+
 
   return (
     <Modal
@@ -210,43 +259,91 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             </Select>
           </FormControl>
 
-          {/* Selected Locations Display */}
-          {selectedLocationIds.length > 0 && (
-            <Box sx={{ my: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1, color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}>
-                Selected Locations:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {selectedLocationIds.map((id) => (
-                  <Chip
-                    key={id}
-                    label={id} // Ideally, we'd show names here. Needs access to full location objects.
-                               // For now, showing IDs. This can be improved later.
-                    onDelete={() => handleLocationDeselect(id)}
-                    size="small"
-                    sx={{
-                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
-                        color: isDarkMode ? 'white' : 'inherit',
-                        '.MuiChip-deleteIcon': {
-                            color: isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.54)',
-                            '&:hover': {
-                                color: isDarkMode ? 'white' : 'rgba(0,0,0,0.87)',
-                            }
-                        }
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
+          {/* Location Selection Section */}
+          <Box sx={{ mt: 3, mb: 2 }}>
+            <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
+              Assign Locations
+            </Typography>
+            <Grid container spacing={3}>
+              {/* Left column - Selected Locations */}
+              <Grid item xs={12} md={6}>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    <div className="flex gap-2">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleUndo}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                        disabled={!lastAction}
+                      >
+                        <span className="mr-1">Undo</span>
+                        <Undo2 size={16} />
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleClearAll}
+                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        disabled={selectedLocationIds.length === 0}
+                      >
+                        <span className="mr-1">Clear All</span>
+                        <Trash2 size={16} />
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={handleAddAllLocations}
+                        className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                        disabled={!allLocationsData?.locations || allLocationsData.locations.length === 0} // Disable if no locations to add
+                      >
+                        <span className="mr-1">Add All</span>
+                        <CheckCircle size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                  <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                    {selectedLocationIds.length === 0 ? (
+                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                        Please select at least one location.
+                      </Typography>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedLocationIds.map((id) => {
+                          // Find the full location object to display name and ID
+                          const location = allLocationsData?.locations?.find((loc: Location) => loc.id === id); // Explicitly type loc
+                          return (
+                            <Chip
+                              key={id}
+                              label={location ? `${location.name} (${location.id})` : id} // Display name and ID if found
+                              onClick={() => handleLocationDeselect(id)}
+                              onDelete={() => handleLocationDeselect(id)}
+                              className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
+                              deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </Box>
+                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                    {selectedLocationIds.length > 0
+                      ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''} selected`
+                      : "No locations selected"}
+                  </Typography>
+                </div>
+              </Grid>
 
-          {/* Location Table */}
-          <Box sx={{ mt: 2, mb: 2, maxHeight: 300, overflowY: 'auto', border: isDarkMode ? '1px solid rgba(255,255,255,0.23)' : '1px solid rgba(0,0,0,0.23)', borderRadius: '4px' }}>
-            <LocationTable
-              selectedLocationIds={selectedLocationIds}
-              onLocationSelect={handleLocationSelect}
-              // userLocationIds={[]} // Not applicable for create user mode
-            />
+              {/* Right column - Location Table */}
+              <Grid item xs={12} md={6}>
+                <LocationTable
+                  selectedLocationIds={selectedLocationIds}
+                  onLocationSelect={handleLocationSelect}
+                  // userLocationIds={[]} // Not applicable for create user mode
+                />
+              </Grid>
+            </Grid>
           </Box>
 
 
@@ -257,7 +354,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             <Button
               type="submit"
               variant="contained"
-              disabled={isLoading || !username || !email || !tempPassword || selectedTeamId === ""} // Add username to disabled check
+              disabled={isLoading || !username || !email || !tempPassword || selectedTeamId === "" || selectedLocationIds.length === 0} // Require at least one location
               startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
             >
               {isLoading ? "Creating..." : "Create User"}
