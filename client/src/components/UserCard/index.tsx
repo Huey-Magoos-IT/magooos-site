@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, User, X } from "lucide-react";
+import { ChevronDown, ChevronUp, User, X, Trash2 } from "lucide-react";
 import RoleBadge from "../RoleBadge";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
@@ -40,6 +40,7 @@ interface UserCardProps {
   updateStatus?: {
     [key: number]: "success" | "error" | "pending" | null;
   };
+  onDisableUser?: (userId: number) => Promise<void>; // New prop
 }
 
 const UserCard: React.FC<UserCardProps> = ({
@@ -49,6 +50,7 @@ const UserCard: React.FC<UserCardProps> = ({
   isAdmin,
   onTeamChange,
   updateStatus = {},
+  onDisableUser, // Destructure new prop
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
@@ -56,6 +58,7 @@ const UserCard: React.FC<UserCardProps> = ({
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
   const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Get authenticated user data
   const { data: authData } = useGetAuthUserQuery({});
@@ -192,6 +195,29 @@ const UserCard: React.FC<UserCardProps> = ({
     setLocationUpdateStatus(null);
   };
 
+  const openDeleteConfirmModal = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const closeDeleteConfirmModal = () => {
+    setShowDeleteConfirm(false);
+  };
+
+  const handleConfirmDisableUser = async () => {
+    // TODO: Implement API call to disable user
+    // This will be handled in a subsequent step when connecting to the users page state.
+    console.log(`Disabling user ${user.userId} - ${user.username}`);
+    // Example:
+    // try {
+    //   // await disableUserMutation({ userId: user.userId }).unwrap();
+    //   // TODO: Add to updateStatus or similar for feedback
+    //   // TODO: Trigger refresh/refetch of user list in parent (on users page)
+    // } catch (err) {
+    //   console.error("Failed to disable user:", err);
+    // }
+    closeDeleteConfirmModal();
+  };
+
   return (
     <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
       <div className="p-4">
@@ -215,13 +241,24 @@ const UserCard: React.FC<UserCardProps> = ({
               <p className="text-sm text-gray-500 dark:text-gray-400">ID: {user.userId}</p>
             </div>
           </div>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label={expanded ? "Collapse" : "Expand"}
-          >
-            {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
+          <div className="flex items-center space-x-1">
+            {isAdmin && (
+              <button
+                onClick={openDeleteConfirmModal}
+                className="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800/50 text-red-500 dark:text-red-400"
+                aria-label="Disable User"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -324,6 +361,19 @@ const UserCard: React.FC<UserCardProps> = ({
                 )}
               </div>
             </div>
+            {isAdmin && (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Trash2 />}
+                  onClick={openDeleteConfirmModal}
+                  size="small"
+                >
+                  Disable User
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -450,6 +500,23 @@ const UserCard: React.FC<UserCardProps> = ({
             disabled={locationUpdateStatus === "pending"}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onClose={closeDeleteConfirmModal}>
+        <DialogTitle>Confirm Disable User</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to disable the user "{user.username}"?
+            This user will no longer be able to log in and will be moved to a disabled users list.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirmModal}>Cancel</Button>
+          <Button onClick={handleConfirmDisableUser} color="error" variant="contained">
+            Disable User
           </Button>
         </DialogActions>
       </Dialog>

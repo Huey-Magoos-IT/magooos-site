@@ -4,6 +4,7 @@ import {
   useGetTeamsQuery, // Already imported
   useUpdateUserTeamMutation,
   useGetAuthUserQuery,
+  // useDisableUserMutation, // Placeholder - Will be uncommented when backend adds it
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -48,7 +49,8 @@ const Users = () => {
   const { data: teamsData, isLoading: isTeamsLoading } = useGetTeamsQuery();
   const { data: locationsData, isLoading: isLocationsLoading } = useGetLocationsQuery(); // Fetch locations
   const { data: authData } = useGetAuthUserQuery({});
-  const [updateUserTeam, { isLoading: isUpdating }] = useUpdateUserTeamMutation();
+  const [updateUserTeam, { isLoading: isUpdatingTeam }] = useUpdateUserTeamMutation();
+  // const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation(); // Placeholder
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -163,6 +165,37 @@ const Users = () => {
       throw new Error(error.message || "Failed to initiate user creation");
     }
   }, []);
+
+  const handleDisableUser = useCallback(async (userId: number) => {
+    setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
+    try {
+      // Placeholder for actual API call
+      // await disableUser({ userId }).unwrap();
+      console.log(`Simulating disable user for ID: ${userId}`);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Manually update a user's status for testing UI - REMOVE THIS IN REAL IMPLEMENTATION
+      // This is a HACK to see the UI change without a real backend.
+      // The actual status update will come from refetchUsers() after backend is ready.
+      // const currentUsers = users || [];
+      // const userToUpdate = currentUsers.find(u => u.userId === userId);
+      // if (userToUpdate) { (userToUpdate as any).status = 'disabled'; }
+
+
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
+      refetchUsers(); // This will be key once backend updates status
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 2000);
+    } catch (error) {
+      console.error('Error disabling user:', error);
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 3000);
+    }
+  }, [refetchUsers, users]); // Removed disableUser from deps for now
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -294,29 +327,28 @@ const Users = () => {
   ], [teams, isUserAdmin, updateStatus, handleTeamChangeEvent]);
 
   // Filter users based on search query, team filter, and user role
-  const filteredUsers = useMemo(() => {
-    if (!users) return [];
-    
-    return users.filter(user => {
-      // Filter by search query (case insensitive)
+  const { activeUsers, disabledUsers } = useMemo(() => {
+    if (!users) return { activeUsers: [], disabledUsers: [] };
+
+    const allFilteredUsers = users.filter(user => {
       const matchesSearch = searchQuery === "" ||
         (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Filter by team
       const matchesTeam = teamFilter === "" ||
         (teamFilter === "none" && !user.teamId) ||
         (user.teamId === teamFilter);
       
-      // For location admins, only show users from their group
       if (isLocationAdmin && !isUserAdmin) {
-        // Get the current user's group ID
         const adminGroupId = authData?.userDetails?.groupId;
-        // Only show users that belong to the same group
         return matchesSearch && matchesTeam && user.groupId === adminGroupId;
       }
-      
       return matchesSearch && matchesTeam;
     });
+
+    return {
+      activeUsers: allFilteredUsers.filter(user => (user as any).status !== 'disabled'), // Temp type assertion
+      disabledUsers: allFilteredUsers.filter(user => (user as any).status === 'disabled') // Temp type assertion
+    };
   }, [users, searchQuery, teamFilter, isLocationAdmin, isUserAdmin, authData?.userDetails?.groupId]);
   
   // Update loading check
@@ -393,9 +425,11 @@ const Users = () => {
         )}
       </div>
       
-      {filteredUsers.length === 0 ? (
+      {/* Active Users Section */}
+      <h2 className="text-xl font-semibold mb-3 dark:text-white">Active Users</h2>
+      {activeUsers.length === 0 ? (
         <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="text-gray-500 dark:text-gray-400 mb-2">No users found matching your search criteria</div>
+          <div className="text-gray-500 dark:text-gray-400 mb-2">No active users found matching your search criteria.</div>
           <button
             onClick={() => {
               setSearchQuery("");
@@ -410,7 +444,7 @@ const Users = () => {
         viewType === "grid" ? (
           <div style={{ height: 650, width: "100%" }}>
             <DataGrid
-              rows={filteredUsers || []}
+              rows={activeUsers || []}
               columns={columns}
               getRowId={(row) => row.userId}
               pagination
@@ -423,7 +457,7 @@ const Users = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.map(user => (
+            {activeUsers.map(user => (
               <UserCard
                 key={user.userId}
                 user={{
@@ -432,17 +466,50 @@ const Users = () => {
                   profilePictureUrl: user.profilePictureUrl,
                   teamId: user.teamId,
                   locationIds: user.locationIds,
-                  groupId: user.groupId
+                  groupId: user.groupId,
+                  // status: user.status // Pass status if needed by UserCard for its own logic
                 }}
                 teams={teams}
                 roles={availableRoles}
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
+                // onDisableUser={handleDisableUser} // This prop will be added to UserCardProps later
                 updateStatus={updateStatus}
               />
             ))}
           </div>
         )
+      )}
+
+      {/* Disabled Users Section */}
+      {disabledUsers.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-3 dark:text-white">Disabled Users</h2>
+          {/* Placeholder for how disabled users might be displayed. For now, identical to active. */}
+          {/* Consider a different card or reduced info for disabled users later. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {disabledUsers.map(user => (
+              <UserCard
+                key={user.userId}
+                user={{
+                  userId: user.userId as number,
+                  username: user.username as string,
+                  profilePictureUrl: user.profilePictureUrl,
+                  teamId: user.teamId,
+                  locationIds: user.locationIds,
+                  groupId: user.groupId,
+                  // status: (user as any).status // Pass status if UserCard needs it
+                }}
+                teams={teams}
+                roles={availableRoles}
+                isAdmin={isUserAdmin}
+                onTeamChange={handleTeamChange}
+                // onDisableUser={handleDisableUser} // Or an "Enable User" handler
+                updateStatus={updateStatus}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Create User Modal */}
