@@ -378,17 +378,30 @@ const DataPage = () => {
                 <DatePicker
                   label="Start Date"
                   value={startDate}
-                  onChange={(newValue) => {
+                  onChange={(newValue: Date | null) => {
                       setStartDate(newValue);
                       setSelectedPreset(''); // Clear preset on manual change
+                      // If an end date is already selected and it's before the new start date, adjust end date.
+                      if (newValue && endDate && endDate < newValue) {
+                        setEndDate(newValue);
+                      }
                   }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
                   minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  // Allow selection up to yesterday
+                  // Max date is either yesterday or the end date (if set), whichever is earlier
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setHours(23, 59, 59, 999); // Set to end of day
+
+                    if (endDate) {
+                      // Ensure endDate is also at the end of its day for comparison
+                      const endOfDayEndDate = new Date(endDate);
+                      endOfDayEndDate.setHours(23, 59, 59, 999);
+                      return endOfDayEndDate < yesterday ? endOfDayEndDate : yesterday;
+                    }
+                    
                     return yesterday;
                   })()}
                   slotProps={{
@@ -403,17 +416,30 @@ const DataPage = () => {
                 <DatePicker
                   label="End Date"
                   value={endDate}
-                  onChange={(newValue) => {
+                  onChange={(newValue: Date | null) => {
                       setEndDate(newValue);
                       setSelectedPreset(''); // Clear preset on manual change
                   }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  // Calculate yesterday by creating a new date and setting it to yesterday
+                  // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
+                  minDate={(() => {
+                    const minAllowedDate = new Date(2025, 0, 13, 12, 0, 0);
+                    
+                    if (startDate) {
+                      // Ensure startDate is at the beginning of its day for comparison
+                      const startOfDayStartDate = new Date(startDate);
+                      startOfDayStartDate.setHours(0, 0, 0, 0);
+                      return startOfDayStartDate > minAllowedDate ? startOfDayStartDate : minAllowedDate;
+                    }
+                    
+                    return minAllowedDate;
+                  })()}
+                  // Max date is yesterday
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setHours(23, 59, 59, 999); // Set to end of day
                     return yesterday;
                   })()}
                   slotProps={{
