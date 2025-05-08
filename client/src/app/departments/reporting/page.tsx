@@ -31,7 +31,8 @@ import {
   processMultipleCSVs,
   filterData,
   fetchEmployeeData,
-  enhanceCSVWithEmployeeNames
+  enhanceCSVWithEmployeeNames,
+  CSVProcessingConfig // Import the new type
 } from "@/lib/csvProcessing";
 import {
   DEFAULT_DISCOUNT_IDS,
@@ -211,20 +212,45 @@ const ReportingPage = () => {
         effectiveLocationIds = userLocationIds;
       }
       
-      // Apply location and discount filters
-      if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
-        setProcessingProgress("Applying filters...");
-        // Pass the full locations array for mapping IDs to names
-        // Pass the daily usage count filter value
-        filteredData = filterData(
-          combinedData,
-          effectiveLocationIds,
-          discountIds,
-          selectedLocations,
-          dailyUsageCountFilter // Pass the new filter value
-        );
+      // Define a config for this page's CSV processing needs *before* filtering/enhancing
+      const reportingPageCsvConfig: CSVProcessingConfig = {
+        locationIdentifierField: {
+          sourceNames: ['Store', 'LocationID', 'Location ID'] // Potential location columns
+        },
+        discountIdentifierField: {
+          sourceNames: ['Order Type', 'DSCL ID', 'Discount ID', 'DiscountId'] // Potential discount columns
+        },
+        dailyUsageCountField: { // Define how to find the usage count
+          sourceNames: 'Daily Usage Count',
+          dataType: 'number' // Explicitly hint it should be a number
+        },
+        employeeIdentifierField: {
+          sourceNames: 'Loyalty ID'
+        },
+        guestNameField: {
+          sourceNames: 'Guest Name'
+        }
+        // Add other field accessors as needed for reporting
+      };
+
+      // Apply location, discount, and usage count filters
+      // Check if any filter criteria are active OR if the config specifies fields needed for filtering
+      const filtersActive = effectiveLocationIds.length > 0 || discountIds.length > 0 || dailyUsageCountFilter !== '';
+      if (filtersActive) {
+          setProcessingProgress("Applying filters...");
+          // Pass the config to filterData
+          filteredData = filterData(
+            combinedData,
+            effectiveLocationIds,
+            discountIds,
+            selectedLocations,
+            dailyUsageCountFilter, // Pass the usage count filter value
+            reportingPageCsvConfig // Pass the config object
+          );
       }
-      
+      // Note: If no filters are active, filterData might return early if config is also minimal,
+      // but it's safer to call it and let it handle the logic based on config.
+
       // Fetch employee data and enhance CSV with employee names
       setProcessingProgress("Fetching employee data...");
       const employeeData = await fetchEmployeeData();
@@ -247,7 +273,16 @@ const ReportingPage = () => {
       
       // Enhance CSV data with employee names
       setProcessingProgress("Enhancing data with employee names...");
-      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData);
+      const reportingPageCsvConfig: CSVProcessingConfig = {
+        employeeIdentifierField: {
+          sourceNames: 'Loyalty ID'
+        },
+        guestNameField: {
+          sourceNames: 'Guest Name'
+        }
+        // Define other accessors if needed for reporting-specific columns
+      };
+      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, reportingPageCsvConfig);
 
       setCSVData(filteredData);
       setProcessingProgress("");

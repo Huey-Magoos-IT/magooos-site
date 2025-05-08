@@ -32,7 +32,8 @@ import {
   filterData,
   enhanceCSVWithLocationNames,
   fetchEmployeeData,
-  enhanceCSVWithEmployeeNames
+  enhanceCSVWithEmployeeNames,
+  CSVProcessingConfig // Import the new type
 } from "@/lib/csvProcessing";
 import {
   DEFAULT_DISCOUNT_IDS,
@@ -215,16 +216,35 @@ const DataPage = () => {
         effectiveLocationIds = userLocationIds;
       }
       
+      // Define a config for this page's CSV processing needs *before* filtering/enhancing
+      const dataPageCsvConfig: CSVProcessingConfig = {
+        locationIdentifierField: {
+          sourceNames: ['Store', 'LocationID', 'Location ID'] // CSVs might use any of these for location
+        },
+        discountIdentifierField: { // Define how to find the discount ID for filtering
+          sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type'] // Added 'Order Type' as potential source
+        },
+        employeeIdentifierField: {
+          sourceNames: 'Loyalty ID'
+        },
+        guestNameField: {
+          sourceNames: 'Guest Name'
+        }
+        // Add other field accessors as needed for this page
+      };
+
       // Apply location and discount filters
       if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
-        // Pass the full locations array for mapping IDs to names
-        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations);
+        // Pass the config to filterData
+        // Pass empty string '' for dailyUsageCountFilter as it's not used here
+        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', dataPageCsvConfig);
       }
       
       // Enhance the CSV data with location names AFTER filtering
       setProcessingProgress("Enhancing data with location information...");
-      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations);
+      // Pass the config to enhanceCSVWithLocationNames
+      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, dataPageCsvConfig);
       
       // Fetch employee data and enhance CSV with employee names
       setProcessingProgress("Fetching employee data...");
@@ -248,7 +268,8 @@ const DataPage = () => {
       
       // Enhance CSV data with employee names
       setProcessingProgress("Enhancing data with employee names...");
-      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData);
+      // Pass the dataPageCsvConfig here
+      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, dataPageCsvConfig);
 
       // Additional debugging
       console.log(`DATA PAGE - Processing complete: ${filteredData.length} rows after filtering`);

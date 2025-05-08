@@ -140,8 +140,106 @@ export const fetchFiles = async (bucketUrl: string, folderPath: string = ""): Pr
   }
 };
 
-export interface ParsedCSVData {
-  data: any[];
+// Defines how to access a specific field within the CSV data,
+// potentially looking for it under multiple header names.
+export interface FieldAccessor {
+  sourceNames: string | string[]; // Original CSV header(s) for this field. If array, uses the first one found.
+  dataType?: 'string' | 'number' | 'date' | 'boolean'; // Optional: For explicit type coercion if PapaParse's dynamicTyping is insufficient for an operation.
+  defaultValue?: any; // Optional: Default value if the field is not found or is empty after trimming.
+}
+
+/**
+ * Configuration object to define how CSV data should be processed for specific needs.
+ * This allows functions like filtering and data enhancement to dynamically find
+ * the columns they need based on potential header names provided in the CSV.
+ * 
+ * Fields not explicitly defined in the config (e.g., via `additionalFields` or
+ * specific operational fields like `locationIdentifierField`) are passed through
+ * from the original CSV with their original header names.
+ */
+// Configuration for how to interpret a CSV for specific operational needs.
+// Functions like filterData or enhanceCSVWithX will use this config
+// to know which columns from the CSV correspond to the data they need.
+// All other columns from the CSV are passed through as-is with their original header names.
+export interface CSVProcessingConfig {
+  // --- Fields for Core Operations (e.g., Filtering, Grouping) ---
+  locationIdentifierField?: FieldAccessor; // How to find the location identifier (e.g., 'Store', 'Location ID')
+  discountIdentifierField?: FieldAccessor; // How to find the discount identifier (e.g., 'DSCL ID', 'Order Type')
+  employeeIdentifierField?: FieldAccessor; // How to find the employee/user identifier (e.g., 'Loyalty ID', 'Cashier Qu Backend ID')
+  transactionDateField?: FieldAccessor;    // How to find the primary date for the record
+  dailyUsageCountField?: FieldAccessor;  // How to find the daily usage count
+
+  // --- Fields for Data Enhancement ---
+  guestNameField?: FieldAccessor; // Which field represents the guest/customer name, to be potentially enhanced
+
+  // --- General Purpose Fields ---
+  // For columns that might be used for display or generic calculations,
+  // allowing type hints or aliasing if needed, without being tied to a specific operation.
+  // The key would be the desired output name if different, or original name if just for type hint.
+  // Example: { 'checkTotalAmount': { sourceNames: 'CHK Total', dataType: 'number' } }
+  // If not specified here, columns are used with their original names and PapaParse's dynamic typing.
+  additionalFields?: {
+    [outputFieldName: string]: FieldAccessor;
+  };
+}
+/**
+ * Helper function to retrieve and optionally type-coerce a field value from a row
+ * based on a FieldAccessor.
+ * @param row The data row (object with string keys).
+ * @param accessor The FieldAccessor defining how to get the value.
+ * @returns The retrieved and optionally coerced value, or undefined if not found.
+ */
+export const getFieldValue = (row: Record<string, any>, accessor?: FieldAccessor): any => {
+  if (!accessor) {
+    return undefined;
+  }
+
+  let rawValue: any;
+  if (Array.isArray(accessor.sourceNames)) {
+    for (const name of accessor.sourceNames) {
+      if (row[name] !== undefined) {
+        rawValue = row[name];
+        break;
+      }
+    }
+  } else {
+    rawValue = row[accessor.sourceNames];
+  }
+
+  if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '') {
+    return accessor.defaultValue !== undefined ? accessor.defaultValue : undefined;
+  }
+
+  if (accessor.dataType) {
+    switch (accessor.dataType) {
+      case 'string':
+        return String(rawValue);
+      case 'number':
+        const num = Number(rawValue);
+        return isNaN(num) ? (accessor.defaultValue !== undefined ? accessor.defaultValue : undefined) : num;
+      case 'boolean':
+        if (typeof rawValue === 'string') {
+          const lowerVal = rawValue.toLowerCase();
+          if (lowerVal === 'true' || lowerVal === 'yes' || lowerVal === '1') return true;
+          if (lowerVal === 'false' || lowerVal === 'no' || lowerVal === '0') return false;
+        }
+        return Boolean(rawValue);
+      case 'date':
+        const date = new Date(rawValue);
+        // Check if date is valid
+        return isNaN(date.getTime()) ? (accessor.defaultValue !== undefined ? accessor.defaultValue : undefined) : date;
+      default:
+        return rawValue; // Should not happen with defined types
+    }
+  }
+  return rawValue; // Return raw value if no explicit dataType or if dynamicTyping from PapaParse is sufficient
+};
+
+// Use Papa.ParseResult directly or ensure ParsedCSVData matches its structure.
+// For simplicity, let's align ParsedCSVData with Papa.ParseResult's relevant fields.
+// Note: The actual type for data in ParseResult is T[], so any[] is a common usage.
+export interface ParsedCSVData<T = any> {
+  data: T[];
   errors: Papa.ParseError[];
   meta: Papa.ParseMeta;
 }
@@ -170,20 +268,24 @@ export const fetchCSV = async (url: string): Promise<string> => {
  * @param hasHeader Whether the CSV has a header row
  * @returns Promise resolving to the parsed data
  */
-export const parseCSV = (csvText: string, hasHeader = true): Promise<ParsedCSVData> => {
+export const parseCSV = <T = any>(csvText: string, hasHeader = true): Promise<ParsedCSVData<T>> => {
   return new Promise((resolve, reject) => {
-    Papa.parse(csvText, {
+    Papa.parse<T>(csvText, { // Specify the type for Papa.parse
       header: hasHeader,
       dynamicTyping: true, // Convert numerical values automatically
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: (results: Papa.ParseResult<T>) => { // Use Papa.ParseResult<T>
         resolve({
           data: results.data,
           errors: results.errors,
           meta: results.meta
         });
       },
-      error: (error: Error) => {
+      error: (error: Error, file?: File | any) => { // Adjusted to match PapaParse's expected signature
+        // The 'error' object here is a standard Error.
+        // If Papa.ParseError has more specific fields, you might need to cast or check its type.
+        // For now, we reject with the standard Error object.
+        console.error("PapaParse Error:", error, "File:", file);
         reject(error);
       }
     });
@@ -191,13 +293,87 @@ export const parseCSV = (csvText: string, hasHeader = true): Promise<ParsedCSVDa
 };
 
 /**
+/**
+ * Parses CSV text and applies transformations based on a CSVProcessingConfig.
+ * It prioritizes explicitly defined mappings in `config.additionalFields` for renaming
+ * and type coercion. All other columns from the original CSV are passed through
+ * with their original header names.
+ *
+ * @param csvText The raw CSV string.
+ * @param config The CSVProcessingConfig to guide parsing and transformation.
+ * @param hasHeader Indicates if the CSV has a header row.
+ * @returns A Promise resolving to an array of processed row objects.
+ */
+export const processCSVWithMapping = async <T extends Record<string, any> = Record<string, any>>(
+  csvText: string,
+  config: CSVProcessingConfig,
+  hasHeader = true
+): Promise<T[]> => {
+  const parseResult = await parseCSV<Record<string, any>>(csvText, hasHeader);
+
+  if (parseResult.errors.length > 0) {
+    console.error('Errors during CSV parsing:', parseResult.errors);
+    // Optionally, you might want to throw an error or return an empty array
+    // depending on how strictly you want to handle parsing errors.
+    // For now, returning empty array if there are errors.
+    // Consider if partial data is acceptable if errors are non-fatal.
+    // Removed check for e.type === "Fatal" as "Fatal" is not a standard Papa.ParseError type.
+    // The existing check for parseResult.data.length === 0 && parseResult.errors.length > 0
+    // should suffice for handling cases where parsing yields no usable data due to errors.
+    // If errors are not fatal, we might still proceed with data that was parsed,
+    // or decide to throw if any error is present. For now, log and continue if not empty.
+    if (parseResult.data.length === 0 && parseResult.errors.length > 0) {
+        // If there's no data and there are errors, it's likely a more serious issue.
+        console.error("CSV parsing resulted in no data and errors. Aborting processing for this file.");
+        // Depending on desired strictness, could throw new Error('CSV parsing failed with no data.');
+        return []; // Return empty array if parsing yields no data due to errors
+    }
+  }
+
+  const processedData: T[] = [];
+
+  for (const originalRow of parseResult.data) {
+    const newRow: Record<string, any> = {};
+
+    // First, copy all original fields to the new row.
+    // This ensures any fields not explicitly mapped are preserved.
+    for (const key in originalRow) {
+      if (Object.prototype.hasOwnProperty.call(originalRow, key)) {
+        newRow[key] = originalRow[key];
+      }
+    }
+
+    // Then, process and potentially overwrite/add fields based on `config.additionalFields`.
+    // This allows renaming and explicit type coercion for specific output fields.
+    if (config.additionalFields) {
+      for (const outputFieldName in config.additionalFields) {
+        if (Object.prototype.hasOwnProperty.call(config.additionalFields, outputFieldName)) {
+          const accessor = config.additionalFields[outputFieldName];
+          const value = getFieldValue(originalRow, accessor);
+          if (value !== undefined) {
+            newRow[outputFieldName] = value;
+          } else if (accessor.defaultValue !== undefined) {
+            newRow[outputFieldName] = accessor.defaultValue;
+          }
+          // If value is undefined and no defaultValue, the field might not be set on newRow,
+          // or it might be explicitly set to undefined if that's desired.
+          // Current getFieldValue returns undefined if not found and no default.
+        }
+      }
+    }
+    processedData.push(newRow as T);
+  }
+  return processedData;
+};
+
+/**
  * Fetches and parses a CSV file from a URL
  * @param url URL of the CSV file to fetch and parse
  * @returns Promise resolving to the parsed data
  */
-export const fetchAndParseCSV = async (url: string): Promise<ParsedCSVData> => {
+export const fetchAndParseCSV = async <T = any>(url: string): Promise<ParsedCSVData<T>> => {
   const csvText = await fetchCSV(url);
-  return parseCSV(csvText);
+  return parseCSV<T>(csvText);
 };
 
 /**
@@ -353,13 +529,18 @@ export const filterFilesByDateAndType = (
  * Maps numeric location IDs to actual location names in the data
  * @param data Array of data objects
  * @param locations Array of location objects with id and name properties
+ * @param config The CSVProcessingConfig to identify the location identifier field.
  * @returns Enhanced data with location names
  */
 export const enhanceCSVWithLocationNames = (
   data: any[],
-  locations: { id: string; name: string }[] = []
+  locations: { id: string; name: string }[] = [],
+  config: CSVProcessingConfig // Added config parameter
 ): any[] => {
-  if (!data.length || !locations.length) return data;
+  if (!data.length || !locations.length || !config.locationIdentifierField) {
+    // If no data, locations, or locationIdentifierField in config, return original data
+    return data;
+  }
   
   // Create a mapping of location IDs to location names
   const locationMap: Record<string, string> = {};
@@ -370,13 +551,20 @@ export const enhanceCSVWithLocationNames = (
   return data.map(row => {
     const newRow = { ...row };
     
-    // Check if row has numeric location ID but no location name
-    const storeId = row['LocationID'] || row['Location ID'] || row['Store'];
-    if (storeId && !isNaN(Number(storeId)) && locationMap[String(storeId)]) {
-      // Add a new column with the proper location name
-      newRow['Location Name'] = locationMap[String(storeId)];
-      // Keep the original ID for reference
-      newRow['LocationID'] = storeId;
+    // Get the location identifier using the config and getFieldValue
+    const storeIdValue = getFieldValue(row, config.locationIdentifierField);
+    
+    if (storeIdValue !== undefined) {
+      const storeIdStr = String(storeIdValue);
+      // Check if row has a valid numeric-like location ID and it exists in our locationMap
+      if (!isNaN(Number(storeIdStr)) && locationMap[storeIdStr]) {
+        newRow['Location Name'] = locationMap[storeIdStr]; // Standardized output column name
+        // Ensure the original identifier (or the one found by accessor) is preserved if needed,
+        // or decide if the newRow should only contain 'Location Name'.
+        // For now, let's assume the original column used by accessor is already in newRow.
+        // If `config.locationIdentifierField.sourceNames` was an array, `getFieldValue` used the first one found.
+        // If a specific output name for the ID itself is desired, it should be in `additionalFields`.
+      }
     }
     
     return newRow;
@@ -390,6 +578,7 @@ export const enhanceCSVWithLocationNames = (
  * @param discountIds Array of discount IDs to filter by
  * @param locations Array of location objects with id and name properties for mapping IDs to names
  * @param dailyUsageCountFilter String representing the minimum daily usage count
+ * @param config The CSVProcessingConfig to identify relevant fields.
  * @returns Filtered data
  */
 export const filterData = (
@@ -397,13 +586,15 @@ export const filterData = (
   locationIds: string[] = [],
   discountIds: number[] = [],
   locations: { id: string; name: string }[] = [],
-  dailyUsageCountFilter: string = '' // Added parameter for usage count filter
+  dailyUsageCountFilter: string = '',
+  config: CSVProcessingConfig // Added config parameter
 ): any[] => {
   // Debug info
   console.log("FILTER DATA - Starting with rows:", data.length);
   console.log("FILTER DATA - Selected location IDs:", locationIds);
   console.log("FILTER DATA - Selected discount IDs:", discountIds);
-  console.log("FILTER DATA - Daily Usage Count Filter:", dailyUsageCountFilter); // Log the new filter value
+  console.log("FILTER DATA - Daily Usage Count Filter:", dailyUsageCountFilter);
+  console.log("FILTER DATA - Config:", JSON.stringify(config));
 
   // Parse the usage count filter value once
   const minUsageCount = dailyUsageCountFilter ? parseInt(dailyUsageCountFilter, 10) : null;
@@ -412,10 +603,14 @@ export const filterData = (
   console.log("FILTER DATA - Parsed Min Usage Count:", minUsageCount);
   console.log("FILTER DATA - Usage Filter Active:", isUsageFilterActive);
 
-  // If no filters applied (including the new one), return all data
-  if (locationIds.length === 0 && discountIds.length === 0 && !isUsageFilterActive) {
-    console.log("FILTER DATA - No filters applied, returning all data");
-    return data;
+  // If no filters applied AND no relevant config fields are set, return all data
+  const noOperationalFilters = locationIds.length === 0 && discountIds.length === 0 && !isUsageFilterActive;
+  // Check if config exists and if the relevant fields for filtering are defined
+  const noConfigForFiltering = !config || (!config.locationIdentifierField && !config.discountIdentifierField && !config.dailyUsageCountField);
+
+  if (noOperationalFilters && noConfigForFiltering) {
+     console.log("FILTER DATA - No operational filters and no relevant config fields for filtering, returning all data");
+     return data;
   }
 
   // Create a mapping of location IDs to location names
@@ -432,21 +627,21 @@ export const filterData = (
   console.log("FILTER DATA - Location names for filtering:", locationNames);
   
   // Sample the first row to see what columns are available
-  if (data.length > 0) {
+  if (data.length > 0 && data[0]) {
     console.log("FILTER DATA - Sample row columns:", Object.keys(data[0]));
-    console.log("FILTER DATA - Sample Store value:", data[0]['Store']);
-    console.log("FILTER DATA - Sample Daily Usage Count value:", data[0]['Daily Usage Count']); // Log sample usage count
+    if(config?.locationIdentifierField) console.log("FILTER DATA - Sample Store value (via config):", getFieldValue(data[0], config.locationIdentifierField));
+    if(config?.dailyUsageCountField) console.log("FILTER DATA - Sample Daily Usage Count value (via config):", getFieldValue(data[0], config.dailyUsageCountField));
+    if(config?.discountIdentifierField) console.log("FILTER DATA - Sample Discount ID value (via config):", getFieldValue(data[0], config.discountIdentifierField));
   }
   
   const filteredData = data.filter(row => {
     
     // Apply location filter if needed
-    if (locationIds.length > 0) {
-      // Get the store value from the CSV row (might be a name or an ID)
-      const storeValue = row['Store'] || row['Location'] || row['LocationID'] || row['Location ID'] || '';
-      const storeValueStr = String(storeValue).trim();
+    if (locationIds.length > 0 && config?.locationIdentifierField) {
+      const storeValueRaw = getFieldValue(row, config.locationIdentifierField);
+      const storeValueStr = storeValueRaw !== undefined ? String(storeValueRaw).trim() : '';
       
-      if (!storeValueStr) return false;
+      if (!storeValueStr) return false; // If location identifier is not found in the row, exclude it
       
       // Check for match using multiple strategies
       let locationMatch = false;
@@ -492,102 +687,62 @@ export const filterData = (
       if (!locationMatch) return false;
     }
     
-    /**
-     * Apply discount ID filtering if needed
-     *
-     * IMPORTANT: We handle default discount IDs as a special case:
-     * When a user has the default discount IDs selected (which is the initial state),
-     * we assume they want to see ALL records regardless of discount.
-     *
-     * This approach was chosen because:
-     * 1. It's more intuitive for users - selecting defaults = show everything
-     * 2. It handles the mismatch between discount IDs and percentage strings in the data
-     * 3. It preserves backward compatibility with existing reports
-     */
-    if (discountIds.length > 0) {
-      // Detect if we're using the default set of discount IDs
+    // Apply discount ID filtering if needed
+    if (discountIds.length > 0 && config?.discountIdentifierField) {
       const usingDefaultDiscounts = discountIds.length === 7 &&
-        discountIds.includes(77406) &&
+        discountIds.includes(77406) && // Keep the default check logic
         discountIds.includes(135733) &&
         discountIds.includes(135736) &&
         discountIds.includes(135737) &&
         discountIds.includes(135738) &&
         discountIds.includes(135739) &&
         discountIds.includes(135910);
-      
-      // console.log("FILTER DATA - Using default discounts:", usingDefaultDiscounts); // Optional logging
-      
-      // Only apply discount filtering if the user has changed the defaults
+
       if (!usingDefaultDiscounts) {
-        // Look for exact discount ID matches in relevant columns
-        // Safely convert discount IDs to numbers for comparison
-        const discountIdMatches = (() => {
-          try {
-            let discountValueFromRow: number | null = null;
-            let usedColumnName = '';
-
-            // Try 'DSCL ID' first (for Data Page)
-            const rawCsvDisclId = row['DSCL ID'];
-            if (rawCsvDisclId !== undefined && rawCsvDisclId !== null && String(rawCsvDisclId).trim() !== '') {
-              discountValueFromRow = Number(rawCsvDisclId);
-              usedColumnName = 'DSCL ID';
-            } else {
-              // If 'DSCL ID' is not found or empty, try 'Order Type' (for Reporting Page)
-              const rawOrderType = row['Order Type'];
-              if (rawOrderType !== undefined && rawOrderType !== null && String(rawOrderType).trim() !== '') {
-                discountValueFromRow = Number(rawOrderType);
-                usedColumnName = 'Order Type';
-              }
-            }
-            
-            // if (row === data[0]) { // Debug for first row
-            //   console.log(`FILTER DATA DEBUG (First Row) - Discount Value: ${discountValueFromRow}, Used Column: ${usedColumnName}, Raw DSCL ID: ${rawCsvDisclId}, Raw Order Type: ${row['Order Type']}`);
-            // }
-
-            // Original logic for other potential discount ID columns
-            const discountId1 = row['Discount ID'] ? Number(row['Discount ID']) : null;
-            const discountId2 = row['DiscountId'] ? Number(row['DiscountId']) : null;
-            
-            const matches = (
-              (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
-              (discountId2 !== null && !isNaN(discountId2) && discountIds.includes(discountId2)) ||
-              (discountValueFromRow !== null && !isNaN(discountValueFromRow) && discountIds.includes(discountValueFromRow))
-            );
-            
-            return matches;
-          } catch (e) {
-            console.warn('Error comparing discount IDs:', e);
-            return false;
-          }
-        })();
+        // Use getFieldValue with the configured discount identifier
+        const discountValueRaw = getFieldValue(row, config.discountIdentifierField);
         
-        if (!discountIdMatches) {
+        if (discountValueRaw !== undefined && discountValueRaw !== null && String(discountValueRaw).trim() !== '') {
+          const discountValueFromRow = Number(discountValueRaw);
+          // Check if the retrieved value is a number and is included in the selected discount IDs
+          if (isNaN(discountValueFromRow) || !discountIds.includes(discountValueFromRow)) {
+            return false; // Not a number or not in the selected discount IDs
+          }
+          // If it's a valid number and included, this part of the filter passes
+        } else {
+          // If the discount identifier field specified in the config is empty or not found in the row
           return false;
         }
       }
+      // If using default discounts, this filter is skipped (all rows pass)
     }
     
     // Apply Daily Usage Count filter if active
-    if (isUsageFilterActive && minUsageCount !== null) {
-      // Assume the column name is exactly "Daily Usage Count"
-      const usageCountValue = row['Daily Usage Count'];
+    if (isUsageFilterActive && minUsageCount !== null && config?.dailyUsageCountField) {
+      // Use getFieldValue with the configured daily usage count field
+      const usageCountValueRaw = getFieldValue(row, config.dailyUsageCountField);
       
       // Check if the value exists and is a number
-      if (usageCountValue === undefined || usageCountValue === null || isNaN(Number(usageCountValue))) {
-        // If the column is missing or not a number, exclude the row when filtering is active
-        // console.log(`FILTER DATA - Row excluded due to missing/invalid 'Daily Usage Count':`, row); // Optional logging
-        return false; 
+      if (usageCountValueRaw === undefined || usageCountValueRaw === null) {
+        // If the configured usage count field is missing, exclude the row when filtering is active
+        return false;
       }
       
-      const rowUsageCount = Number(usageCountValue);
+      const rowUsageCount = Number(usageCountValueRaw);
       
+      // Check if it's a valid number before applying the filter condition
+      if (isNaN(rowUsageCount)) {
+         // If the value is not a number, exclude the row when filtering is active
+         return false;
+      }
+
       // Apply the filter condition
       if (rowUsageCount < minUsageCount) {
-        // console.log(`FILTER DATA - Row excluded by usage count: ${rowUsageCount} < ${minUsageCount}`); // Optional: Log excluded rows
         return false;
       }
     }
     
+    // If the row passed all active filters, include it
     return true;
   });
   
@@ -600,18 +755,28 @@ export const filterData = (
  * Maps loyalty IDs to actual employee names in the data
  * @param data Array of data objects
  * @param employeeData Mapping of loyalty IDs to employee names
+ * @param config The CSVProcessingConfig to identify employee and guest name fields.
  * @returns Enhanced data with employee names
  */
 export const enhanceCSVWithEmployeeNames = (
   data: any[],
-  employeeData: Record<string, string> = {}
+  employeeData: Record<string, string> = {},
+  config: CSVProcessingConfig // Added config parameter
 ): any[] => {
-  if (!data.length || Object.keys(employeeData).length === 0) {
-    console.log("DEBUG - No data or employee data to enhance");
+  if (!data.length || Object.keys(employeeData).length === 0 || !config.employeeIdentifierField) {
+    console.log("DEBUG - No data, employee data, or employeeIdentifierField in config to enhance");
     return data;
   }
   
-  console.log(`Enhancing CSV data with employee names (${data.length} rows, ${Object.keys(employeeData).length} employee records)`);
+  const employeeIdAccessor = config.employeeIdentifierField;
+  // Guest name field is optional for enhancement target
+  const guestNameAccessor = config.guestNameField;
+  // Determine the output column name for the guest name
+  const guestNameOutputColumn = guestNameAccessor && typeof guestNameAccessor.sourceNames === 'string'
+                                ? guestNameAccessor.sourceNames
+                                : 'Guest Name'; // Default output column if not specified or complex
+
+  console.log(`Enhancing CSV data with employee names (${data.length} rows, ${Object.keys(employeeData).length} employee records) using employee ID from ${JSON.stringify(employeeIdAccessor.sourceNames)} and guest name from ${guestNameOutputColumn}`);
   
   // Track statistics for debugging
   let totalRows = 0;
@@ -623,37 +788,41 @@ export const enhanceCSVWithEmployeeNames = (
     totalRows++;
     const newRow = { ...row };
     
-    // Check for loyalty ID in various possible column names - exactly like Python implementation
-    const loyaltyId = row['Loyalty ID'] || '';
-    
+    const loyaltyIdValue = getFieldValue(row, employeeIdAccessor);
+    const loyaltyId = loyaltyIdValue !== undefined ? String(loyaltyIdValue) : '';
+
     if (!loyaltyId) {
       missingLoyaltyIdRows++;
-      // console.log(`DEBUG - Row ${totalRows}: Missing loyalty ID`); // Optional logging
       return newRow;
     }
     
-    // Get employee name using the exact same function as Python
     const employeeName = getEmployeeName(loyaltyId, employeeData);
     
-    // Track if this was an unknown employee
     if (employeeName.includes('Unknown')) {
       unknownRows++;
     } else {
       enhancedRows++;
     }
     
-    // Replace "Unknown" in Guest Name column with actual employee name
-    if (row['Guest Name'] && row['Guest Name'].includes('Unknown')) {
-      newRow['Guest Name'] = employeeName;
+    // Get current guest name using accessor if available
+    const currentGuestName = guestNameAccessor ? getFieldValue(row, guestNameAccessor) : newRow[guestNameOutputColumn];
+
+    // Replace "Unknown" in the target Guest Name column or add it if it doesn't exist.
+    if (currentGuestName && typeof currentGuestName === 'string' && currentGuestName.includes('Unknown')) {
+      newRow[guestNameOutputColumn] = employeeName;
+    } else if (currentGuestName === undefined || currentGuestName === null || String(currentGuestName).trim() === '') {
+      // If the guest name field is empty or not present, add the employee name.
+      newRow[guestNameOutputColumn] = employeeName;
     }
-    
-    // If there's no Guest Name column, add it
-    if (!row['Guest Name']) {
-      newRow['Guest Name'] = employeeName;
-    }
-    
-    // Keep the original loyalty ID for reference
-    newRow['Loyalty ID'] = loyaltyId;
+    // If guestNameAccessor was defined, the original source column(s) are preserved from the initial row copy.
+    // We are specifically targeting the `guestNameOutputColumn` for the enhanced name.
+
+    // Preserve the original loyalty ID field if its sourceName was different from employeeIdAccessor.sourceNames
+    // This is generally handled by the initial spread `...row`.
+    // If `employeeIdAccessor.sourceNames` was an array, `getFieldValue` used the first one found.
+    // We can ensure the *identified* loyalty ID is present under a consistent key if desired,
+    // but for now, the original column is preserved.
+    // Example: newRow[typeof employeeIdAccessor.sourceNames === 'string' ? employeeIdAccessor.sourceNames : employeeIdAccessor.sourceNames[0]] = loyaltyId;
     
     return newRow;
   });
