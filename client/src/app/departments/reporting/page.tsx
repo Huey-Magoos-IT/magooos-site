@@ -273,15 +273,7 @@ const ReportingPage = () => {
       
       // Enhance CSV data with employee names
       setProcessingProgress("Enhancing data with employee names...");
-      const reportingPageCsvConfig: CSVProcessingConfig = {
-        employeeIdentifierField: {
-          sourceNames: 'Loyalty ID'
-        },
-        guestNameField: {
-          sourceNames: 'Guest Name'
-        }
-        // Define other accessors if needed for reporting-specific columns
-      };
+      // Use the same config object defined earlier
       filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, reportingPageCsvConfig);
 
       setCSVData(filteredData);
