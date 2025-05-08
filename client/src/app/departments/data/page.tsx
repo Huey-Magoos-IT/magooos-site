@@ -179,8 +179,7 @@ const DataPage = () => {
         allS3Files,
         startDate,
         endDate,
-        dataType,
-        "data" // Optional department prefix
+        dataType
       );
 
       if (matchingFiles.length === 0) {
