@@ -222,7 +222,8 @@ const ReportingPage = () => {
         },
         dailyUsageCountField: { // Define how to find the usage count
           sourceNames: 'Daily Usage Count',
-          dataType: 'number' // Explicitly hint it should be a number
+          dataType: 'number', // Explicitly hint it should be a number
+          defaultValue: 0 // Treat missing/empty as 0 for filtering
         },
         employeeIdentifierField: {
           sourceNames: 'Loyalty ID'
@@ -234,22 +235,20 @@ const ReportingPage = () => {
       };
 
       // Apply location, discount, and usage count filters
-      // Check if any filter criteria are active OR if the config specifies fields needed for filtering
-      const filtersActive = effectiveLocationIds.length > 0 || discountIds.length > 0 || dailyUsageCountFilter !== '';
-      if (filtersActive) {
-          setProcessingProgress("Applying filters...");
-          // Pass the config to filterData
-          filteredData = filterData(
-            combinedData,
-            effectiveLocationIds,
-            discountIds,
-            selectedLocations,
-            dailyUsageCountFilter, // Pass the usage count filter value
-            reportingPageCsvConfig // Pass the config object
-          );
-      }
-      // Note: If no filters are active, filterData might return early if config is also minimal,
-      // but it's safer to call it and let it handle the logic based on config.
+      // TEMPORARILY DISABLE FILTERS (except date/report type for file fetching)
+      // Pass empty arrays/strings to filterData to effectively bypass these filters for now.
+      // The UI elements for these filters will remain, but their values won't be used here.
+      setProcessingProgress("Preparing data (filters temporarily disabled)...");
+      filteredData = filterData(
+        combinedData,
+        [], // effectiveLocationIds - temporarily disabled
+        [], // activeDiscountIds - temporarily disabled
+        selectedLocations, // Still pass selectedLocations for potential use in enhanceCSVWithLocationNames if it were called before name enhancement
+        '', // dailyUsageCountFilter - temporarily disabled
+        reportingPageCsvConfig // Pass the config object
+      );
+      // The enhanceCSVWithLocationNames is not currently called on this page,
+      // but if it were, it would use the reportingPageCsvConfig.
 
       // Fetch employee data and enhance CSV with employee names
       setProcessingProgress("Fetching employee data...");
