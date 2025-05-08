@@ -523,29 +523,26 @@ export const filterData = (
         // Safely convert discount IDs to numbers for comparison
         const discountIdMatches = (() => {
           try {
-            // Correctly access 'DSCL ID' as it appears in the CSV header and sample row log
-            const rawCsvDisclId = row['DSCL ID'];
-            // Declare discountId3 once
-            const discountId3 = rawCsvDisclId !== undefined && rawCsvDisclId !== null && String(rawCsvDisclId).trim() !== '' ? Number(rawCsvDisclId) : null;
-            
-            const isFirstRow = row === data[0];
-            const potentialMatch = discountId3 !== null && discountIds.includes(discountId3);
+            let discountValueFromRow: number | null = null;
+            let usedColumnName = '';
 
-            if (isFirstRow) { // Log details for the first row unconditionally
-              console.log(`FILTER DATA DEBUG (First Row) - Full Row Object:`, JSON.stringify(row));
-              console.log(`FILTER DATA DEBUG (First Row) - Raw CSV 'DSCL ID': '${rawCsvDisclId}', Type: ${typeof rawCsvDisclId}`);
-              console.log(`FILTER DATA DEBUG (First Row) - Converted discountId3: ${discountId3}, Type: ${typeof discountId3}`);
-              console.log(`FILTER DATA DEBUG (First Row) - Selected discountIds: ${JSON.stringify(discountIds)}`);
-              if (discountId3 !== null) {
-                console.log(`FILTER DATA DEBUG (First Row) - discountIds.includes(discountId3): ${discountIds.includes(discountId3)}`);
-              }
-            } else if (potentialMatch) { // Log for other potential matches
-              console.log(`FILTER DATA DEBUG - Row DSCL ID (raw): '${rawCsvDisclId}', Type: ${typeof rawCsvDisclId}`);
-              console.log(`FILTER DATA DEBUG - Converted discountId3: ${discountId3}, Type: ${typeof discountId3}`);
-              if (discountId3 !== null) {
-                console.log(`FILTER DATA DEBUG - discountIds.includes(discountId3): ${discountIds.includes(discountId3)}`);
+            // Try 'DSCL ID' first (for Data Page)
+            const rawCsvDisclId = row['DSCL ID'];
+            if (rawCsvDisclId !== undefined && rawCsvDisclId !== null && String(rawCsvDisclId).trim() !== '') {
+              discountValueFromRow = Number(rawCsvDisclId);
+              usedColumnName = 'DSCL ID';
+            } else {
+              // If 'DSCL ID' is not found or empty, try 'Order Type' (for Reporting Page)
+              const rawOrderType = row['Order Type'];
+              if (rawOrderType !== undefined && rawOrderType !== null && String(rawOrderType).trim() !== '') {
+                discountValueFromRow = Number(rawOrderType);
+                usedColumnName = 'Order Type';
               }
             }
+            
+            // if (row === data[0]) { // Debug for first row
+            //   console.log(`FILTER DATA DEBUG (First Row) - Discount Value: ${discountValueFromRow}, Used Column: ${usedColumnName}, Raw DSCL ID: ${rawCsvDisclId}, Raw Order Type: ${row['Order Type']}`);
+            // }
 
             // Original logic for other potential discount ID columns
             const discountId1 = row['Discount ID'] ? Number(row['Discount ID']) : null;
@@ -554,12 +551,9 @@ export const filterData = (
             const matches = (
               (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
               (discountId2 !== null && !isNaN(discountId2) && discountIds.includes(discountId2)) ||
-              (discountId3 !== null && !isNaN(discountId3) && discountIds.includes(discountId3)) // discountId3 is used here
+              (discountValueFromRow !== null && !isNaN(discountValueFromRow) && discountIds.includes(discountValueFromRow))
             );
             
-            if (isFirstRow || (potentialMatch && !matches)) {
-                console.log(`FILTER DATA DEBUG - Match result for row: ${matches}. discountId3 was ${discountId3}. Included in selected: ${discountId3 !== null ? discountIds.includes(discountId3) : 'N/A (discountId3 is null)'}`);
-            }
             return matches;
           } catch (e) {
             console.warn('Error comparing discount IDs:', e);
@@ -568,8 +562,6 @@ export const filterData = (
         })();
         
         if (!discountIdMatches) {
-          // Log if a row is being filtered out by discount
-          // console.log(`FILTER DATA DEBUG - Row filtered out by discount. DSCL ID: ${row['DISCL ID']}`);
           return false;
         }
       }
