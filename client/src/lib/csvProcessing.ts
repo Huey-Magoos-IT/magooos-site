@@ -523,14 +523,25 @@ export const filterData = (
         // Safely convert discount IDs to numbers for comparison
         const discountIdMatches = (() => {
           try {
+            const rawDisclId = row['DISCL ID'];
+            const discountId3 = rawDisclId !== undefined && rawDisclId !== null && String(rawDisclId).trim() !== '' ? Number(rawDisclId) : null;
+            
+            // More detailed logging for discount matching
+            const isFirstRow = row === data[0];
+            const potentialMatch = discountId3 !== null && discountIds.includes(discountId3);
+
+            if (isFirstRow || potentialMatch) {
+              console.log(`FILTER DATA DEBUG - Row DSCL ID (raw): '${rawDisclId}', Type: ${typeof rawDisclId}`);
+              console.log(`FILTER DATA DEBUG - Converted discountId3: ${discountId3}, Type: ${typeof discountId3}`);
+              console.log(`FILTER DATA DEBUG - Selected discountIds: ${JSON.stringify(discountIds)}`);
+              if (discountId3 !== null) {
+                console.log(`FILTER DATA DEBUG - discountIds.includes(discountId3): ${discountIds.includes(discountId3)}`);
+              }
+            }
+
+            // Original logic for other potential discount ID columns (though not present in current CSV)
             const discountId1 = row['Discount ID'] ? Number(row['Discount ID']) : null;
             const discountId2 = row['DiscountId'] ? Number(row['DiscountId']) : null;
-            const discountId3 = row['DISCL ID'] ? Number(row['DISCL ID']) : null;
-            
-            // Log the discount IDs found in the row
-            // if (discountId1 !== null || discountId2 !== null || discountId3 !== null) {
-            //   console.log(`FILTER DATA - Row discount IDs: ${discountId1}, ${discountId2}, ${discountId3}`); // Optional logging
-            // }
             
             const matches = (
               (discountId1 !== null && !isNaN(discountId1) && discountIds.includes(discountId1)) ||
@@ -538,6 +549,9 @@ export const filterData = (
               (discountId3 !== null && !isNaN(discountId3) && discountIds.includes(discountId3))
             );
             
+            if (isFirstRow || (potentialMatch && !matches)) {
+                console.log(`FILTER DATA DEBUG - Match result for row: ${matches}. DiscountId3 was ${discountId3}. Included in selected: ${discountId3 !== null ? discountIds.includes(discountId3) : 'N/A (discountId3 is null)'}`);
+            }
             return matches;
           } catch (e) {
             console.warn('Error comparing discount IDs:', e);
@@ -545,7 +559,11 @@ export const filterData = (
           }
         })();
         
-        if (!discountIdMatches) return false;
+        if (!discountIdMatches) {
+          // Log if a row is being filtered out by discount
+          // console.log(`FILTER DATA DEBUG - Row filtered out by discount. DSCL ID: ${row['DISCL ID']}`);
+          return false;
+        }
       }
     }
     
