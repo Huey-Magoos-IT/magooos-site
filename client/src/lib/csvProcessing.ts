@@ -660,9 +660,15 @@ export const filterData = (
       const storeValueRaw = getFieldValue(row, config.locationIdentifierField);
       const storeValueStr = storeValueRaw !== undefined ? String(storeValueRaw).trim() : '';
       
-      if (!storeValueStr) return false; // If location identifier is not found in the row, exclude it
-      
-      // Check for match using multiple strategies
+      // If the location value is "TOTAL", do not filter it out by location.
+      if (storeValueStr === 'TOTAL') {
+        // This row will pass the location filter part.
+        // Other filters (like discount) might still apply.
+      } else if (!storeValueStr) {
+        return false; // If location identifier is not found (and not "TOTAL"), exclude it
+      } else {
+        // Original location matching logic for non-"TOTAL" rows
+        // Check for match using multiple strategies
       let locationMatch = false;
       
       // Strategy 1: Direct ID match (CSV record has a location ID as a string)
@@ -704,6 +710,7 @@ export const filterData = (
       }
       
       if (!locationMatch) return false;
+      } // End of the 'else' for non-"TOTAL" rows
     }
     
     // Apply discount ID filtering if needed

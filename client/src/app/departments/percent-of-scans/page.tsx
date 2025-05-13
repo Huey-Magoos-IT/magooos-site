@@ -223,13 +223,11 @@ const PercentOfScansPage = () => {
           locationIdentifierField: {
             sourceNames: ['Location']
           },
-          discountIdentifierField: {
-            sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type']
-          },
-          employeeIdentifierField: { // Only for detail files
+          // No discountIdentifierField for loyalty_scan_detail as it's not in the CSV
+          employeeIdentifierField: {
             sourceNames: 'Employee ID'
           },
-          guestNameField: { // Only for detail files
+          guestNameField: {
             sourceNames: 'Guest Name'
           }
         };
@@ -238,9 +236,7 @@ const PercentOfScansPage = () => {
           locationIdentifierField: {
             sourceNames: ['Location']
           }
-          // No employeeIdentifierField or guestNameField for summary files
-          // DiscountIdentifierField might also be irrelevant for summary, can be removed if so.
-          // For now, keeping it to see if filterData handles it gracefully.
+          // No employeeIdentifierField, guestNameField, or discountIdentifierField for summary files
         };
       }
       
