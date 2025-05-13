@@ -221,60 +221,36 @@ const PercentOfScansPage = () => {
       if (dataType === 'loyalty_scan_detail') {
         percentOfScansCsvConfig = {
           locationIdentifierField: {
-            sourceNames: ['Location']
-          },
-          // No discountIdentifierField for loyalty_scan_detail as it's not in the CSV
-          employeeIdentifierField: {
-            sourceNames: 'Employee ID'
-          },
-          guestNameField: {
-            sourceNames: 'Guest Name'
+            sourceNames: ['Location'] // Only location needed for filtering/enhancement
           }
+          // No other fields needed in config for detail, as "Employee" column should pass through as is.
         };
       } else { // For 'loyalty_scan_summary'
         percentOfScansCsvConfig = {
           locationIdentifierField: {
             sourceNames: ['Location']
           }
-          // No employeeIdentifierField, guestNameField, or discountIdentifierField for summary files
+          // No other specific fields needed for summary.
         };
       }
       
       console.log("PERCENT OF SCANS PAGE - CSV Config based on dataType:", dataType, percentOfScansCsvConfig);
 
       if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
+        // Discount filter will effectively not apply if discountIdentifierField is not in config for the current dataType
         setProcessingProgress("Applying filters...");
         filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', percentOfScansCsvConfig);
       }
       
-      setProcessingProgress("Enhancing data with location information...");
+      setProcessingProgress("Enhancing data with location information (if applicable)...");
+      // This adds 'Location Name' based on the 'Location' column (ID or name) from CSV.
+      // It does not affect the 'Employee' column.
       filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig);
       
-      // Only fetch and enhance with employee data if it's the detail report
-      if (dataType === 'loyalty_scan_detail') {
-        setProcessingProgress("Fetching employee data...");
-        const employeeData = await fetchEmployeeData();
-        console.log(`DEBUG - Percent of Scans (Detail) - Employee data fetched: ${Object.keys(employeeData).length} records`);
-        
-        if (filteredData.length > 0 && percentOfScansCsvConfig.employeeIdentifierField) {
-          const employeeIdKey = Array.isArray(percentOfScansCsvConfig.employeeIdentifierField.sourceNames)
-                              ? percentOfScansCsvConfig.employeeIdentifierField.sourceNames[0]
-                              : percentOfScansCsvConfig.employeeIdentifierField.sourceNames;
-          const sampleEmployeeIds = filteredData.slice(0, 5).map(row => row[employeeIdKey] || 'N/A');
-          console.log(`DEBUG - Percent of Scans (Detail) - Sample Employee IDs from data (using key "${employeeIdKey}"): ${sampleEmployeeIds.join(', ')}`);
-          
-          sampleEmployeeIds.forEach(id => {
-            if (id !== 'N/A') {
-              console.log(`DEBUG - Percent of Scans (Detail) - Sample Employee ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`);
-            }
-          });
-        }
-        
-        setProcessingProgress("Enhancing data with employee names...");
-        filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, percentOfScansCsvConfig);
-      }
+      // Employee name enhancement and related data fetching are removed entirely.
+      // The 'Employee' column from the detail CSV will be part of 'filteredData' as is.
 
-      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering`);
+      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering and location name enhancement.`);
       
       setCSVData(filteredData);
       setProcessingProgress("");
