@@ -291,14 +291,14 @@ const PercentOfScansPage = () => {
   console.log("PERCENT OF SCANS PAGE - Team roles:", userTeam?.teamRoles); // Updated log
   console.log("PERCENT OF SCANS PAGE - Is Admin:", userTeam?.isAdmin); // Updated log
   
-  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA')); // Assuming same access role for now
+  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'SCANS'));
   console.log("PERCENT OF SCANS PAGE - Has Access:", hasAccess); // Updated log
 
   if (!hasAccess) {
     return (
       <div className="m-5 p-4">
         <div className="bg-red-50 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-700 shadow-md dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
-          <p className="font-medium">Access Denied: This page is only accessible to teams with DATA role access.</p>
+          <p className="font-medium">Access Denied: This page is only accessible to teams with SCANS role access.</p>
           <Link href="/teams" className="text-blue-500 hover:text-blue-600 hover:underline mt-2 inline-block dark:text-blue-300 dark:hover:text-blue-200 font-medium">
             Go to Teams Page
           </Link>
@@ -313,7 +313,7 @@ const PercentOfScansPage = () => {
       <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
         <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Welcome to % of Scans Department</h2> {/* Updated Title */}
         <div className="bg-green-50 p-4 rounded-md mb-4 border-l-4 border-green-500 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100">
-          <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">DATA Access Successful</h3>
+          <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">SCANS Access Successful</h3>
           <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
           <div className="mt-2">
             <p className="text-green-600 dark:text-green-300">Roles:</p>

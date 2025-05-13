@@ -39,6 +39,7 @@ async function setupRoles() {
     { name: "ADMIN", description: "Full access to all areas" },
     { name: "DATA", description: "Access to data department" },
     { name: "REPORTING", description: "Access to reporting department" },
+    { name: "SCANS", description: "Access to scans department" },
     { name: "LOCATION_ADMIN", description: "Can manage users within assigned group" },
     { name: "LOCATION_USER", description: "Has access to data for assigned locations" }
   ];
