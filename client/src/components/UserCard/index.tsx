@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, User, X, Trash2 } from "lucide-react";
 import RoleBadge from "../RoleBadge";
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip } from "@mui/material";
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip, CircularProgress } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { useUpdateUserLocationsMutation, useGetAuthUserQuery } from "@/state/api";
 import LocationTable, { Location } from "@/components/LocationTable";
@@ -59,6 +59,7 @@ const UserCard: React.FC<UserCardProps> = ({
   const [lastAction, setLastAction] = useState<string>("");
   const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDisabling, setIsDisabling] = useState(false); // New state for loading
 
   // Get authenticated user data
   const { data: authData } = useGetAuthUserQuery({});
@@ -204,18 +205,22 @@ const UserCard: React.FC<UserCardProps> = ({
   };
 
   const handleConfirmDisableUser = async () => {
-    // TODO: Implement API call to disable user
-    // This will be handled in a subsequent step when connecting to the users page state.
-    console.log(`Disabling user ${user.userId} - ${user.username}`);
-    // Example:
-    // try {
-    //   // await disableUserMutation({ userId: user.userId }).unwrap();
-    //   // TODO: Add to updateStatus or similar for feedback
-    //   // TODO: Trigger refresh/refetch of user list in parent (on users page)
-    // } catch (err) {
-    //   console.error("Failed to disable user:", err);
-    // }
-    closeDeleteConfirmModal();
+    if (!onDisableUser) {
+      console.error("onDisableUser prop is not provided to UserCard");
+      return;
+    }
+    setIsDisabling(true);
+    try {
+      await onDisableUser(user.userId);
+      // Optionally, handle success feedback here or rely on parent component
+      console.log(`User ${user.userId} - ${user.username} disable process initiated.`);
+    } catch (err) {
+      console.error("Failed to disable user:", err);
+      // Optionally, handle error feedback here
+    } finally {
+      setIsDisabling(false);
+      closeDeleteConfirmModal();
+    }
   };
 
   return (
@@ -514,9 +519,15 @@ const UserCard: React.FC<UserCardProps> = ({
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteConfirmModal}>Cancel</Button>
-          <Button onClick={handleConfirmDisableUser} color="error" variant="contained">
-            Disable User
+          <Button onClick={closeDeleteConfirmModal} disabled={isDisabling}>Cancel</Button>
+          <Button
+            onClick={handleConfirmDisableUser}
+            color="error"
+            variant="contained"
+            disabled={isDisabling}
+            startIcon={isDisabling ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {isDisabling ? "Disabling..." : "Disable User"}
           </Button>
         </DialogActions>
       </Dialog>

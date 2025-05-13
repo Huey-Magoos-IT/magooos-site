@@ -8,6 +8,7 @@ import {
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { toast } from "react-hot-toast"; // Added for error notifications
 import { useAppSelector } from "../redux";
 import { signUp } from 'aws-amplify/auth'; // Revert back to signUp
 import Header from "@/components/Header";
@@ -188,14 +189,26 @@ const Users = () => {
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
       }, 2000);
-    } catch (error) {
+    } catch (error: any) { // Added :any type for error to access properties like message
       console.error('Error disabling user:', error);
+      // TODO: When the actual `disableUser` mutation is implemented,
+      // inspect `error.data`, `error.status`, or `error.message` for more specific error details
+      // from the backend API response to provide even more targeted feedback.
+      // For example:
+      // if (error.status === 403) {
+      //   toast.error("You do not have permission to disable this user.");
+      // } else if (error.data?.message) {
+      //   toast.error(`Failed to disable user: ${error.data.message}`);
+      // } else {
+      //   toast.error("An unexpected error occurred while trying to disable the user. Please try again.");
+      // }
+      toast.error(error.message || "Failed to disable user. Please check console for details.");
       setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
-      }, 3000);
+      }, 3000); // Keep timeout to clear visual error indicator
     }
-  }, [refetchUsers, setUpdateStatus]); // Removed users from deps as it's not directly used in the active logic
+  }, [refetchUsers, setUpdateStatus]);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -473,7 +486,7 @@ const Users = () => {
                 roles={availableRoles}
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
-                // onDisableUser={handleDisableUser} // This prop will be added to UserCardProps later
+                onDisableUser={handleDisableUser}
                 updateStatus={updateStatus}
               />
             ))}

@@ -149,6 +149,14 @@ const Sidebar = () => {
                 href="/departments/data"
               />
             )}
+            {/* Show % of Scans department if user has ADMIN or DATA role */}
+            {(isAdmin || hasRole(teamRoles, 'DATA')) && (
+              <SidebarLink
+                icon={Layers3} // Using the same icon for now
+                label="% of Scans"
+                href="/departments/percent-of-scans"
+              />
+            )}
             
             {/* Show Reporting department if user has ADMIN or REPORTING role */}
             {(isAdmin || hasRole(teamRoles, 'REPORTING')) && (

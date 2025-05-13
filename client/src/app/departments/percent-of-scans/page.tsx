@@ -5,7 +5,7 @@ import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import Link from "next/link";
-// Removed useRouter and usePathname as they are no longer needed here
+import { useRouter, usePathname } from "next/navigation"; // Added useRouter and usePathname
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
@@ -43,17 +43,20 @@ import {
 import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils"; // Added import
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
-const LOYALTY_DATA_FOLDER = process.env.NEXT_PUBLIC_LOYALTY_DATA_FOLDER || "loyalty-data-pool/";
+const LOYALTY_DATA_FOLDER = "loyalty-scan-pool/"; // Updated based on user input
 
-// Data file types based on the new loyalty_data_MM-DD-YYYY.csv format
+// Data file types for this page, allowing selection between detail and summary
 const DATA_TYPES = [
-  { value: 'loyalty_data', label: 'Loyalty Data' }
+  { value: 'loyalty_scan_detail', label: 'Loyalty Scan Detail' },
+  { value: 'loyalty_scan_summary', label: 'Loyalty Scan Summary' }
 ];
 
-// NOTE: The current implementation handles filenames that follow the pattern: loyalty_data_MM-DD-YYYY.csv
+// NOTE: This page handles filenames that follow patterns:
+// loyalty_scan_detail_MM-DD-YYYY.csv
+// loyalty_scan_summary_MM-DD-YYYY.csv
 
-const DataPage = () => {
-  // Removed router and pathname
+const PercentOfScansPage = () => {
+  // Removed router and pathname as page navigation dropdown is removed from this page
   const { data: authData, isLoading, error } = useGetAuthUserQuery({});
   const { data: locationsData } = useGetLocationsQuery();
   const userTeam = authData?.userDetails?.team;
@@ -63,7 +66,8 @@ const DataPage = () => {
   // Form state
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState<DatePreset | ''>(''); // Removed selectedDepartmentPage
+  const [selectedPreset, setSelectedPreset] = useState<DatePreset | ''>('');
+  // Removed selectedDepartmentPage state
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
@@ -154,9 +158,9 @@ const DataPage = () => {
   const fetchFiles = async () => {
     try {
       // Use the fetchS3Files utility from csvProcessing with the folder path
-      console.log("DATA PAGE - Fetching files from:", S3_DATA_LAKE, LOYALTY_DATA_FOLDER);
+      console.log("PERCENT OF SCANS PAGE - Fetching files from:", S3_DATA_LAKE, LOYALTY_DATA_FOLDER); // Updated log
       const fileList = await fetchS3Files(S3_DATA_LAKE, LOYALTY_DATA_FOLDER);
-      console.log("DATA PAGE - Files found:", fileList);
+      console.log("PERCENT OF SCANS PAGE - Files found:", fileList); // Updated log
       setAllS3Files(fileList);
     } catch (err) {
       console.error("File fetch failed:", err);
@@ -182,7 +186,7 @@ const DataPage = () => {
         allS3Files,
         startDate,
         endDate,
-        dataType
+        dataType // This will now be 'loyalty_scan_summary'
       );
 
       if (matchingFiles.length === 0) {
@@ -193,88 +197,71 @@ const DataPage = () => {
 
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
       
-      // Create full URLs for the files - matching the Reporting page approach
+      // Create full URLs for the files
       const fileUrls = matchingFiles.map(filename => `${S3_DATA_LAKE}/${LOYALTY_DATA_FOLDER}${filename}`);
       
-      // Process all files (fetch and parse) - same as Reporting page
       setProcessingProgress(`Processing ${matchingFiles.length} file(s)...`);
       const combinedData = await processMultipleCSVs(fileUrls);
       
-      // Log sample data for debugging
       if (combinedData.length > 0) {
-        console.log("DATA PAGE - Sample CSV Data:", combinedData[0]);
+        console.log("PERCENT OF SCANS PAGE - Sample CSV Data:", combinedData[0]); // Updated log
       }
       
-      // Apply filters - ALWAYS filter by user's location access unless they're an admin
       let filteredData = combinedData;
       
-      // Determine which location IDs to use for filtering
       let effectiveLocationIds = selectedLocationIds;
       
-      // If no locations are selected but user has assigned locations and is not an admin,
-      // use the user's assigned locations
       if (selectedLocationIds.length === 0 && userLocationIds.length > 0 && !userIsAdmin) {
-        console.log("DATA PAGE - No locations selected, using user's assigned locations:", userLocationIds);
+        console.log("PERCENT OF SCANS PAGE - No locations selected, using user's assigned locations:", userLocationIds); // Updated log
         effectiveLocationIds = userLocationIds;
       }
       
-      // Define a config for this page's CSV processing needs *before* filtering/enhancing
-      const dataPageCsvConfig: CSVProcessingConfig = {
+      // Define a config for this page's CSV processing needs
+      // This might need to be different for summary files vs detail files
+      const percentOfScansCsvConfig: CSVProcessingConfig = { // Renamed config
         locationIdentifierField: {
-          sourceNames: ['Store', 'LocationID', 'Location ID'] // CSVs might use any of these for location
+          sourceNames: ['Store', 'LocationID', 'Location ID'] // Assuming same for summary
         },
-        discountIdentifierField: { // Define how to find the discount ID for filtering
-          sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type'] // Added 'Order Type' as potential source
+        discountIdentifierField: { 
+          sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type'] // Assuming same for summary
         },
         employeeIdentifierField: {
-          sourceNames: 'Loyalty ID'
+          sourceNames: 'Loyalty ID' // Assuming same for summary, though might not be relevant for summary
         },
         guestNameField: {
-          sourceNames: 'Guest Name'
+          sourceNames: 'Guest Name' // Assuming same for summary, though might not be relevant for summary
         }
-        // Add other field accessors as needed for this page
+        // Potentially add/remove fields specific to summary data
       };
 
-      // Apply location and discount filters
       if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
-        // Pass the config to filterData
-        // Pass empty string '' for dailyUsageCountFilter as it's not used here
-        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', dataPageCsvConfig);
+        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', percentOfScansCsvConfig); // Use new config
       }
       
-      // Enhance the CSV data with location names AFTER filtering
       setProcessingProgress("Enhancing data with location information...");
-      // Pass the config to enhanceCSVWithLocationNames
-      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, dataPageCsvConfig);
+      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig); // Use new config
       
-      // Fetch employee data and enhance CSV with employee names
       setProcessingProgress("Fetching employee data...");
       const employeeData = await fetchEmployeeData();
       
-      // Debug log for employee data
-      console.log(`DEBUG - Data Department - Employee data fetched: ${Object.keys(employeeData).length} records`);
+      console.log(`DEBUG - Percent of Scans - Employee data fetched: ${Object.keys(employeeData).length} records`); // Updated log
       
-      // Sample the first few loyalty IDs from the data for debugging
       if (filteredData.length > 0) {
         const sampleLoyaltyIds = filteredData.slice(0, 5).map(row => row['Loyalty ID'] || 'N/A');
-        console.log(`DEBUG - Data Department - Sample loyalty IDs from data: ${sampleLoyaltyIds.join(', ')}`);
+        console.log(`DEBUG - Percent of Scans - Sample loyalty IDs from data: ${sampleLoyaltyIds.join(', ')}`); // Updated log
         
-        // Check if these sample IDs exist in the employee data
         sampleLoyaltyIds.forEach(id => {
           if (id !== 'N/A') {
-            console.log(`DEBUG - Data Department - Sample ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`);
+            console.log(`DEBUG - Percent of Scans - Sample ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`); // Updated log
           }
         });
       }
       
-      // Enhance CSV data with employee names
       setProcessingProgress("Enhancing data with employee names...");
-      // Pass the dataPageCsvConfig here
-      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, dataPageCsvConfig);
+      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, percentOfScansCsvConfig); // Use new config
 
-      // Additional debugging
-      console.log(`DATA PAGE - Processing complete: ${filteredData.length} rows after filtering`);
+      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering`); // Updated log
       
       setCSVData(filteredData);
       setProcessingProgress("");
@@ -286,7 +273,6 @@ const DataPage = () => {
     }
   };
 
-  // Handler for preset dropdown change
   const handlePresetChange = (event: SelectChangeEvent<DatePreset | ''>) => {
     const preset = event.target.value as DatePreset | '';
     setSelectedPreset(preset);
@@ -297,10 +283,9 @@ const DataPage = () => {
     }
   };
 
-  // Removed handleDepartmentPageChange
+  // Removed handleDepartmentPageChange handler
 
   useEffect(() => {
-    // Fetch available files on component mount
     fetchFiles();
     // Removed pathname dependency and setSelectedDepartmentPage
   }, []);
@@ -313,13 +298,12 @@ const DataPage = () => {
     return <div className="m-5 p-4">Error: {error.toString()}</div>;
   }
 
-  // Check if user's team has DATA role access
-  console.log("DATA PAGE - User team:", userTeam);
-  console.log("DATA PAGE - Team roles:", userTeam?.teamRoles);
-  console.log("DATA PAGE - Is Admin:", userTeam?.isAdmin);
+  console.log("PERCENT OF SCANS PAGE - User team:", userTeam); // Updated log
+  console.log("PERCENT OF SCANS PAGE - Team roles:", userTeam?.teamRoles); // Updated log
+  console.log("PERCENT OF SCANS PAGE - Is Admin:", userTeam?.isAdmin); // Updated log
   
-  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA'));
-  console.log("DATA PAGE - Has Access:", hasAccess);
+  const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'DATA')); // Assuming same access role for now
+  console.log("PERCENT OF SCANS PAGE - Has Access:", hasAccess); // Updated log
 
   if (!hasAccess) {
     return (
@@ -336,9 +320,9 @@ const DataPage = () => {
 
   return (
     <div className="m-5 p-4">
-      <Header name="Data Department" />
+      <Header name="% of Scans Department" /> {/* Updated Header */}
       <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Welcome to Data Department (Enhanced CSV Processing)</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Welcome to % of Scans Department</h2> {/* Updated Title */}
         <div className="bg-green-50 p-4 rounded-md mb-4 border-l-4 border-green-500 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100">
           <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">DATA Access Successful</h3>
           <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
@@ -356,7 +340,7 @@ const DataPage = () => {
 
         {/* Data Generation Form */}
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate % of Scans Report</h3> {/* Updated Title */}
           
           <Grid container spacing={4}>
             {/* Left column - Form inputs */}
@@ -364,22 +348,22 @@ const DataPage = () => {
               <div className="space-y-4 flex flex-col h-full justify-center">
                 {/* Removed Department Page Selector */}
 
-                {/* Data Type Selector (Original - specific to this page) */}
+                {/* File Content Type Selector (Updated to choose between detail and summary) */}
                 <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
-                  <InputLabel className="text-gray-700 dark:text-gray-300">Data Type</InputLabel> {/* Reverted Label */}
+                  <InputLabel className="text-gray-700 dark:text-gray-300">File Content Type</InputLabel>
                   <Select
                     value={dataType}
                     onChange={(e) => setDataType(e.target.value as string)}
-                    label="Data Type" // Reverted Label
+                    label="File Content Type"
                     className="border-gray-200 dark:border-stroke-dark dark:text-white"
                   >
-                    {DATA_TYPES.map((type) => (
+                    {DATA_TYPES.map((type) => ( // DATA_TYPES now includes detail and summary
                       <MenuItem key={type.value} value={type.value} className="dark:text-gray-200">
                         {type.label}
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText className="dark:text-gray-300">Select the type of data to generate</FormHelperText> {/* Reverted Helper Text */}
+                  <FormHelperText className="dark:text-gray-300">Select Detail or Summary scan files</FormHelperText>
                 </FormControl>
 
                 {/* Date Preset Dropdown */}
@@ -406,23 +390,20 @@ const DataPage = () => {
                   value={startDate}
                   onChange={(newValue: Date | null) => {
                       setStartDate(newValue);
-                      setSelectedPreset(''); // Clear preset on manual change
-                      // If an end date is already selected and it's before the new start date, adjust end date.
+                      setSelectedPreset(''); 
                       if (newValue && endDate && endDate < newValue) {
                         setEndDate(newValue);
                       }
                   }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025 at noon
-                  // Max date is either yesterday or the end date (if set), whichever is earlier
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} 
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
-                    yesterday.setHours(23, 59, 59, 999); // Set to end of day
+                    yesterday.setHours(23, 59, 59, 999); 
 
                     if (endDate) {
-                      // Ensure endDate is also at the end of its day for comparison
                       const endOfDayEndDate = new Date(endDate);
                       endOfDayEndDate.setHours(23, 59, 59, 999);
                       return endOfDayEndDate < yesterday ? endOfDayEndDate : yesterday;
@@ -444,16 +425,14 @@ const DataPage = () => {
                   value={endDate}
                   onChange={(newValue: Date | null) => {
                       setEndDate(newValue);
-                      setSelectedPreset(''); // Clear preset on manual change
+                      setSelectedPreset(''); 
                   }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                  // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
                   minDate={(() => {
                     const minAllowedDate = new Date(2025, 0, 13, 12, 0, 0);
                     
                     if (startDate) {
-                      // Ensure startDate is at the beginning of its day for comparison
                       const startOfDayStartDate = new Date(startDate);
                       startOfDayStartDate.setHours(0, 0, 0, 0);
                       return startOfDayStartDate > minAllowedDate ? startOfDayStartDate : minAllowedDate;
@@ -461,11 +440,10 @@ const DataPage = () => {
                     
                     return minAllowedDate;
                   })()}
-                  // Max date is yesterday
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
-                    yesterday.setHours(23, 59, 59, 999); // Set to end of day
+                    yesterday.setHours(23, 59, 59, 999); 
                     return yesterday;
                   })()}
                   slotProps={{
@@ -597,14 +575,12 @@ const DataPage = () => {
                     ) : "Process Data"}
                   </Button>
                   
-                  {/* Progress message for processing */}
                   {processingProgress && (
                     <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded-md border border-blue-100 text-sm shadow-sm dark:bg-blue-900/10 dark:text-blue-300 dark:border-blue-900/30">
                       {processingProgress}
                     </div>
                   )}
                   
-                  {/* Processing errors */}
                   {csvError && (
                     <div className="mt-2 p-3 bg-red-50 text-red-700 rounded-md border-l-4 border-red-500 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
                       <p className="font-semibold">Error Processing CSV Data:</p>
@@ -615,7 +591,6 @@ const DataPage = () => {
               </div>
             </Grid>
             
-            {/* Right column - Location Table */}
             <Grid item xs={12} md={6}>
               <LocationTable
                 selectedLocationIds={selectedLocationIds}
@@ -634,7 +609,7 @@ const DataPage = () => {
             error={csvError}
             selectedLocationIds={selectedLocationIds}
             selectedDiscountIds={discountIds}
-            reportType={dataType}
+            reportType={dataType} // This will be 'loyalty_scan_summary'
             startDate={startDate}
             endDate={endDate}
           />
@@ -644,4 +619,4 @@ const DataPage = () => {
   );
 };
 
-export default DataPage;
+export default PercentOfScansPage;
