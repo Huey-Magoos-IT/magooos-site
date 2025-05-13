@@ -450,23 +450,42 @@ export const downloadCSV = (data: any[], filename: string, reloadAfterDownload: 
  * @returns Date object or null if no date found
  */
 export const extractDateFromFilename = (filename: string): Date | null => {
-  // Look for pattern of loyalty_data_MM-DD-YYYY.csv
-  let dateMatch = filename.match(/loyalty_data_(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  // Look for pattern loyalty_scan_detail_MM-DD-YYYY.csv
+  let dateMatch = filename.match(/loyalty_scan_detail_(\d{2})-(\d{2})-(\d{4})\.csv$/);
   if (dateMatch) {
     const month = dateMatch[1];
     const day = dateMatch[2];
     const year = dateMatch[3];
-    return new Date(`${month}/${day}/${year}`);
+    return new Date(`${year}-${month}-${day}T00:00:00`); // Use ISO format for consistency
+  }
+
+  // Look for pattern loyalty_scan_summary_MM-DD-YYYY.csv
+  dateMatch = filename.match(/loyalty_scan_summary_(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  if (dateMatch) {
+    const month = dateMatch[1];
+    const day = dateMatch[2];
+    const year = dateMatch[3];
+    return new Date(`${year}-${month}-${day}T00:00:00`); // Use ISO format for consistency
+  }
+
+  // Look for pattern of loyalty_data_MM-DD-YYYY.csv (original data page)
+  dateMatch = filename.match(/loyalty_data_(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  if (dateMatch) {
+    const month = dateMatch[1];
+    const day = dateMatch[2];
+    const year = dateMatch[3];
+    return new Date(`${year}-${month}-${day}T00:00:00`); // Use ISO format for consistency
   }
   
-  // Look for pattern of any-prefix-MM-DD-YYYY.csv (for reporting page files)
-  dateMatch = filename.match(/.*?-(\d{2})-(\d{2})-(\d{4})\.csv$/);
+  // Look for pattern of any-prefix-MM-DD-YYYY.csv (for general reporting page files)
+  // This should be more specific if other types are added, or be the last resort.
+  dateMatch = filename.match(/.*?_(\d{2})-(\d{2})-(\d{4})\.csv$/); // Made slightly more specific to catch underscore before date
   if (dateMatch) {
     const month = dateMatch[1];
     const day = dateMatch[2];
     const year = dateMatch[3];
-    console.log(`Extracted date from reporting file: ${month}/${day}/${year}`);
-    return new Date(`${month}/${day}/${year}`);
+    // console.log(`Extracted date from general file: ${month}/${day}/${year} for ${filename}`);
+    return new Date(`${year}-${month}-${day}T00:00:00`); // Use ISO format for consistency
   }
   
   // Look for pattern of 8 digits in a row which would be MMDDYYYY (legacy format)
@@ -476,10 +495,10 @@ export const extractDateFromFilename = (filename: string): Date | null => {
     const month = dateStr.substring(0, 2);
     const day = dateStr.substring(2, 4);
     const year = dateStr.substring(4, 8);
-    return new Date(`${month}/${day}/${year}`);
+    return new Date(`${year}-${month}-${day}T00:00:00`); // Use ISO format for consistency
   }
   
-  console.log(`Could not extract date from filename: ${filename}`);
+  console.warn(`Could not extract date from filename: ${filename}`); // Changed to warn
   return null;
 };
 
@@ -502,13 +521,13 @@ export const filterFilesByDateAndType = (
   if (!startDate || !endDate) return [];
   
   return files.filter(filename => {
-    // Check if filename matches the data type pattern
-    // Handle both formats: loyalty_data_MM-DD-YYYY.csv and legacy format
-    const isLoyaltyData = filename.startsWith('loyalty_data_');
-    const legacyPattern = department ? `${department}-${dataType}` : dataType;
-    const matchesPattern = isLoyaltyData || filename.startsWith(legacyPattern);
-    
-    if (!matchesPattern) return false;
+    // Check if filename starts with the specified dataType (e.g., "loyalty_scan_detail", "loyalty_scan_summary", "loyalty_data")
+    const matchesDataType = filename.startsWith(dataType);
+
+    if (!matchesDataType) {
+      // console.log(`Filename ${filename} does not match dataType ${dataType}`); // Optional debug
+      return false;
+    }
     
     // Extract and check date
     const fileDate = extractDateFromFilename(filename);
