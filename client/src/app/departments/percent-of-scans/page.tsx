@@ -216,52 +216,69 @@ const PercentOfScansPage = () => {
         effectiveLocationIds = userLocationIds;
       }
       
-      // Define a config for this page's CSV processing needs
-      // This might need to be different for summary files vs detail files
-      const percentOfScansCsvConfig: CSVProcessingConfig = { // Renamed config
-        locationIdentifierField: {
-          sourceNames: ['Store', 'LocationID', 'Location ID'] // Assuming same for summary
-        },
-        discountIdentifierField: { 
-          sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type'] // Assuming same for summary
-        },
-        employeeIdentifierField: {
-          sourceNames: 'Loyalty ID' // Assuming same for summary, though might not be relevant for summary
-        },
-        guestNameField: {
-          sourceNames: 'Guest Name' // Assuming same for summary, though might not be relevant for summary
-        }
-        // Potentially add/remove fields specific to summary data
-      };
+      let percentOfScansCsvConfig: CSVProcessingConfig;
+
+      if (dataType === 'loyalty_scan_detail') {
+        percentOfScansCsvConfig = {
+          locationIdentifierField: {
+            sourceNames: ['Location']
+          },
+          discountIdentifierField: {
+            sourceNames: ['DSCL ID', 'Discount ID', 'DiscountId', 'Order Type']
+          },
+          employeeIdentifierField: { // Only for detail files
+            sourceNames: 'Employee ID'
+          },
+          guestNameField: { // Only for detail files
+            sourceNames: 'Guest Name'
+          }
+        };
+      } else { // For 'loyalty_scan_summary'
+        percentOfScansCsvConfig = {
+          locationIdentifierField: {
+            sourceNames: ['Location']
+          }
+          // No employeeIdentifierField or guestNameField for summary files
+          // DiscountIdentifierField might also be irrelevant for summary, can be removed if so.
+          // For now, keeping it to see if filterData handles it gracefully.
+        };
+      }
+      
+      console.log("PERCENT OF SCANS PAGE - CSV Config based on dataType:", dataType, percentOfScansCsvConfig);
 
       if (effectiveLocationIds.length > 0 || discountIds.length > 0) {
         setProcessingProgress("Applying filters...");
-        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', percentOfScansCsvConfig); // Use new config
+        filteredData = filterData(combinedData, effectiveLocationIds, discountIds, selectedLocations, '', percentOfScansCsvConfig);
       }
       
       setProcessingProgress("Enhancing data with location information...");
-      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig); // Use new config
+      filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig);
       
-      setProcessingProgress("Fetching employee data...");
-      const employeeData = await fetchEmployeeData();
-      
-      console.log(`DEBUG - Percent of Scans - Employee data fetched: ${Object.keys(employeeData).length} records`); // Updated log
-      
-      if (filteredData.length > 0) {
-        const sampleLoyaltyIds = filteredData.slice(0, 5).map(row => row['Loyalty ID'] || 'N/A');
-        console.log(`DEBUG - Percent of Scans - Sample loyalty IDs from data: ${sampleLoyaltyIds.join(', ')}`); // Updated log
+      // Only fetch and enhance with employee data if it's the detail report
+      if (dataType === 'loyalty_scan_detail') {
+        setProcessingProgress("Fetching employee data...");
+        const employeeData = await fetchEmployeeData();
+        console.log(`DEBUG - Percent of Scans (Detail) - Employee data fetched: ${Object.keys(employeeData).length} records`);
         
-        sampleLoyaltyIds.forEach(id => {
-          if (id !== 'N/A') {
-            console.log(`DEBUG - Percent of Scans - Sample ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`); // Updated log
-          }
-        });
+        if (filteredData.length > 0 && percentOfScansCsvConfig.employeeIdentifierField) {
+          const employeeIdKey = Array.isArray(percentOfScansCsvConfig.employeeIdentifierField.sourceNames)
+                              ? percentOfScansCsvConfig.employeeIdentifierField.sourceNames[0]
+                              : percentOfScansCsvConfig.employeeIdentifierField.sourceNames;
+          const sampleEmployeeIds = filteredData.slice(0, 5).map(row => row[employeeIdKey] || 'N/A');
+          console.log(`DEBUG - Percent of Scans (Detail) - Sample Employee IDs from data (using key "${employeeIdKey}"): ${sampleEmployeeIds.join(', ')}`);
+          
+          sampleEmployeeIds.forEach(id => {
+            if (id !== 'N/A') {
+              console.log(`DEBUG - Percent of Scans (Detail) - Sample Employee ID "${id}" exists in employee data: ${Boolean(employeeData[id])}`);
+            }
+          });
+        }
+        
+        setProcessingProgress("Enhancing data with employee names...");
+        filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, percentOfScansCsvConfig);
       }
-      
-      setProcessingProgress("Enhancing data with employee names...");
-      filteredData = enhanceCSVWithEmployeeNames(filteredData, employeeData, percentOfScansCsvConfig); // Use new config
 
-      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering`); // Updated log
+      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering`);
       
       setCSVData(filteredData);
       setProcessingProgress("");
