@@ -612,10 +612,10 @@ export const disableUser = async (req: Request, res: Response): Promise<void> =>
     try {
       const cognitoCommand = new AdminDisableUserCommand({
         UserPoolId: COGNITO_USER_POOL_ID,
-        Username: userToDisable.cognitoId, // This is Cognito's username attribute
+        Username: userToDisable.username, // Try using the app username, which might be Cognito's sign-in username
       });
 
-      console.log(`[PATCH /users/${targetUserIdString}/disable] Attempting to disable Cognito user: ${userToDisable.cognitoId} in pool ${COGNITO_USER_POOL_ID}`);
+      console.log(`[PATCH /users/${targetUserIdString}/disable] Attempting to disable Cognito user (using app username): ${userToDisable.username} in pool ${COGNITO_USER_POOL_ID}`);
       await cognitoClient.send(cognitoCommand);
       console.log(`[PATCH /users/${targetUserIdString}/disable] Successfully disabled user ${userToDisable.cognitoId} in Cognito.`);
       
