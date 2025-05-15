@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { CognitoIdentityProviderClient, AdminDisableUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+
+// Initialize Cognito Client
+// Ensure AWS_REGION and COGNITO_USER_POOL_ID are set in the server's environment
+// The SDK will automatically use credentials from the EC2 instance's IAM role.
+const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
+const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 
 const prisma = new PrismaClient({
   datasources: {
@@ -243,9 +250,20 @@ export const createLocationUser = async (req: Request, res: Response): Promise<v
 };
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
+  const { status } = req.query; // active, disabled, all (or undefined)
+  let whereClause = {};
+
+  if (status === 'active') {
+    whereClause = { isDisabled: false };
+  } else if (status === 'disabled') {
+    whereClause = { isDisabled: true };
+  }
+  // If status is 'all' or undefined, whereClause remains empty, fetching all users.
+
   try {
-    // Fetch users and order them by username alphabetically
+    console.log(`[GET /users] Fetching users with status: ${status || 'all'}`);
     const users = await prisma.user.findMany({
+      where: whereClause,
       orderBy: {
         username: 'asc',
       },
@@ -538,5 +556,91 @@ export const updateUserTeam = async (req: Request, res: Response): Promise<void>
       message: "Error updating user team",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+};
+
+export const disableUser = async (req: Request, res: Response): Promise<void> => {
+  const { userId: targetUserIdString } = req.params;
+  const targetUserId = parseInt(targetUserIdString);
+
+  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
+  // For example, check req.user or a similar mechanism established by your auth middleware.
+  // const requestingUser = req.user; // Placeholder
+  // if (!requestingUser || !requestingUser.isAdmin) { // Replace with actual admin check
+  //   res.status(403).json({ message: "Forbidden: Administrator access required." });
+  //   return;
+  // }
+
+  if (isNaN(targetUserId)) {
+    console.error(`[PATCH /users/${targetUserIdString}/disable] Invalid user ID format.`);
+    res.status(400).json({ message: "Invalid user ID format." });
+    return;
+  }
+
+  if (!COGNITO_USER_POOL_ID) {
+    console.error("[PATCH /users/:userId/disable] Server configuration error: COGNITO_USER_POOL_ID environment variable is not set.");
+    res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set. Cannot proceed." });
+    return;
+  }
+
+  let userToDisable;
+  try {
+    userToDisable = await prisma.user.findUnique({
+      where: { userId: targetUserId },
+    });
+
+    if (!userToDisable) {
+      console.log(`[PATCH /users/${targetUserIdString}/disable] User not found in database.`);
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    if (userToDisable.isDisabled) {
+      console.log(`[PATCH /users/${targetUserIdString}/disable] User ${userToDisable.username} is already disabled.`);
+      res.status(200).json({ message: "User is already disabled.", user: userToDisable });
+      return;
+    }
+
+    // 1. Update user in local database
+    const updatedUserInDb = await prisma.user.update({
+      where: { userId: targetUserId },
+      data: { isDisabled: true },
+    });
+    console.log(`[PATCH /users/${targetUserIdString}/disable] User ${updatedUserInDb.username} (ID: ${targetUserId}) marked as disabled in DB.`);
+
+    // 2. Disable user in Cognito
+    try {
+      const cognitoCommand = new AdminDisableUserCommand({
+        UserPoolId: COGNITO_USER_POOL_ID,
+        Username: userToDisable.cognitoId, // This is Cognito's username attribute
+      });
+
+      console.log(`[PATCH /users/${targetUserIdString}/disable] Attempting to disable Cognito user: ${userToDisable.cognitoId} in pool ${COGNITO_USER_POOL_ID}`);
+      await cognitoClient.send(cognitoCommand);
+      console.log(`[PATCH /users/${targetUserIdString}/disable] Successfully disabled user ${userToDisable.cognitoId} in Cognito.`);
+      
+      res.status(200).json({ 
+          message: "User disabled successfully in database and Cognito.", 
+          user: updatedUserInDb 
+      });
+
+    } catch (cognitoError: any) {
+      console.error(`[PATCH /users/${targetUserIdString}/disable] Cognito Error for user ${userToDisable.cognitoId}:`, cognitoError);
+      // User was disabled in DB, but Cognito operation failed. This is a critical state.
+      // Log this error thoroughly. For now, respond with an error indicating partial success/failure.
+      // A more robust solution might involve a retry mechanism for Cognito or a background job to reconcile.
+      res.status(500).json({ 
+        message: `User marked as disabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
+        user: updatedUserInDb, // Return the DB state
+        cognitoErrorDetails: {
+          name: cognitoError.name,
+          message: cognitoError.message,
+        }
+      });
+    }
+
+  } catch (dbError: any) {
+    console.error(`[PATCH /users/${targetUserIdString}/disable] Database or general error:`, dbError);
+    res.status(500).json({ message: `Error processing disable user request: ${dbError.message}` });
   }
 };

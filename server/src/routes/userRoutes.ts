@@ -6,7 +6,8 @@ import {
   postUser,
   updateUserTeam,
   updateUserLocations,
-  createLocationUser
+  createLocationUser,
+  disableUser
 } from "../controllers/userController";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get("/:cognitoId", getUser);
 router.patch("/:userId/team", updateUserTeam);
 router.patch("/:id/locations", updateUserLocations);
 router.post("/location-user", createLocationUser);
+router.patch("/:userId/disable", disableUser);
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {
