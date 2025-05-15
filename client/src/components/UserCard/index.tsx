@@ -593,7 +593,7 @@ const UserCard: React.FC<UserCardProps> = ({
         <DialogTitle>Confirm Enable User (Database Only)</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to enable the user "{user.username}" in the database?
+            Are you sure you want to enable the user &quot;{user.username}&quot; in the database?
             This will NOT re-enable them in Cognito.
           </Typography>
         </DialogContent>
