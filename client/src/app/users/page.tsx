@@ -1,11 +1,11 @@
 "use client";
 import {
   useGetUsersQuery,
-  useGetTeamsQuery, // Already imported
+  useGetTeamsQuery,
   useUpdateUserTeamMutation,
   useGetAuthUserQuery,
   useDisableUserMutation,
-  useEnableUserInDBMutation,
+  useEnableUserMutation,
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -53,7 +53,7 @@ const Users = () => {
   const { data: authData } = useGetAuthUserQuery({});
   const [updateUserTeam, { isLoading: isUpdatingTeam }] = useUpdateUserTeamMutation();
   const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
-  const [enableUserInDB, { isLoading: isEnablingUser }] = useEnableUserInDBMutation();
+  const [enableUser, { isLoading: isEnablingUser }] = useEnableUserMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -191,27 +191,27 @@ const Users = () => {
     }
   }, [disableUser, refetchUsers, setUpdateStatus]);
 
-  const handleEnableUserInDB = useCallback(async (userId: number) => {
+  const handleEnableUser = useCallback(async (userId: number) => {
     setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
     try {
-      console.log(`Attempting to enable user ID (DB only): ${userId}`);
-      await enableUserInDB({ userId }).unwrap();
-      toast.success("User enabled in DB successfully!");
+      console.log(`Attempting to enable user ID: ${userId}`); 
+      await enableUser({ userId }).unwrap();
+      toast.success("User enabled successfully!");
       setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
       refetchUsers(); // Refetch users to update the list
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
       }, 2000);
     } catch (error: any) {
-      console.error('Error enabling user in DB:', error);
-      const errorMessage = error.data?.message || error.message || "Failed to enable user in DB.";
+      console.error('Error enabling user:', error);
+      const errorMessage = error.data?.message || error.message || "Failed to enable user.";
       toast.error(errorMessage);
       setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
       }, 3000);
     }
-  }, [enableUserInDB, refetchUsers, setUpdateStatus]);
+  }, [enableUser, refetchUsers, setUpdateStatus]);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -490,7 +490,7 @@ const Users = () => {
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
                 onDisableUser={handleDisableUser}
-                // onEnableUserInDB will be passed conditionally or UserCard will handle logic
+                onEnableUser={handleEnableUser} 
                 updateStatus={updateStatus}
               />
             ))}
@@ -521,8 +521,8 @@ const Users = () => {
                 roles={availableRoles}
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
-                onDisableUser={handleDisableUser} // For active users
-                onEnableUserInDB={handleEnableUserInDB} // For disabled users
+                onDisableUser={handleDisableUser} // For active users - though this card is for disabled users
+                onEnableUser={handleEnableUser} // For disabled users
                 updateStatus={updateStatus}
               />
             ))}

@@ -42,7 +42,7 @@ interface UserCardProps {
     [key: number]: "success" | "error" | "pending" | null;
   };
   onDisableUser?: (userId: number) => Promise<void>;
-  onEnableUserInDB?: (userId: number) => Promise<void>; // For DB only re-enable
+  onEnableUser?: (userId: number) => Promise<void>;
 }
 
 const UserCard: React.FC<UserCardProps> = ({
@@ -53,9 +53,9 @@ const UserCard: React.FC<UserCardProps> = ({
   onTeamChange,
   updateStatus = {},
   onDisableUser,
-  onEnableUserInDB,
+  onEnableUser, 
 }) => {
-  const [expanded, setExpanded] = useState(false);
+ const [expanded, setExpanded] = useState(false);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
@@ -237,16 +237,16 @@ const UserCard: React.FC<UserCardProps> = ({
   };
 
   const handleConfirmEnableUser = async () => {
-    if (!onEnableUserInDB) {
-      console.error("onEnableUserInDB prop is not provided to UserCard");
+    if (!onEnableUser) {
+      console.error("onEnableUser prop is not provided to UserCard");
       return;
     }
     setIsEnabling(true);
     try {
-      await onEnableUserInDB(user.userId);
-      console.log(`User ${user.userId} - ${user.username} enable (DB only) process initiated.`);
+      await onEnableUser(user.userId);
+      console.log(`User ${user.userId} - ${user.username} enable process initiated.`); 
     } catch (err) {
-      console.error("Failed to enable user (DB only):", err);
+      console.error("Failed to enable user:", err);
     } finally {
       setIsEnabling(false);
       closeEnableConfirmModal();
@@ -286,15 +286,15 @@ const UserCard: React.FC<UserCardProps> = ({
                 <Trash2 size={18} />
               </button>
             )}
-            {isAdmin && user.isDisabled && onEnableUserInDB && (
+            {isAdmin && user.isDisabled && onEnableUser && ( 
               <Button
                 size="small"
                 variant="outlined"
                 color="success"
                 onClick={openEnableConfirmModal}
-                className="p-1 text-xs"
+                className="p-1 text-xs" 
               >
-                Enable (DB)
+                Enable User
               </Button>
             )}
             <button
@@ -422,7 +422,7 @@ const UserCard: React.FC<UserCardProps> = ({
                     {isDisabling ? "Disabling..." : "Disable User"}
                   </Button>
                 )}
-                {user.isDisabled && onEnableUserInDB && (
+                {user.isDisabled && onEnableUser && (
                   <Button
                     variant="outlined"
                     color="success"
@@ -430,7 +430,7 @@ const UserCard: React.FC<UserCardProps> = ({
                     size="small"
                     disabled={isEnabling}
                   >
-                    {isEnabling ? "Enabling..." : "Enable (DB Only)"}
+                    {isEnabling ? "Enabling..." : "Enable User"}
                   </Button>
                 )}
               </div>

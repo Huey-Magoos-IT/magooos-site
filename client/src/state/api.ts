@@ -395,16 +395,16 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"]
     }),
-    disableUser: build.mutation<User, { userId: number }>({ // Assuming the backend returns the updated User
+    disableUser: build.mutation<User, { userId: number }>({
       query: ({ userId }) => ({
         url: `users/${userId}/disable`,
         method: "PATCH",
       }),
       invalidatesTags: ["Users"],
     }),
-    enableUserInDB: build.mutation<User, { userId: number }>({ // Assuming the backend returns the updated User
+    enableUser: build.mutation<User, { userId: number }>({ 
       query: ({ userId }) => ({
-        url: `users/${userId}/enable-db-only`,
+        url: `users/${userId}/enable`, 
         method: "PATCH",
       }),
       invalidatesTags: ["Users"],
@@ -442,5 +442,5 @@ export const {
   useUpdateUserLocationsMutation,
   useCreateLocationUserMutation,
   useDisableUserMutation,
-  useEnableUserInDBMutation,
+  useEnableUserMutation, 
 } = api;

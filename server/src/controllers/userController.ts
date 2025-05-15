@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { CognitoIdentityProviderClient, AdminDisableUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminDisableUserCommand, AdminEnableUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
 // Ensure AWS_REGION and COGNITO_USER_POOL_ID are set in the server's environment
@@ -645,49 +645,81 @@ export const disableUser = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const enableUserInDB = async (req: Request, res: Response): Promise<void> => {
+export const enableUser = async (req: Request, res: Response): Promise<void> => {
   const { userId: targetUserIdString } = req.params;
   const targetUserId = parseInt(targetUserIdString);
 
-  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
-  // Similar to disableUser, this should be restricted.
+  // TODO: Implement robust authentication and authorization
+  // Similar to disableUser, this should be restricted to admins.
 
   if (isNaN(targetUserId)) {
-    console.error(`[PATCH /users/${targetUserIdString}/enable-db-only] Invalid user ID format.`);
+    console.error(`[PATCH /users/${targetUserIdString}/enable] Invalid user ID format.`);
     res.status(400).json({ message: "Invalid user ID format." });
     return;
   }
 
+  if (!COGNITO_USER_POOL_ID) {
+    console.error("[PATCH /users/:userId/enable] Server configuration error: COGNITO_USER_POOL_ID environment variable is not set.");
+    res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set. Cannot proceed." });
+    return;
+  }
+
+  let userToEnable;
   try {
-    const userToEnable = await prisma.user.findUnique({
+    userToEnable = await prisma.user.findUnique({
       where: { userId: targetUserId },
     });
 
     if (!userToEnable) {
-      console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User not found in database.`);
+      console.log(`[PATCH /users/${targetUserIdString}/enable] User not found in database.`);
       res.status(404).json({ message: "User not found." });
       return;
     }
 
     if (!userToEnable.isDisabled) {
-      console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User ${userToEnable.username} is already enabled.`);
+      console.log(`[PATCH /users/${targetUserIdString}/enable] User ${userToEnable.username} is already enabled.`);
       res.status(200).json({ message: "User is already enabled.", user: userToEnable });
       return;
     }
 
-    const updatedUser = await prisma.user.update({
+    // 1. Update user in local database
+    const updatedUserInDb = await prisma.user.update({
       where: { userId: targetUserId },
-      data: { isDisabled: false },
+      data: { isDisabled: false }, // Set to false to enable
     });
+    console.log(`[PATCH /users/${targetUserIdString}/enable] User ${updatedUserInDb.username} (ID: ${targetUserId}) marked as enabled in DB.`);
 
-    console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User ${updatedUser.username} (ID: ${targetUserId}) marked as enabled in DB.`);
-    res.status(200).json({
-      message: "User enabled in database successfully (DB only).",
-      user: updatedUser,
-    });
+    // 2. Enable user in Cognito
+    try {
+      const cognitoCommand = new AdminEnableUserCommand({ // Use AdminEnableUserCommand
+        UserPoolId: COGNITO_USER_POOL_ID,
+        Username: userToEnable.username, // Consistent with disableUser
+      });
+
+      console.log(`[PATCH /users/${targetUserIdString}/enable] Attempting to enable Cognito user (using app username): ${userToEnable.username} in pool ${COGNITO_USER_POOL_ID}`);
+      await cognitoClient.send(cognitoCommand);
+      console.log(`[PATCH /users/${targetUserIdString}/enable] Successfully enabled user ${userToEnable.username} in Cognito.`);
+      
+      res.status(200).json({
+          message: "User enabled successfully in database and Cognito.",
+          user: updatedUserInDb
+      });
+
+    } catch (cognitoError: any) {
+      console.error(`[PATCH /users/${targetUserIdString}/enable] Cognito Error for user ${userToEnable.username}:`, cognitoError);
+      // User was enabled in DB, but Cognito operation failed.
+      res.status(500).json({
+        message: `User marked as enabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
+        user: updatedUserInDb, // Return the DB state
+        cognitoErrorDetails: {
+          name: cognitoError.name,
+          message: cognitoError.message,
+        }
+      });
+    }
 
   } catch (dbError: any) {
-    console.error(`[PATCH /users/${targetUserIdString}/enable-db-only] Database error:`, dbError);
-    res.status(500).json({ message: `Error processing enable user (DB only) request: ${dbError.message}` });
+    console.error(`[PATCH /users/${targetUserIdString}/enable] Database or general error:`, dbError);
+    res.status(500).json({ message: `Error processing enable user request: ${dbError.message}` });
   }
 };
