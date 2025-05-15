@@ -67,6 +67,7 @@ export interface User {
   locationIds?: string[];
   team?: Team;
   group?: Group;
+  isDisabled?: boolean;
 }
 
 export interface Attachment {
@@ -394,6 +395,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"]
     }),
+    disableUser: build.mutation<User, { userId: number }>({ // Assuming the backend returns the updated User
+      query: ({ userId }) => ({
+        url: `users/${userId}/disable`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -426,4 +434,5 @@ export const {
   useRemoveUserFromGroupMutation,
   useUpdateUserLocationsMutation,
   useCreateLocationUserMutation,
+  useDisableUserMutation,
 } = api;

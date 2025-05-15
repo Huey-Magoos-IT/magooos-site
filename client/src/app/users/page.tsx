@@ -4,7 +4,7 @@ import {
   useGetTeamsQuery, // Already imported
   useUpdateUserTeamMutation,
   useGetAuthUserQuery,
-  // useDisableUserMutation, // Placeholder - Will be uncommented when backend adds it
+  useDisableUserMutation,
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -51,7 +51,7 @@ const Users = () => {
   const { data: locationsData, isLoading: isLocationsLoading } = useGetLocationsQuery(); // Fetch locations
   const { data: authData } = useGetAuthUserQuery({});
   const [updateUserTeam, { isLoading: isUpdatingTeam }] = useUpdateUserTeamMutation();
-  // const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation(); // Placeholder
+  const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -170,45 +170,24 @@ const Users = () => {
   const handleDisableUser = useCallback(async (userId: number) => {
     setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
     try {
-      // Placeholder for actual API call
-      // await disableUser({ userId }).unwrap();
-      console.log(`Simulating disable user for ID: ${userId}`);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Manually update a user's status for testing UI - REMOVE THIS IN REAL IMPLEMENTATION
-      // This is a HACK to see the UI change without a real backend.
-      // The actual status update will come from refetchUsers() after backend is ready.
-      // const currentUsers = users || [];
-      // const userToUpdate = currentUsers.find(u => u.userId === userId);
-      // if (userToUpdate) { (userToUpdate as any).status = 'disabled'; }
-
-
+      console.log(`Attempting to disable user ID: ${userId}`);
+      await disableUser({ userId }).unwrap(); // Actual API call
+      toast.success("User disabled successfully!"); // Success feedback
       setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
-      refetchUsers(); // This will be key once backend updates status
+      refetchUsers(); // Refetch users to update the list
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
-      }, 2000);
-    } catch (error: any) { // Added :any type for error to access properties like message
+      }, 2000); // Clear success indicator
+    } catch (error: any) {
       console.error('Error disabling user:', error);
-      // TODO: When the actual `disableUser` mutation is implemented,
-      // inspect `error.data`, `error.status`, or `error.message` for more specific error details
-      // from the backend API response to provide even more targeted feedback.
-      // For example:
-      // if (error.status === 403) {
-      //   toast.error("You do not have permission to disable this user.");
-      // } else if (error.data?.message) {
-      //   toast.error(`Failed to disable user: ${error.data.message}`);
-      // } else {
-      //   toast.error("An unexpected error occurred while trying to disable the user. Please try again.");
-      // }
-      toast.error(error.message || "Failed to disable user. Please check console for details.");
+      const errorMessage = error.data?.message || error.message || "Failed to disable user. Please check console for details.";
+      toast.error(errorMessage);
       setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
-      }, 3000); // Keep timeout to clear visual error indicator
+      }, 3000); // Clear error indicator
     }
-  }, [refetchUsers, setUpdateStatus]);
+  }, [disableUser, refetchUsers, setUpdateStatus]);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -359,8 +338,8 @@ const Users = () => {
     });
 
     return {
-      activeUsers: allFilteredUsers.filter(user => (user as any).status !== 'disabled'), // Temp type assertion
-      disabledUsers: allFilteredUsers.filter(user => (user as any).status === 'disabled') // Temp type assertion
+      activeUsers: allFilteredUsers.filter(user => !user.isDisabled),
+      disabledUsers: allFilteredUsers.filter(user => user.isDisabled)
     };
   }, [users, searchQuery, teamFilter, isLocationAdmin, isUserAdmin, authData?.userDetails?.groupId]);
   
