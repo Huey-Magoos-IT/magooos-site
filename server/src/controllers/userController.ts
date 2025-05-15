@@ -644,3 +644,50 @@ export const disableUser = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({ message: `Error processing disable user request: ${dbError.message}` });
   }
 };
+
+export const enableUserInDB = async (req: Request, res: Response): Promise<void> => {
+  const { userId: targetUserIdString } = req.params;
+  const targetUserId = parseInt(targetUserIdString);
+
+  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
+  // Similar to disableUser, this should be restricted.
+
+  if (isNaN(targetUserId)) {
+    console.error(`[PATCH /users/${targetUserIdString}/enable-db-only] Invalid user ID format.`);
+    res.status(400).json({ message: "Invalid user ID format." });
+    return;
+  }
+
+  try {
+    const userToEnable = await prisma.user.findUnique({
+      where: { userId: targetUserId },
+    });
+
+    if (!userToEnable) {
+      console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User not found in database.`);
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    if (!userToEnable.isDisabled) {
+      console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User ${userToEnable.username} is already enabled.`);
+      res.status(200).json({ message: "User is already enabled.", user: userToEnable });
+      return;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { userId: targetUserId },
+      data: { isDisabled: false },
+    });
+
+    console.log(`[PATCH /users/${targetUserIdString}/enable-db-only] User ${updatedUser.username} (ID: ${targetUserId}) marked as enabled in DB.`);
+    res.status(200).json({
+      message: "User enabled in database successfully (DB only).",
+      user: updatedUser,
+    });
+
+  } catch (dbError: any) {
+    console.error(`[PATCH /users/${targetUserIdString}/enable-db-only] Database error:`, dbError);
+    res.status(500).json({ message: `Error processing enable user (DB only) request: ${dbError.message}` });
+  }
+};

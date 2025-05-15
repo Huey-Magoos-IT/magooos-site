@@ -5,6 +5,7 @@ import {
   useUpdateUserTeamMutation,
   useGetAuthUserQuery,
   useDisableUserMutation,
+  useEnableUserInDBMutation,
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -52,6 +53,7 @@ const Users = () => {
   const { data: authData } = useGetAuthUserQuery({});
   const [updateUserTeam, { isLoading: isUpdatingTeam }] = useUpdateUserTeamMutation();
   const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
+  const [enableUserInDB, { isLoading: isEnablingUser }] = useEnableUserInDBMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -188,6 +190,28 @@ const Users = () => {
       }, 3000); // Clear error indicator
     }
   }, [disableUser, refetchUsers, setUpdateStatus]);
+
+  const handleEnableUserInDB = useCallback(async (userId: number) => {
+    setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
+    try {
+      console.log(`Attempting to enable user ID (DB only): ${userId}`);
+      await enableUserInDB({ userId }).unwrap();
+      toast.success("User enabled in DB successfully!");
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
+      refetchUsers(); // Refetch users to update the list
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error enabling user in DB:', error);
+      const errorMessage = error.data?.message || error.message || "Failed to enable user in DB.";
+      toast.error(errorMessage);
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 3000);
+    }
+  }, [enableUserInDB, refetchUsers, setUpdateStatus]);
   
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
@@ -459,13 +483,14 @@ const Users = () => {
                   teamId: user.teamId,
                   locationIds: user.locationIds,
                   groupId: user.groupId,
-                  // status: user.status // Pass status if needed by UserCard for its own logic
+                  isDisabled: user.isDisabled, // Pass isDisabled status
                 }}
                 teams={teams}
                 roles={availableRoles}
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
                 onDisableUser={handleDisableUser}
+                // onEnableUserInDB will be passed conditionally or UserCard will handle logic
                 updateStatus={updateStatus}
               />
             ))}
@@ -490,13 +515,14 @@ const Users = () => {
                   teamId: user.teamId,
                   locationIds: user.locationIds,
                   groupId: user.groupId,
-                  // status: (user as any).status // Pass status if UserCard needs it
+                  isDisabled: user.isDisabled, // Pass isDisabled status
                 }}
                 teams={teams}
                 roles={availableRoles}
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
-                // onDisableUser={handleDisableUser} // Or an "Enable User" handler
+                onDisableUser={handleDisableUser} // For active users
+                onEnableUserInDB={handleEnableUserInDB} // For disabled users
                 updateStatus={updateStatus}
               />
             ))}

@@ -402,6 +402,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
+    enableUserInDB: build.mutation<User, { userId: number }>({ // Assuming the backend returns the updated User
+      query: ({ userId }) => ({
+        url: `users/${userId}/enable-db-only`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -435,4 +442,5 @@ export const {
   useUpdateUserLocationsMutation,
   useCreateLocationUserMutation,
   useDisableUserMutation,
+  useEnableUserInDBMutation,
 } = api;

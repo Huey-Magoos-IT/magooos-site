@@ -17,6 +17,7 @@ interface UserCardProps {
     teamId?: number | null;
     locationIds?: string[];
     groupId?: number;
+    isDisabled?: boolean; // Add isDisabled here
   };
   teams: Array<{
     id: number;
@@ -40,7 +41,8 @@ interface UserCardProps {
   updateStatus?: {
     [key: number]: "success" | "error" | "pending" | null;
   };
-  onDisableUser?: (userId: number) => Promise<void>; // New prop
+  onDisableUser?: (userId: number) => Promise<void>;
+  onEnableUserInDB?: (userId: number) => Promise<void>; // For DB only re-enable
 }
 
 const UserCard: React.FC<UserCardProps> = ({
@@ -50,7 +52,8 @@ const UserCard: React.FC<UserCardProps> = ({
   isAdmin,
   onTeamChange,
   updateStatus = {},
-  onDisableUser, // Destructure new prop
+  onDisableUser,
+  onEnableUserInDB,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
@@ -59,7 +62,9 @@ const UserCard: React.FC<UserCardProps> = ({
   const [lastAction, setLastAction] = useState<string>("");
   const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDisabling, setIsDisabling] = useState(false); // New state for loading
+  const [showEnableConfirm, setShowEnableConfirm] = useState(false); // For enable confirmation
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [isEnabling, setIsEnabling] = useState(false); // New state for loading enable
 
   // Get authenticated user data
   const { data: authData } = useGetAuthUserQuery({});
@@ -223,8 +228,33 @@ const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
+  const openEnableConfirmModal = () => {
+    setShowEnableConfirm(true);
+  };
+
+  const closeEnableConfirmModal = () => {
+    setShowEnableConfirm(false);
+  };
+
+  const handleConfirmEnableUser = async () => {
+    if (!onEnableUserInDB) {
+      console.error("onEnableUserInDB prop is not provided to UserCard");
+      return;
+    }
+    setIsEnabling(true);
+    try {
+      await onEnableUserInDB(user.userId);
+      console.log(`User ${user.userId} - ${user.username} enable (DB only) process initiated.`);
+    } catch (err) {
+      console.error("Failed to enable user (DB only):", err);
+    } finally {
+      setIsEnabling(false);
+      closeEnableConfirmModal();
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
+    <div className={`bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 ${user.isDisabled ? 'opacity-70' : ''}`}>
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -247,7 +277,7 @@ const UserCard: React.FC<UserCardProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-1">
-            {isAdmin && (
+            {isAdmin && !user.isDisabled && onDisableUser && (
               <button
                 onClick={openDeleteConfirmModal}
                 className="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800/50 text-red-500 dark:text-red-400"
@@ -255,6 +285,17 @@ const UserCard: React.FC<UserCardProps> = ({
               >
                 <Trash2 size={18} />
               </button>
+            )}
+            {isAdmin && user.isDisabled && onEnableUserInDB && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                onClick={openEnableConfirmModal}
+                className="p-1 text-xs"
+              >
+                Enable (DB)
+              </Button>
             )}
             <button
               onClick={() => setExpanded(!expanded)}
@@ -366,17 +407,32 @@ const UserCard: React.FC<UserCardProps> = ({
                 )}
               </div>
             </div>
+            {/* Action buttons in expanded view */}
             {isAdmin && (
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Trash2 />}
-                  onClick={openDeleteConfirmModal}
-                  size="small"
-                >
-                  Disable User
-                </Button>
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+                {!user.isDisabled && onDisableUser && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Trash2 />}
+                    onClick={openDeleteConfirmModal}
+                    size="small"
+                    disabled={isDisabling}
+                  >
+                    {isDisabling ? "Disabling..." : "Disable User"}
+                  </Button>
+                )}
+                {user.isDisabled && onEnableUserInDB && (
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    onClick={openEnableConfirmModal}
+                    size="small"
+                    disabled={isEnabling}
+                  >
+                    {isEnabling ? "Enabling..." : "Enable (DB Only)"}
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -528,6 +584,29 @@ const UserCard: React.FC<UserCardProps> = ({
             startIcon={isDisabling ? <CircularProgress size={20} color="inherit" /> : null}
           >
             {isDisabling ? "Disabling..." : "Disable User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Enable Confirmation Dialog */}
+      <Dialog open={showEnableConfirm} onClose={closeEnableConfirmModal}>
+        <DialogTitle>Confirm Enable User (Database Only)</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to enable the user "{user.username}" in the database?
+            This will NOT re-enable them in Cognito.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEnableConfirmModal} disabled={isEnabling}>Cancel</Button>
+          <Button
+            onClick={handleConfirmEnableUser}
+            color="success"
+            variant="contained"
+            disabled={isEnabling}
+            startIcon={isEnabling ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {isEnabling ? "Enabling..." : "Enable (DB Only)"}
           </Button>
         </DialogActions>
       </Dialog>
