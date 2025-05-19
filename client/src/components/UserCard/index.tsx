@@ -570,7 +570,7 @@ const UserCard: React.FC<UserCardProps> = ({
         <DialogTitle>Confirm Disable User</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to disable the user &quot;{user.username}&quot;?
+            Are you sure you want to disable the user "{user.username}"?
             This user will no longer be able to log in and will be moved to a disabled users list.
           </Typography>
         </DialogContent>
