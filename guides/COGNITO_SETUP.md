@@ -278,6 +278,30 @@ router.post('/create-user', createUser);
 4. Select your Lambda function
 5. Click "Save changes"
 
+## 7. Additional IAM Considerations for Backend Services
+
+If your backend server (e.g., the Express application running on EC2, or other microservices) needs to perform administrative actions on users within this Cognito User Pool (such as disabling, enabling, or administratively updating user attributes), the IAM role associated with that backend service will require specific permissions targeting the User Pool.
+
+For example, to implement features like administratively disabling or enabling users, the backend service's IAM role (e.g., `EC2-Backend-CognitoDisableUser-Role` in our project) must have an IAM policy granting permissions for actions like:
+- `cognito-idp:AdminDisableUser`
+- `cognito-idp:AdminEnableUser`
+- (Potentially others like `cognito-idp:AdminUpdateUserAttributes`, `cognito-idp:AdminGetUser` etc., depending on the features)
+
+These permissions should be scoped to the specific User Pool resource:
+`arn:aws:cognito-idp:YOUR_AWS_REGION:YOUR_ACCOUNT_ID:userpool/YOUR_USER_POOL_ID`
+
+**Example Policy Statement Snippet:**
+```json
+{
+    "Effect": "Allow",
+    "Action": [
+        "cognito-idp:AdminDisableUser",
+        "cognito-idp:AdminEnableUser"
+    ],
+    "Resource": "arn:aws:cognito-idp:us-east-2:974496641387:userpool/us-east-2_5rTsYPjpA" // Replace with your actual User Pool ARN
+}
+```
+This is distinct from the permissions required for Lambda triggers (like the post-confirmation trigger) or the API Gateway authorizer setup. Ensure that any backend service performing user management actions has its IAM role appropriately configured with these specific Cognito permissions.
 ## 7. AWS Amplify Hosting Configuration
 
 ### Add Environment Variables to Amplify

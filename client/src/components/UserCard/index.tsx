@@ -590,11 +590,11 @@ const UserCard: React.FC<UserCardProps> = ({
 
       {/* Enable Confirmation Dialog */}
       <Dialog open={showEnableConfirm} onClose={closeEnableConfirmModal}>
-        <DialogTitle>Confirm Enable User (Database Only)</DialogTitle>
+        <DialogTitle>Confirm Enable User</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to enable the user &quot;{user.username}&quot; in the database?
-            This will NOT re-enable them in Cognito.
+            Are you sure you want to enable the user "{user.username}"?
+            This will re-enable their account.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -606,7 +606,7 @@ const UserCard: React.FC<UserCardProps> = ({
             disabled={isEnabling}
             startIcon={isEnabling ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            {isEnabling ? "Enabling..." : "Enable (DB Only)"}
+            {isEnabling ? "Enabling..." : "Enable User"}
           </Button>
         </DialogActions>
       </Dialog>

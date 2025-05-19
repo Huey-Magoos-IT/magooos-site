@@ -83,9 +83,11 @@ server/
      - Dedicated endpoint for "no team" assignments
    - Permission checking utility functions
 
-4. **User Controller** (`controllers/userController.ts`)
+4. **User Controller** ([`controllers/userController.ts`](server/src/controllers/userController.ts:23))
    - User profile management
-   - AWS Cognito synchronization
+   - AWS Cognito synchronization for user attributes
+   - User account enable/disable (soft delete), including Cognito status synchronization using `AdminEnableUser` and `AdminDisableUser` commands.
+     *Note: Requires the EC2 instance role (e.g., `EC2-Backend-CognitoDisableUser-Role`) to have `cognito-idp:AdminDisableUser` and `cognito-idp:AdminEnableUser` permissions for the User Pool (`us-east-2_5rTsYPjpA`).*
    - Authentication handling
    - Profile picture management
 
@@ -126,10 +128,12 @@ server/
      - POST /teams/:teamId/roles - Add a role to a team
      - DELETE /teams/:teamId/roles/:roleId - Remove a role from a team
 
-4. **User Routes** (`routes/userRoutes.ts`)
+4. **User Routes** ([`routes/userRoutes.ts`](server/src/routes/userRoutes.ts:31))
    - User profile operations
    - Authentication endpoints
    - Profile updates
+   - `PATCH /users/:userId/disable` - Disables a user account (marks as inactive in DB and disables in Cognito).
+   - `PATCH /users/:userId/enable` - Enables a user account (marks as active in DB and enables in Cognito).
 
 5. **Search Routes** (`routes/searchRoutes.ts`)
    - GET /search - Global search endpoint
@@ -147,6 +151,7 @@ Core Models:
    - Group association (for LocationAdmin users)
    - Location access (locationIds array)
    - Task relationships (author/assignee)
+   - `isDisabled: boolean`           # Tracks if the user account is active or soft-deleted.
 
 2. **Group**
    - Group name and description

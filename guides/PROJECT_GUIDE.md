@@ -18,6 +18,7 @@ DO NOT INTRODUCE AWS SDK DEPENDENCIES UNDER ANY CIRCUMSTANCES.
 - Routes: JWT validation → API Gateway
 - Team management: `teamController.ts` with role-based permissions
 - Role management: `Role` and `TeamRole` models for granular access control
+- User lifecycle management: Includes enabling and disabling user accounts (soft delete) via API, synchronized with AWS Cognito.
 
 ## State Management (`client/src/state/`)
 - Redux Toolkit: `api.ts` handles Cognito token injection
