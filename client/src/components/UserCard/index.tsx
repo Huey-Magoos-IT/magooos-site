@@ -569,8 +569,9 @@ const UserCard: React.FC<UserCardProps> = ({
       <Dialog open={showDeleteConfirm} onClose={closeDeleteConfirmModal}>
         <DialogTitle>Confirm Disable User</DialogTitle>
         <DialogContent>
+          {/* eslint-disable-next-line react/no-unescaped-entities */}
           <Typography>
-            Are you sure you want to disable the user "{user.username}"?
+            Are you sure you want to disable the user &quot;{user.username}&quot;?
             This user will no longer be able to log in and will be moved to a disabled users list.
           </Typography>
         </DialogContent>
@@ -592,8 +593,9 @@ const UserCard: React.FC<UserCardProps> = ({
       <Dialog open={showEnableConfirm} onClose={closeEnableConfirmModal}>
         <DialogTitle>Confirm Enable User</DialogTitle>
         <DialogContent>
+          {/* eslint-disable-next-line react/no-unescaped-entities */}
           <Typography>
-            Are you sure you want to enable the user "{user.username}"?
+            Are you sure you want to enable the user &quot;{user.username}&quot;?
             This will re-enable their account.
           </Typography>
         </DialogContent>
