@@ -238,13 +238,13 @@ const ReportingPage = () => {
       // TEMPORARILY DISABLE FILTERS (except date/report type for file fetching)
       // Pass empty arrays/strings to filterData to effectively bypass these filters for now.
       // The UI elements for these filters will remain, but their values won't be used here.
-      setProcessingProgress("Preparing data (filters temporarily disabled)...");
+      setProcessingProgress("Filtering data..."); // Updated progress message
       filteredData = filterData(
         combinedData,
-        [], // effectiveLocationIds - temporarily disabled
-        [], // activeDiscountIds - temporarily disabled
-        selectedLocations, // Still pass selectedLocations for potential use in enhanceCSVWithLocationNames if it were called before name enhancement
-        '', // dailyUsageCountFilter - temporarily disabled
+        effectiveLocationIds, // Use the calculated effectiveLocationIds
+        discountIds,          // Use the current discountIds state
+        selectedLocations,    // Pass selectedLocations as before
+        dailyUsageCountFilter, // Use the dailyUsageCountFilter state
         reportingPageCsvConfig // Pass the config object
       );
       // The enhanceCSVWithLocationNames is not currently called on this page,
