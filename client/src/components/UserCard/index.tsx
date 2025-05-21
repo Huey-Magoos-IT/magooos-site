@@ -663,7 +663,7 @@ const UserCard: React.FC<UserCardProps> = ({
         </DialogTitle>
         <DialogContent>
           <Typography>
-            Are you absolutely sure you want to permanently delete the user "<strong>{user.username}</strong>" (ID: {user.userId})?
+            Are you absolutely sure you want to permanently delete the user &quot;<strong>{user.username}</strong>&quot; (ID: {user.userId})?
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
             This action cannot be undone. All related data (tasks, comments, attachments etc., depending on server configuration) will be permanently removed or disassociated. The user will also be deleted from Cognito.
