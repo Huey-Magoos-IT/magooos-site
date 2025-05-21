@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { CognitoIdentityProviderClient, AdminDisableUserCommand, AdminEnableUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { CognitoIdentityProviderClient, AdminDisableUserCommand, AdminEnableUserCommand, AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
 // Ensure AWS_REGION and COGNITO_USER_POOL_ID are set in the server's environment
@@ -721,5 +721,110 @@ export const enableUser = async (req: Request, res: Response): Promise<void> => 
   } catch (dbError: any) {
     console.error(`[PATCH /users/${targetUserIdString}/enable] Database or general error:`, dbError);
     res.status(500).json({ message: `Error processing enable user request: ${dbError.message}` });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  const { userId: targetUserIdString } = req.params;
+  const targetUserId = parseInt(targetUserIdString);
+
+  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
+  // This action is destructive and should be heavily guarded.
+  // const requestingUser = req.user; // Placeholder
+  // if (!requestingUser || !requestingUser.isSuperAdmin) { // Ensure only super admins can delete
+  //   res.status(403).json({ message: "Forbidden: Super administrator access required for deletion." });
+  //   return;
+  // }
+
+  if (isNaN(targetUserId)) {
+    console.error(`[DELETE /users/${targetUserIdString}] Invalid user ID format.`);
+    res.status(400).json({ message: "Invalid user ID format." });
+    return;
+  }
+
+  if (!COGNITO_USER_POOL_ID) {
+    console.error("[DELETE /users/:userId] Server configuration error: COGNITO_USER_POOL_ID environment variable is not set.");
+    res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set. Cannot proceed with deletion." });
+    return;
+  }
+
+  let userToDelete;
+  try {
+    userToDelete = await prisma.user.findUnique({
+      where: { userId: targetUserId },
+    });
+
+    if (!userToDelete) {
+      console.log(`[DELETE /users/${targetUserIdString}] User not found in database.`);
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    console.log(`[DELETE /users/${targetUserIdString}] Initiating deletion for user ${userToDelete.username} (ID: ${targetUserId}).`);
+
+    // Database cleanup and user deletion within a transaction
+    await prisma.$transaction(async (tx) => {
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting related comments for user ID: ${targetUserId}`);
+      await tx.comment.deleteMany({ where: { userId: targetUserId } });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting related attachments for user ID: ${targetUserId}`);
+      await tx.attachment.deleteMany({ where: { uploadedById: targetUserId } });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting related task assignments for user ID: ${targetUserId}`);
+      await tx.taskAssignment.deleteMany({ where: { userId: targetUserId } });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Nullifying assigned tasks for user ID: ${targetUserId}`);
+      await tx.task.updateMany({
+        where: { assignedUserId: targetUserId },
+        data: { assignedUserId: null },
+      });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting authored tasks for user ID: ${targetUserId}`);
+      await tx.task.deleteMany({ where: { authorUserId: targetUserId } });
+      
+      // Unset team and group associations (optional if user record is deleted immediately after, but good for clarity)
+      // This step is technically redundant if the user is deleted in the same transaction,
+      // but shown here for completeness if one were to separate these steps.
+      // await tx.user.update({
+      //   where: { userId: targetUserId },
+      //   data: { teamId: null, groupId: null },
+      // });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting user record from database for user ID: ${targetUserId}`);
+      await tx.user.delete({ where: { userId: targetUserId } });
+    });
+
+    console.log(`[DELETE /users/${targetUserIdString}] User ${userToDelete.username} and related data successfully deleted from database.`);
+
+    // Delete user from Cognito
+    try {
+      const cognitoCommand = new AdminDeleteUserCommand({
+        UserPoolId: COGNITO_USER_POOL_ID,
+        Username: userToDelete.username, // Using app username, consistent with disable/enable
+      });
+
+      console.log(`[DELETE /users/${targetUserIdString}] Attempting to delete Cognito user: ${userToDelete.username} from pool ${COGNITO_USER_POOL_ID}`);
+      await cognitoClient.send(cognitoCommand);
+      console.log(`[DELETE /users/${targetUserIdString}] Successfully deleted user ${userToDelete.username} from Cognito.`);
+      
+      res.status(200).json({
+          message: "User permanently deleted successfully from database and Cognito."
+      });
+
+    } catch (cognitoError: any) {
+      console.error(`[DELETE /users/${targetUserIdString}] Cognito Deletion Error for user ${userToDelete.username}:`, cognitoError);
+      // User was deleted from DB, but Cognito operation failed. This is a critical state.
+      res.status(500).json({
+        message: `User deleted from DB, but Cognito deletion failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito cleanup may be required for user ${userToDelete.username}.`,
+        cognitoErrorDetails: {
+          name: cognitoError.name,
+          message: cognitoError.message,
+        }
+      });
+    }
+
+  } catch (dbError: any) {
+    console.error(`[DELETE /users/${targetUserIdString}] Database transaction or general error during deletion:`, dbError);
+    res.status(500).json({ message: `Error processing delete user request: ${dbError.message}` });
   }
 };

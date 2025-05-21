@@ -6,6 +6,8 @@ import {
   useGetAuthUserQuery,
   useDisableUserMutation,
   useEnableUserMutation,
+  useDeleteUserMutation,
+  type User as ApiUser, // Alias the User interface from API
 } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import React, { useMemo, useState, useEffect, useCallback } from "react";
@@ -31,9 +33,14 @@ import {
   SelectChangeEvent,
   Tooltip,
   CircularProgress,
-  Button // Added Button import
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from "@mui/material";
-import { AlertCircle, Check, User, UserPlus } from "lucide-react"; // Added UserPlus import
+import { AlertCircle, Check, User as UserIcon, UserPlus } from "lucide-react"; // Alias the User icon
 import ViewToggle, { ViewType } from "@/components/ViewToggle";
 import RoleBadge from "@/components/RoleBadge";
 import UserCard from "@/components/UserCard";
@@ -54,6 +61,7 @@ const Users = () => {
   const [updateUserTeam, { isLoading: isUpdatingTeam }] = useUpdateUserTeamMutation();
   const [disableUser, { isLoading: isDisablingUser }] = useDisableUserMutation();
   const [enableUser, { isLoading: isEnablingUser }] = useEnableUserMutation();
+  const [deleteUserMutation, { isLoading: isDeletingUser }] = useDeleteUserMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -61,7 +69,17 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState<string | number>("");
   const [isModalOpen, setIsModalOpen] = useState(false); // Added modal state
-  
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // The user object passed from UserCard will match its internal prop structure
+  const [userToDelete, setUserToDelete] = useState<{
+    userId: number;
+    username: string;
+    profilePictureUrl?: string;
+    teamId?: number | null;
+    locationIds?: string[];
+    groupId?: number;
+    isDisabled?: boolean;
+  } | null>(null);
   // Load view preference from localStorage on component mount
   useEffect(() => {
     const savedView = localStorage.getItem("usersViewType");
@@ -212,7 +230,51 @@ const Users = () => {
       }, 3000);
     }
   }, [enableUser, refetchUsers, setUpdateStatus]);
-  
+
+  const openDeleteConfirmationDialog = (user: {
+    userId: number;
+    username: string;
+    profilePictureUrl?: string;
+    teamId?: number | null;
+    locationIds?: string[];
+    groupId?: number;
+    isDisabled?: boolean;
+  }) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const closeDeleteConfirmationDialog = () => {
+    setUserToDelete(null);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleDeleteUser = useCallback(async () => {
+    if (!userToDelete || !userToDelete.userId) return;
+
+    const userId = userToDelete.userId;
+    setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
+    try {
+      console.log(`Attempting to delete user ID: ${userId}`);
+      await deleteUserMutation({ userId }).unwrap();
+      toast.success(`User ${userToDelete.username} deleted successfully!`);
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
+      refetchUsers();
+      closeDeleteConfirmationDialog();
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      const errorMessage = error.data?.message || error.message || "Failed to delete user.";
+      toast.error(errorMessage);
+      setUpdateStatus(prev => ({ ...prev, [userId]: 'error' }));
+      closeDeleteConfirmationDialog();
+      setTimeout(() => {
+        setUpdateStatus(prev => ({ ...prev, [userId]: null }));
+      }, 3000);
+    }
+  }, [deleteUserMutation, refetchUsers, setUpdateStatus, userToDelete]);
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
     { field: "userId", headerName: "ID", width: 70 },
@@ -233,7 +295,7 @@ const Users = () => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <User size={20} className="text-gray-500 dark:text-gray-400" />
+              <UserIcon size={20} className="text-gray-500 dark:text-gray-400" /> // Use aliased UserIcon
             )}
           </div>
         </div>
@@ -490,7 +552,8 @@ const Users = () => {
                 isAdmin={isUserAdmin}
                 onTeamChange={handleTeamChange}
                 onDisableUser={handleDisableUser}
-                onEnableUser={handleEnableUser} 
+                onEnableUser={handleEnableUser}
+                onDeleteUser={openDeleteConfirmationDialog}
                 updateStatus={updateStatus}
               />
             ))}
@@ -523,6 +586,7 @@ const Users = () => {
                 onTeamChange={handleTeamChange}
                 onDisableUser={handleDisableUser} // For active users - though this card is for disabled users
                 onEnableUser={handleEnableUser} // For disabled users
+                onDeleteUser={openDeleteConfirmationDialog}
                 updateStatus={updateStatus}
               />
             ))}
@@ -538,6 +602,31 @@ const Users = () => {
         teams={teams} // Pass teams
         // locations={locations} // This prop is no longer needed as LocationTable fetches its own data
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={closeDeleteConfirmationDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {`Permanently delete user "${userToDelete?.username || ''}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            This action cannot be undone. All data associated with this user that cannot be reassigned (like authored tasks, comments, and attachments, depending on system setup) will be permanently deleted. The user will also be removed from Cognito.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirmationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteUser} color="error" variant="contained" autoFocus disabled={isDeletingUser}>
+            {isDeletingUser ? <CircularProgress size={24} color="inherit" /> : "Delete User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

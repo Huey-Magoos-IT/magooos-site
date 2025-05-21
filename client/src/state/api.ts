@@ -409,6 +409,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
+    deleteUser: build.mutation<User, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `users/${userId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -442,5 +449,6 @@ export const {
   useUpdateUserLocationsMutation,
   useCreateLocationUserMutation,
   useDisableUserMutation,
-  useEnableUserMutation, 
+  useEnableUserMutation,
+  useDeleteUserMutation,
 } = api;

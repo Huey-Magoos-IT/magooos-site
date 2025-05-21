@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, User, X, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, User, X, Trash2, AlertTriangle } from "lucide-react"; // Added AlertTriangle
 import RoleBadge from "../RoleBadge";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip, CircularProgress } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
@@ -43,6 +43,7 @@ interface UserCardProps {
   };
   onDisableUser?: (userId: number) => Promise<void>;
   onEnableUser?: (userId: number) => Promise<void>;
+  onDeleteUser?: (user: UserCardProps['user']) => void;
 }
 
 const UserCard: React.FC<UserCardProps> = ({
@@ -53,9 +54,10 @@ const UserCard: React.FC<UserCardProps> = ({
   onTeamChange,
   updateStatus = {},
   onDisableUser,
-  onEnableUser, 
+  onEnableUser,
+  onDeleteUser,
 }) => {
- const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
@@ -63,8 +65,10 @@ const UserCard: React.FC<UserCardProps> = ({
   const [locationUpdateStatus, setLocationUpdateStatus] = useState<"success" | "error" | "pending" | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEnableConfirm, setShowEnableConfirm] = useState(false); // For enable confirmation
+  const [showHardDeleteConfirm, setShowHardDeleteConfirm] = useState(false); // For hard delete confirmation
   const [isDisabling, setIsDisabling] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false); // New state for loading enable
+  const [isHardDeleting, setIsHardDeleting] = useState(false); // New state for hard delete
 
   // Get authenticated user data
   const { data: authData } = useGetAuthUserQuery({});
@@ -253,6 +257,31 @@ const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
+  const openHardDeleteConfirmModal = () => {
+    setShowHardDeleteConfirm(true);
+  };
+
+  const closeHardDeleteConfirmModal = () => {
+    setShowHardDeleteConfirm(false);
+  };
+
+  const handleConfirmHardDeleteUser = async () => {
+    if (!onDeleteUser) {
+      console.error("onDeleteUser prop is not provided to UserCard");
+      return;
+    }
+    setIsHardDeleting(true);
+    try {
+      await onDeleteUser(user); // Pass the whole user object
+      console.log(`User ${user.userId} - ${user.username} hard delete process initiated.`);
+    } catch (err) {
+      console.error("Failed to hard delete user:", err);
+    } finally {
+      setIsHardDeleting(false);
+      closeHardDeleteConfirmModal();
+    }
+  };
+
   return (
     <div className={`bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 ${user.isDisabled ? 'opacity-70' : ''}`}>
       <div className="p-4">
@@ -433,6 +462,20 @@ const UserCard: React.FC<UserCardProps> = ({
                     {isEnabling ? "Enabling..." : "Enable User"}
                   </Button>
                 )}
+                {/* Hard Delete Button */}
+                {isAdmin && onDeleteUser && (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<AlertTriangle />}
+                    onClick={openHardDeleteConfirmModal}
+                    size="small"
+                    disabled={isHardDeleting || isDisabling || isEnabling} // Disable if any action is in progress
+                    sx={{ backgroundColor: '#d32f2f', '&:hover': { backgroundColor: '#b71c1c' } }} // More prominent red
+                  >
+                    {isHardDeleting ? "Deleting..." : "Delete Permanently"}
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -609,6 +652,33 @@ const UserCard: React.FC<UserCardProps> = ({
             startIcon={isEnabling ? <CircularProgress size={20} color="inherit" /> : null}
           >
             {isEnabling ? "Enabling..." : "Enable User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Hard Delete Confirmation Dialog */}
+      <Dialog open={showHardDeleteConfirm} onClose={closeHardDeleteConfirmModal}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <AlertTriangle className="mr-2 text-red-600" /> Confirm Permanent Deletion
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you absolutely sure you want to permanently delete the user "<strong>{user.username}</strong>" (ID: {user.userId})?
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            This action cannot be undone. All related data (tasks, comments, attachments etc., depending on server configuration) will be permanently removed or disassociated. The user will also be deleted from Cognito.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeHardDeleteConfirmModal} disabled={isHardDeleting}>Cancel</Button>
+          <Button
+            onClick={handleConfirmHardDeleteUser}
+            color="error"
+            variant="contained"
+            disabled={isHardDeleting}
+            startIcon={isHardDeleting ? <CircularProgress size={20} color="inherit" /> : <Trash2 />}
+          >
+            {isHardDeleting ? "Deleting..." : "Yes, Delete Permanently"}
           </Button>
         </DialogActions>
       </Dialog>

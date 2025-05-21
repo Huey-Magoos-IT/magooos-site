@@ -8,7 +8,8 @@ import {
   updateUserLocations,
   createLocationUser,
   disableUser,
-  enableUser
+  enableUser,
+  deleteUser
 } from "../controllers/userController";
 
 const router = Router();
@@ -20,7 +21,8 @@ router.patch("/:userId/team", updateUserTeam);
 router.patch("/:id/locations", updateUserLocations);
 router.post("/location-user", createLocationUser);
 router.patch("/:userId/disable", disableUser);
-router.patch("/:userId/enable", enableUser); 
+router.patch("/:userId/enable", enableUser);
+router.delete("/:userId", deleteUser);
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {
