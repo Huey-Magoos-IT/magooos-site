@@ -479,7 +479,7 @@ export const extractDateFromFilename = (filename: string): Date | null => {
   
   // Look for pattern of any-prefix-MM-DD-YYYY.csv (for general reporting page files)
   // This should be more specific if other types are added, or be the last resort.
-  dateMatch = filename.match(/.*?_(\d{2})-(\d{2})-(\d{4})\.csv$/); // Made slightly more specific to catch underscore before date
+  dateMatch = filename.match(/.*?-(\d{2})-(\d{2})-(\d{4})\.csv$/); // Made slightly more specific to catch hyphen before date
   if (dateMatch) {
     const month = dateMatch[1];
     const day = dateMatch[2];
