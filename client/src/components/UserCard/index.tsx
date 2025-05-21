@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, User, X, Trash2, AlertTriangle } from "lucide-react"; // Added AlertTriangle
+import { ChevronDown, ChevronUp, User, X, Trash2, AlertTriangle, UserX } from "lucide-react"; // Added AlertTriangle & UserX
 import RoleBadge from "../RoleBadge";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip, CircularProgress } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
@@ -309,10 +309,10 @@ const UserCard: React.FC<UserCardProps> = ({
             {isAdmin && !user.isDisabled && onDisableUser && (
               <button
                 onClick={openDeleteConfirmModal}
-                className="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800/50 text-red-500 dark:text-red-400"
+                className="p-1 rounded-full hover:bg-yellow-100 dark:hover:bg-yellow-800/50 text-yellow-600 dark:text-yellow-500"
                 aria-label="Disable User"
               >
-                <Trash2 size={18} />
+                <UserX size={18} />
               </button>
             )}
             {isAdmin && user.isDisabled && onEnableUser && ( 
@@ -442,8 +442,8 @@ const UserCard: React.FC<UserCardProps> = ({
                 {!user.isDisabled && onDisableUser && (
                   <Button
                     variant="outlined"
-                    color="error"
-                    startIcon={<Trash2 />}
+                    color="warning" // Changed to warning for disable
+                    startIcon={<UserX />} // Changed icon
                     onClick={openDeleteConfirmModal}
                     size="small"
                     disabled={isDisabling}
@@ -610,19 +610,22 @@ const UserCard: React.FC<UserCardProps> = ({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onClose={closeDeleteConfirmModal}>
-        <DialogTitle>Confirm Disable User</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <UserX className="mr-2 text-yellow-600" /> Confirm Disable User
+        </DialogTitle>
         <DialogContent>
-          {/* eslint-disable-next-line react/no-unescaped-entities */}
           <Typography>
             Are you sure you want to disable the user &quot;{user.username}&quot;?
-            This user will no longer be able to log in and will be moved to a disabled users list.
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            This user will no longer be able to log in and will be moved to a disabled users list. They can be re-enabled later.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteConfirmModal} disabled={isDisabling}>Cancel</Button>
           <Button
             onClick={handleConfirmDisableUser}
-            color="error"
+            color="warning"
             variant="contained"
             disabled={isDisabling}
             startIcon={isDisabling ? <CircularProgress size={20} color="inherit" /> : null}

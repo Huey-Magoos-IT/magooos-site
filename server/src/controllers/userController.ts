@@ -625,18 +625,24 @@ export const disableUser = async (req: Request, res: Response): Promise<void> =>
       });
 
     } catch (cognitoError: any) {
-      console.error(`[PATCH /users/${targetUserIdString}/disable] Cognito Error for user ${userToDisable.cognitoId}:`, cognitoError);
-      // User was disabled in DB, but Cognito operation failed. This is a critical state.
-      // Log this error thoroughly. For now, respond with an error indicating partial success/failure.
-      // A more robust solution might involve a retry mechanism for Cognito or a background job to reconcile.
-      res.status(500).json({ 
-        message: `User marked as disabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
-        user: updatedUserInDb, // Return the DB state
-        cognitoErrorDetails: {
-          name: cognitoError.name,
-          message: cognitoError.message,
-        }
-      });
+      if (cognitoError.name === 'UserNotFoundException') {
+        console.info(`[PATCH /users/${targetUserIdString}/disable] Cognito user ${userToDisable.username} not found. Assuming already disabled or does not exist in Cognito. DB user is disabled.`);
+        res.status(200).json({
+            message: "User disabled successfully in database. User not found in Cognito (assumed already actioned).",
+            user: updatedUserInDb
+        });
+      } else {
+        console.error(`[PATCH /users/${targetUserIdString}/disable] Cognito Error for user ${userToDisable.username}:`, cognitoError);
+        // User was disabled in DB, but Cognito operation failed. This is a critical state.
+        res.status(500).json({
+          message: `User marked as disabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
+          user: updatedUserInDb, // Return the DB state
+          cognitoErrorDetails: {
+            name: cognitoError.name,
+            message: cognitoError.message,
+          }
+        });
+      }
     }
 
   } catch (dbError: any) {
@@ -706,16 +712,26 @@ export const enableUser = async (req: Request, res: Response): Promise<void> => 
       });
 
     } catch (cognitoError: any) {
-      console.error(`[PATCH /users/${targetUserIdString}/enable] Cognito Error for user ${userToEnable.username}:`, cognitoError);
-      // User was enabled in DB, but Cognito operation failed.
-      res.status(500).json({
-        message: `User marked as enabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
-        user: updatedUserInDb, // Return the DB state
-        cognitoErrorDetails: {
-          name: cognitoError.name,
-          message: cognitoError.message,
-        }
-      });
+      if (cognitoError.name === 'UserNotFoundException') {
+        console.info(`[PATCH /users/${targetUserIdString}/enable] Cognito user ${userToEnable.username} not found. Cannot enable in Cognito if user does not exist. DB user is enabled.`);
+        // This is a bit of an edge case. User is enabled in DB but doesn't exist in Cognito.
+        // For consistency, we might want to prevent enabling in DB if not in Cognito, or flag this.
+        // For now, report success for DB and note Cognito status.
+        res.status(200).json({
+            message: "User enabled successfully in database. User not found in Cognito.",
+            user: updatedUserInDb
+        });
+      } else {
+        console.error(`[PATCH /users/${targetUserIdString}/enable] Cognito Error for user ${userToEnable.username}:`, cognitoError);
+        res.status(500).json({
+          message: `User marked as enabled in DB, but Cognito operation failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito check may be required.`,
+          user: updatedUserInDb, // Return the DB state
+          cognitoErrorDetails: {
+            name: cognitoError.name,
+            message: cognitoError.message,
+          }
+        });
+      }
     }
 
   } catch (dbError: any) {
@@ -764,32 +780,54 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
     // Database cleanup and user deletion within a transaction
     await prisma.$transaction(async (tx) => {
-      console.log(`[DELETE /users/${targetUserIdString}] Deleting related comments for user ID: ${targetUserId}`);
+      // 1. Delete comments directly made by the user
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting comments authored by user ID: ${targetUserId}`);
       await tx.comment.deleteMany({ where: { userId: targetUserId } });
 
-      console.log(`[DELETE /users/${targetUserIdString}] Deleting related attachments for user ID: ${targetUserId}`);
+      // 2. Delete attachments uploaded by the user
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting attachments uploaded by user ID: ${targetUserId}`);
       await tx.attachment.deleteMany({ where: { uploadedById: targetUserId } });
 
-      console.log(`[DELETE /users/${targetUserIdString}] Deleting related task assignments for user ID: ${targetUserId}`);
+      // 3. Delete task assignments for the user
+      console.log(`[DELETE /users/${targetUserIdString}] Deleting task assignments for user ID: ${targetUserId}`);
       await tx.taskAssignment.deleteMany({ where: { userId: targetUserId } });
 
+      // 4. Find all tasks authored by the user
+      const tasksAuthoredByUser = await tx.task.findMany({
+        where: { authorUserId: targetUserId },
+        select: { id: true } // Only need the IDs
+      });
+      const authoredTaskIds = tasksAuthoredByUser.map(task => task.id);
+
+      if (authoredTaskIds.length > 0) {
+        // 5. Delete comments associated with tasks authored by the user
+        console.log(`[DELETE /users/${targetUserIdString}] Deleting comments on tasks authored by user ID: ${targetUserId} (Task IDs: ${authoredTaskIds.join(', ')})`);
+        await tx.comment.deleteMany({
+          where: { taskId: { in: authoredTaskIds } }
+        });
+
+        // 6. Delete attachments associated with tasks authored by the user
+        console.log(`[DELETE /users/${targetUserIdString}] Deleting attachments on tasks authored by user ID: ${targetUserId} (Task IDs: ${authoredTaskIds.join(', ')})`);
+        await tx.attachment.deleteMany({
+            where: { taskId: { in: authoredTaskIds } }
+        });
+      }
+
+      // 7. Nullify other users' tasks assigned to the target user
       console.log(`[DELETE /users/${targetUserIdString}] Nullifying assigned tasks for user ID: ${targetUserId}`);
       await tx.task.updateMany({
         where: { assignedUserId: targetUserId },
         data: { assignedUserId: null },
       });
 
-      console.log(`[DELETE /users/${targetUserIdString}] Deleting authored tasks for user ID: ${targetUserId}`);
-      await tx.task.deleteMany({ where: { authorUserId: targetUserId } });
+      // 8. Delete tasks authored by the user
+      // This must happen after comments/attachments on these tasks are deleted
+      if (authoredTaskIds.length > 0) {
+        console.log(`[DELETE /users/${targetUserIdString}] Deleting tasks authored by user ID: ${targetUserId}`);
+        await tx.task.deleteMany({ where: { id: { in: authoredTaskIds } } });
+      }
       
-      // Unset team and group associations (optional if user record is deleted immediately after, but good for clarity)
-      // This step is technically redundant if the user is deleted in the same transaction,
-      // but shown here for completeness if one were to separate these steps.
-      // await tx.user.update({
-      //   where: { userId: targetUserId },
-      //   data: { teamId: null, groupId: null },
-      // });
-
+      // 9. Delete the user record
       console.log(`[DELETE /users/${targetUserIdString}] Deleting user record from database for user ID: ${targetUserId}`);
       await tx.user.delete({ where: { userId: targetUserId } });
     });
@@ -812,15 +850,22 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       });
 
     } catch (cognitoError: any) {
-      console.error(`[DELETE /users/${targetUserIdString}] Cognito Deletion Error for user ${userToDelete.username}:`, cognitoError);
-      // User was deleted from DB, but Cognito operation failed. This is a critical state.
-      res.status(500).json({
-        message: `User deleted from DB, but Cognito deletion failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito cleanup may be required for user ${userToDelete.username}.`,
-        cognitoErrorDetails: {
-          name: cognitoError.name,
-          message: cognitoError.message,
-        }
-      });
+      if (cognitoError.name === 'UserNotFoundException') {
+        console.info(`[DELETE /users/${targetUserIdString}] Cognito user ${userToDelete.username} not found. Assuming already deleted or never existed in Cognito. DB user and related data deleted.`);
+        res.status(200).json({
+            message: "User permanently deleted successfully from database. User not found in Cognito (assumed already actioned)."
+        });
+      } else {
+        console.error(`[DELETE /users/${targetUserIdString}] Cognito Deletion Error for user ${userToDelete.username}:`, cognitoError);
+        // User was deleted from DB, but Cognito operation failed. This is a critical state.
+        res.status(500).json({
+          message: `User deleted from DB, but Cognito deletion failed: ${cognitoError.name || 'Unknown Cognito Error'} - ${cognitoError.message || ''}. Manual Cognito cleanup may be required for user ${userToDelete.username}.`,
+          cognitoErrorDetails: {
+            name: cognitoError.name,
+            message: cognitoError.message,
+          }
+        });
+      }
     }
 
   } catch (dbError: any) {
