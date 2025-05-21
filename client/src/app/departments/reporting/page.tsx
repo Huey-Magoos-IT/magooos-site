@@ -238,11 +238,11 @@ const ReportingPage = () => {
       // TEMPORARILY DISABLE FILTERS (except date/report type for file fetching)
       // Pass empty arrays/strings to filterData to effectively bypass these filters for now.
       // The UI elements for these filters will remain, but their values won't be used here.
-      setProcessingProgress("Filtering data..."); // Updated progress message
+      setProcessingProgress("Filtering data (testing daily usage count)..."); // Updated progress message
       filteredData = filterData(
         combinedData,
-        effectiveLocationIds, // Use the calculated effectiveLocationIds
-        discountIds,          // Use the current discountIds state
+        [], // effectiveLocationIds - temporarily disabled again for testing
+        [], // discountIds - temporarily disabled again for testing
         selectedLocations,    // Pass selectedLocations as before
         dailyUsageCountFilter, // Use the dailyUsageCountFilter state
         reportingPageCsvConfig // Pass the config object
