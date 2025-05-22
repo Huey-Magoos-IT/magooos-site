@@ -53,7 +53,6 @@ export type DatePreset =
   | "Today Last Week"
   | "Month to date"
   | "Last Month"
-  | "This Day Last Year"
   | "This Year";
 
 export const datePresets: DatePreset[] = [
@@ -63,7 +62,6 @@ export const datePresets: DatePreset[] = [
   "Today Last Week",
   "Month to date",
   "Last Month",
-  "This Day Last Year",
   "This Year",
 ];
 
@@ -116,16 +114,8 @@ export const getDateRangeForPreset = (
         endDate = yesterday;
       }
       break;
-    case "This Day Last Year":
-      startDate = startOfDay(subYears(now, 1));
-      endDate = endOfDay(subYears(now, 1));
-      // Ensure endDate is not after yesterday
-      if (endDate > yesterday) {
-        endDate = yesterday;
-      }
-      break;
     case "This Year":
-      startDate = startOfYear(now);
+      startDate = new Date(now.getFullYear(), 0, 13); // Set to Jan 13 of current year
       endDate = endOfYear(now);
       // Ensure endDate is not after yesterday
       if (endDate > yesterday) {
