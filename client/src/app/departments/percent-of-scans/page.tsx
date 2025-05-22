@@ -386,7 +386,7 @@ const PercentOfScansPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
-                  minDate={new Date(2025, 0, 13, 12, 0, 0)} 
+                  minDate={new Date(new Date().getFullYear(), 0, 13, 12, 0, 0)}
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -419,7 +419,7 @@ const PercentOfScansPage = () => {
                   format="MMddyyyy"
                   className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
                   minDate={(() => {
-                    const minAllowedDate = new Date(2025, 0, 13, 12, 0, 0);
+                    const minAllowedDate = new Date(new Date().getFullYear(), 0, 13, 12, 0, 0);
                     
                     if (startDate) {
                       const startOfDayStartDate = new Date(startDate);
