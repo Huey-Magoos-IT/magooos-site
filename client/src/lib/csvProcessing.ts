@@ -274,7 +274,6 @@ export const parseCSV = <T = any>(csvText: string, hasHeader = true): Promise<Pa
       header: hasHeader,
       dynamicTyping: true, // Convert numerical values automatically
       skipEmptyLines: true,
-      delimiter: ',', // Force comma delimiter
       complete: (results: Papa.ParseResult<T>) => { // Use Papa.ParseResult<T>
         console.log("PapaParse Meta Fields:", results.meta.fields);
         resolve({
