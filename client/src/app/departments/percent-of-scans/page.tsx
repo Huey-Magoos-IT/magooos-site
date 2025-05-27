@@ -601,6 +601,7 @@ const PercentOfScansPage = () => {
             reportType={dataType} // This will be 'loyalty_scan_summary'
             startDate={startDate}
             endDate={endDate}
+            hiddenColumns={['Location ID']} // Hide the Location ID column from display
           />
         </div>
       </div>

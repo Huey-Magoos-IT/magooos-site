@@ -1,0 +1,200 @@
+{
+  "info": {
+    "name": "Location Data Testing",
+    "description": "Collection for testing the new location endpoint to investigate missing location data",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://gateway-api.qubeyond.com/api/v4/data/export",
+      "type": "string"
+    },
+    {
+      "key": "secret",
+      "value": "REPLACE_WITH_ACTUAL_PASSWORD",
+      "type": "string"
+    },
+    {
+      "key": "storeId",
+      "value": "REPLACE_WITH_REAL_STORE_ID",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "integrationId",
+      "value": "61cac285255d5748b9f7391c",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extract token from response and set as environment variable",
+              "if (pm.response.code === 200) {",
+              "    const responseJson = pm.response.json();",
+              "    // Adjust this based on actual response structure",
+              "    if (responseJson.token) {",
+              "        pm.collectionVariables.set('authToken', responseJson.token);",
+              "    } else if (responseJson.access_token) {",
+              "        pm.collectionVariables.set('authToken', responseJson.access_token);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"secret\": \"{{secret}}\",\n  \"store_id\": \"{{storeId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth"]
+        },
+        "description": "Generate authentication token using secret and store ID"
+      }
+    },
+    {
+      "name": "Get Locations - Full Dataset",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "x-integration",
+            "value": "{{integrationId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/locations",
+          "host": ["{{baseUrl}}"],
+          "path": ["locations"]
+        },
+        "description": "Get all locations to check for missing data"
+      }
+    },
+    {
+      "name": "Get Locations - Limited (Safe Test)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "x-integration",
+            "value": "{{integrationId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/locations?limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["locations"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "50",
+              "description": "Limit response size to avoid crashing Postman"
+            }
+          ]
+        },
+        "description": "Get limited locations for initial testing (safer for large datasets)"
+      }
+    },
+    {
+      "name": "Get Locations - Specific Store",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "x-integration",
+            "value": "{{integrationId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/locations?store_id={{storeId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["locations"],
+          "query": [
+            {
+              "key": "store_id",
+              "value": "{{storeId}}",
+              "description": "Filter by specific store ID"
+            }
+          ]
+        },
+        "description": "Get locations for a specific store to compare with existing data"
+      }
+    },
+    {
+      "name": "Get Locations - Date Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authToken}}",
+            "type": "text"
+          },
+          {
+            "key": "x-integration",
+            "value": "{{integrationId}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/locations?start_date=2025-05-01&end_date=2025-05-27",
+          "host": ["{{baseUrl}}"],
+          "path": ["locations"],
+          "query": [
+            {
+              "key": "start_date",
+              "value": "2025-05-01",
+              "description": "Start date for data range"
+            },
+            {
+              "key": "end_date",
+              "value": "2025-05-27",
+              "description": "End date for data range"
+            }
+          ]
+        },
+        "description": "Get locations within a specific date range"
+      }
+    }
+  ]
+}

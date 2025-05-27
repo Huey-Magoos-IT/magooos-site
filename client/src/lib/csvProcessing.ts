@@ -656,61 +656,46 @@ export const filterData = (
   const filteredData = data.filter(row => {
     
     // Apply location filter if needed
-    if (locationIds.length > 0 && config?.locationIdentifierField) {
-      const storeValueRaw = getFieldValue(row, config.locationIdentifierField);
-      const storeValueStr = storeValueRaw !== undefined ? String(storeValueRaw).trim() : '';
+    if (locationIds.length > 0) {
+      // First, try to use Location ID column if it exists (preferred method)
+      const locationIdValue = row['Location ID'];
       
-      // If the location value is "TOTAL", do not filter it out by location.
-      if (storeValueStr === 'TOTAL') {
-        // This row will pass the location filter part.
-        // Other filters (like discount) might still apply.
-      } else if (!storeValueStr) {
-        return false; // If location identifier is not found (and not "TOTAL"), exclude it
-      } else {
-        // Original location matching logic for non-"TOTAL" rows
-        // Check for match using multiple strategies
-      let locationMatch = false;
-      
-      // Strategy 1: Direct ID match (CSV record has a location ID as a string)
-      if (!locationMatch) {
-        locationMatch = locationIds.some(id => storeValueStr === id);
-        if (locationMatch) {
-          // console.log(`FILTER DATA - Direct ID match: ${storeValueStr} === ${locationIds.find(id => storeValueStr === id)}`); // Optional logging
-        }
-      }
-      
-      // Strategy 2: Name match (CSV record has a location name)
-      if (!locationMatch && locationNames.length > 0) {
-        locationMatch = locationNames.some(name => {
-          if (!name) return false;
-          const nameStr = String(name);
-          
-          const matches = (
-            storeValueStr.includes(nameStr) ||
-            // Also check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
-            (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false)
-          );
-          
-          if (matches) {
-            // console.log(`FILTER DATA - Name match: ${storeValueStr} includes ${nameStr}`); // Optional logging
+      if (locationIdValue !== undefined && locationIdValue !== null && String(locationIdValue).trim() !== '') {
+        const locationIdStr = String(locationIdValue).trim();
+        
+        // If the location ID is empty string for TOTAL row, allow it to pass
+        if (locationIdStr === '') {
+          // This is likely a TOTAL row, let it pass
+        } else {
+          // Direct Location ID match
+          const locationMatch = locationIds.includes(locationIdStr);
+          if (!locationMatch) {
+            return false;
           }
-          
-          return matches;
-        });
-      }
-      
-      // Strategy 3: Numeric location code match (CSV has numeric codes like "1825")
-      if (!locationMatch) {
-        // In case the CSV has numeric location codes (IDs without leading/trailing text)
-        // that match our locationIds
-        locationMatch = locationIds.includes(storeValueStr);
-        if (locationMatch) {
-          // console.log(`FILTER DATA - Numeric code match: ${storeValueStr} in locationIds`); // Optional logging
         }
+      } else if (config?.locationIdentifierField) {
+        // Fallback to the old method using config if Location ID column doesn't exist
+        const storeValueRaw = getFieldValue(row, config.locationIdentifierField);
+        const storeValueStr = storeValueRaw !== undefined ? String(storeValueRaw).trim() : '';
+        
+        // If the location value is "TOTAL", do not filter it out by location.
+        if (storeValueStr === 'TOTAL') {
+          // This row will pass the location filter part.
+          // Other filters (like discount) might still apply.
+        } else if (!storeValueStr) {
+          return false; // If location identifier is not found (and not "TOTAL"), exclude it
+        } else {
+          // Check for direct ID match first
+          let locationMatch = locationIds.includes(storeValueStr);
+          
+          if (!locationMatch) {
+            return false;
+          }
+        }
+      } else {
+        // No Location ID column and no config - can't filter by location
+        return false;
       }
-      
-      if (!locationMatch) return false;
-      } // End of the 'else' for non-"TOTAL" rows
     }
     
     // Apply discount ID filtering if needed
