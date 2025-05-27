@@ -221,9 +221,8 @@ const PercentOfScansPage = () => {
       if (dataType === 'loyalty_scan_detail') {
         percentOfScansCsvConfig = {
           locationIdentifierField: {
-            sourceNames: ['Location'] // Only location needed for filtering/enhancement
+            sourceNames: ['Location ID', 'Location'] // Prioritize 'Location ID', fallback to 'Location'
           }
-          // No other fields needed in config for detail, as "Employee" column should pass through as is.
         };
       } else { // For 'loyalty_scan_summary'
         percentOfScansCsvConfig = {
