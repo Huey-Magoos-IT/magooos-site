@@ -658,26 +658,27 @@ export const filterData = (
     if (locationIds.length > 0) { // Only filter if locationIds are provided
       if (!config?.locationIdentifierField) {
         // If location filtering is requested but no identifier field is configured,
-        // we cannot apply the filter. Depending on strictness, this might be an error
-        // or simply mean these rows are excluded. For now, we exclude.
+        // we cannot apply the filter.
         console.warn("FILTER DATA - Location filter active but no `locationIdentifierField` in config. Excluding row.");
-        return false;
+        return false; // Exclude row if location filter is active but cannot be applied
       }
 
       const locationIdValue = getFieldValue(row, config.locationIdentifierField);
       const locationIdStr = locationIdValue !== undefined ? String(locationIdValue).trim() : '';
 
-      // If the location ID is an empty string, or "TOTAL", allow it to pass the location filter.
-      // This is a common pattern for summary rows.
-      if (locationIdStr === '' || locationIdStr === 'TOTAL') {
-        // This row passes the location filter, but other filters (like discount) might still apply.
+      // If specific locations are selected, we must ensure the row's location ID
+      // is either among the selected ones or is an aggregate 'TOTAL' row.
+      // Any other location ID (including empty ones for non-TOTAL rows) should be filtered out.
+      if (locationIdStr === 'TOTAL') {
+        console.log(`FILTER DATA - Row passed location filter: TOTAL row. Location ID: '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
+        // Allow TOTAL rows to pass the location filter, as they are aggregates.
+        // Other filters (like discount) might still apply.
+      } else if (!locationIds.includes(locationIdStr)) {
+        console.log(`FILTER DATA - Row filtered out by location: ID '${locationIdStr}' not in selected IDs: [${locationIds.join(', ')}]`);
+        return false;
       } else {
-        // Direct Location ID match
-        const locationMatch = locationIds.includes(locationIdStr);
-        if (!locationMatch) {
-          // console.log(`FILTER DATA - Row excluded because location ID '${locationIdStr}' not in selected IDs: ${locationIds.join(', ')}`);
-          return false;
-        }
+        // Row has a matching location ID
+        console.log(`FILTER DATA - Row passed location filter: Matching ID '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
       }
     }
     
