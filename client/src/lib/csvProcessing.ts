@@ -20,34 +20,35 @@ export const fetchEmployeeData = async (): Promise<Record<string, string>> => {
 
   try {
     console.log(`Fetching employee data from ${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
-    const csvText = await fetchCSV(`${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`);
+    const csvUrl = `${EMPLOYEE_BUCKET_URL}/${EMPLOYEE_FILE_NAME}`;
+    console.log(`Fetching employee data from ${csvUrl}`);
+    const csvText = await fetchCSV(csvUrl);
     
-    // Parse CSV manually to match Python implementation exactly
-    const lines = csvText.split('\n');
+    // Define a config for parsing employee data using processCSVWithMapping
+    const employeeConfig: CSVProcessingConfig = {
+      additionalFields: {
+        loyaltyId: { sourceNames: ['Loyalty ID', 'CUSTOMER ID', 'customer_id'], dataType: 'string' },
+        firstName: { sourceNames: ['First Name', 'FNAME', 'first_name'], dataType: 'string' },
+        lastName: { sourceNames: ['Last Name', 'LNAME', 'last_name'], dataType: 'string' },
+        // Add other fields you might need from this CSV in the future
+      },
+    };
+
+    // Process the CSV using the generic mapping function
+    // This assumes the employee CSV has a header
+    const parsedEmployees = await processCSVWithMapping(csvText, employeeConfig, true);
+    
     const employeeData: Record<string, string> = {};
-    
-    console.log(`Total lines in employee data: ${lines.length}`);
-    console.log(`Header: ${lines[0]}`);
-    
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.trim()) continue;
+    parsedEmployees.forEach(employee => {
+      const loyaltyId = employee.loyaltyId;
+      const firstName = employee.firstName || '';
+      const lastName = employee.lastName || '';
       
-      // Split by comma and clean up values - exactly like Python implementation
-      const parts = line.split(',');
-      if (parts.length >= 3) {
-        const loyaltyId = parts[0].trim().replace(/"/g, '');
-        const firstName = parts[1].trim().replace(/"/g, '');
-        const lastName = parts[2].trim().replace(/"/g, '');
-        
-        // Only add entries with valid loyalty IDs
-        if (loyaltyId) {
-          employeeData[loyaltyId] = `${firstName} ${lastName}`.trim();
-        }
+      if (loyaltyId) {
+        employeeData[loyaltyId] = `${firstName} ${lastName}`.trim();
       }
-    }
-    
+    });
+
     console.log(`Loaded ${Object.keys(employeeData).length} employee records`);
     
     // Debug: Log a sample of the employee data
@@ -55,15 +56,13 @@ export const fetchEmployeeData = async (): Promise<Record<string, string>> => {
     console.log("Sample employee data mapping:",
       sampleEntries.map(([id, name]) => `${id}: ${name}`).join(', '));
     
-    console.log(`Loaded ${Object.keys(employeeData).length} employee records`);
-    
     // Cache the data for future use
     employeeDataCache = employeeData;
     
     return employeeData;
   } catch (error) {
     console.error('Error fetching employee data:', error);
-    // Return empty object on error
+    // Return empty object on error to prevent cascading errors if employee data is non-critical
     return {};
   }
 };
@@ -654,74 +653,32 @@ export const filterData = (
   }
   
   const filteredData = data.filter(row => {
-    
+
     // Apply location filter if needed
-    if (locationIds.length > 0 && config?.locationIdentifierField) {
-      const storeValueRaw = getFieldValue(row, config.locationIdentifierField);
-      const storeValueStr = storeValueRaw !== undefined ? String(storeValueRaw).trim() : '';
-      
-      // If the location value is "TOTAL", do not filter it out by location.
-      if (storeValueStr === 'TOTAL') {
-        // This row will pass the location filter part.
-        // Other filters (like discount) might still apply.
-      } else if (!storeValueStr) {
-        return false; // If location identifier is not found (and not "TOTAL"), exclude it
+    if (locationIds.length > 0) { // Only filter if locationIds are provided
+      if (!config?.locationIdentifierField) {
+        // If location filtering is requested but no identifier field is configured,
+        // we cannot apply the filter. Depending on strictness, this might be an error
+        // or simply mean these rows are excluded. For now, we exclude.
+        console.warn("FILTER DATA - Location filter active but no `locationIdentifierField` in config. Excluding row.");
+        return false;
+      }
+
+      const locationIdValue = getFieldValue(row, config.locationIdentifierField);
+      const locationIdStr = locationIdValue !== undefined ? String(locationIdValue).trim() : '';
+
+      // If the location ID is an empty string, or "TOTAL", allow it to pass the location filter.
+      // This is a common pattern for summary rows.
+      if (locationIdStr === '' || locationIdStr === 'TOTAL') {
+        // This row passes the location filter, but other filters (like discount) might still apply.
       } else {
-        // Original location matching logic for non-"TOTAL" rows
-        // Check for match using multiple strategies
-      let locationMatch = false;
-      
-      // Strategy 1: Direct ID match (CSV record has a location ID as a string)
-      if (!locationMatch) {
-        locationMatch = locationIds.some(id => storeValueStr === id);
-        if (locationMatch) {
-          // console.log(`FILTER DATA - Direct ID match: ${storeValueStr} === ${locationIds.find(id => storeValueStr === id)}`); // Optional logging
+        // Direct Location ID match
+        const locationMatch = locationIds.includes(locationIdStr);
+        if (!locationMatch) {
+          // console.log(`FILTER DATA - Row excluded because location ID '${locationIdStr}' not in selected IDs: ${locationIds.join(', ')}`);
+          return false;
         }
       }
-      
-      // Strategy 2: Name match (CSV record has a location name)
-      if (!locationMatch && locationNames.length > 0) {
-        locationMatch = locationNames.some(name => {
-          if (!name) return false;
-          const nameStr = String(name);
-          
-          // More flexible matching strategies
-          const matches = (
-            // Exact match
-            storeValueStr === nameStr ||
-            // CSV contains the location name
-            storeValueStr.includes(nameStr) ||
-            // Location name contains the CSV value (reverse check)
-            nameStr.includes(storeValueStr) ||
-            // Check for case where name is like "Winter Garden" but CSV has "Winter Garden, FL"
-            (nameStr.includes(',') ? storeValueStr.includes(nameStr.split(',')[0].trim()) : false) ||
-            // Check for case where CSV is like "Arden, NC" but name is "Arden"
-            (storeValueStr.includes(',') ? nameStr.includes(storeValueStr.split(',')[0].trim()) : false) ||
-            // Case-insensitive partial matching for city names
-            nameStr.toLowerCase().includes(storeValueStr.toLowerCase()) ||
-            storeValueStr.toLowerCase().includes(nameStr.toLowerCase())
-          );
-          
-          if (matches) {
-            console.log(`FILTER DATA - Name match found: "${storeValueStr}" matches "${nameStr}"`);
-          }
-          
-          return matches;
-        });
-      }
-      
-      // Strategy 3: Numeric location code match (CSV has numeric codes like "1825")
-      if (!locationMatch) {
-        // In case the CSV has numeric location codes (IDs without leading/trailing text)
-        // that match our locationIds
-        locationMatch = locationIds.includes(storeValueStr);
-        if (locationMatch) {
-          // console.log(`FILTER DATA - Numeric code match: ${storeValueStr} in locationIds`); // Optional logging
-        }
-      }
-      
-      if (!locationMatch) return false;
-      } // End of the 'else' for non-"TOTAL" rows
     }
     
     // Apply discount ID filtering if needed
