@@ -29,7 +29,6 @@ interface CSVDataTableProps {
   reportType: string;
   startDate?: Date | null;
   endDate?: Date | null;
-  hiddenColumns?: string[]; // New prop to specify columns to hide from display
 }
 
 type OrderDirection = 'asc' | 'desc';
@@ -42,8 +41,7 @@ const CSVDataTable = ({
   selectedDiscountIds,
   reportType,
   startDate,
-  endDate,
-  hiddenColumns = [] // Default to empty array if not provided
+  endDate
 }: CSVDataTableProps) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
@@ -87,15 +85,13 @@ const CSVDataTable = ({
     // Reset to first page when data changes
     setPage(0);
     
-    // Determine columns from the first data item, excluding hidden columns
+    // Determine columns from the first data item
     if (data.length > 0) {
-      const allColumns = Object.keys(data[0]);
-      const visibleColumns = allColumns.filter(column => !hiddenColumns.includes(column));
-      setColumns(visibleColumns);
+      setColumns(Object.keys(data[0]));
     } else {
       setColumns([]);
     }
-  }, [data, hiddenColumns]);
+  }, [data]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
