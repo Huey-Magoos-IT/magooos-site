@@ -220,17 +220,18 @@ const PercentOfScansPage = () => {
 
       if (dataType === 'loyalty_scan_detail') {
         percentOfScansCsvConfig = {
-          locationIdentifierField: {
-            sourceNames: ['Location'] // Only location needed for filtering/enhancement
-          }
-          // No other fields needed in config for detail, as "Employee" column should pass through as is.
+          // For loyalty_scan_detail report:
+          locationIdentifierField: { sourceNames: ['Location ID', 'LocationId', 'Location_ID'], dataType: 'string' },
+          employeeIdentifierField: { sourceNames: ['Employee ID', 'EmployeeId', 'Employee_ID'], dataType: 'string' },
+          transactionDateField: { sourceNames: ['Date'], dataType: 'string' }, // Keep as string for filtering then process, or make date to be strict
+          dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' }, // For 'daily usage count' filter
         };
       } else { // For 'loyalty_scan_summary'
         percentOfScansCsvConfig = {
-          locationIdentifierField: {
-            sourceNames: ['Location']
-          }
-          // No other specific fields needed for summary.
+          // For loyalty_scan_summary report:
+          locationIdentifierField: { sourceNames: ['Location', 'Location ID', 'LocationId', 'Location_ID'], dataType: 'string' },
+          // Summary reports might need different fields, add as necessary
+          // Example: totalScanCountField: { sourceNames: ['Total Scans'], dataType: 'number' },
         };
       }
       
