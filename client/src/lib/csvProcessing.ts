@@ -250,7 +250,9 @@ export interface ParsedCSVData<T = any> {
  */
 export const fetchCSV = async (url: string): Promise<string> => {
   try {
-    const response = await fetch(url);
+    // Add a cache-busting parameter to the URL
+    const uniqueUrl = `${url}${url.includes('?') ? '&' : '?'}cacheBuster=${new Date().getTime()}`;
+    const response = await fetch(uniqueUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);
     }
