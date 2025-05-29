@@ -248,6 +248,15 @@ const PercentOfScansPage = () => {
       // It does not affect the 'Employee' column.
       filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig);
       
+      // Remove 'Location ID' and 'Location Name' columns for display on this specific page
+      // This is done after all filtering and enhancement to ensure data integrity for those operations
+      filteredData = filteredData.map(row => {
+        const newRow = { ...row };
+        delete newRow['Location ID'];
+        delete newRow['Location Name'];
+        return newRow;
+      });
+
       // Employee name enhancement and related data fetching are removed entirely.
       // The 'Employee' column from the detail CSV will be part of 'filteredData' as is.
 
