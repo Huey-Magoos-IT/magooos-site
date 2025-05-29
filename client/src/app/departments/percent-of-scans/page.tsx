@@ -230,8 +230,12 @@ const PercentOfScansPage = () => {
         percentOfScansCsvConfig = {
           // For loyalty_scan_summary report:
           locationIdentifierField: { sourceNames: ['Location', 'Location ID', 'LocationId', 'Location_ID'], dataType: 'string' },
-          // Summary reports might need different fields, add as necessary
-          // Example: totalScanCountField: { sourceNames: ['Total Scans'], dataType: 'number' },
+          transactionDateField: { sourceNames: ['Date'], dataType: 'string' },
+          dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' },
+          additionalFields: {
+            'Loyalty Scans': { sourceNames: ['Loyalty Scans'], dataType: 'number' },
+            'Scan Rate': { sourceNames: ['Scan Rate'], dataType: 'string' }
+          },
         };
       }
       
