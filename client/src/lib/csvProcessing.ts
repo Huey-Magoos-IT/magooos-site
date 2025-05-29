@@ -814,6 +814,24 @@ export const enhanceCSVWithEmployeeNames = (
  * @param config The CSVProcessingConfig to identify relevant fields.
  * @returns The original data combined with dynamically calculated daily total rows, sorted by date.
  */
+
+// Helper to parse MM/DD/YYYY to a UTC Date object at midnight
+const parseMMDDYYYYtoUTCDate = (dateStr: string): Date | null => {
+  if (!dateStr || !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) { // Allow single or double digit M/D
+    // console.warn(`parseMMDDYYYYtoUTCDate: Invalid date string format: ${dateStr}`);
+    return null;
+  }
+  const parts = dateStr.split('/');
+  const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed
+  const day = parseInt(parts[1], 10);
+  const year = parseInt(parts[2], 10);
+  if (isNaN(month) || isNaN(day) || isNaN(year) || month < 0 || month > 11 || day < 1 || day > 31) {
+    // console.warn(`parseMMDDYYYYtoUTCDate: Invalid date components: ${dateStr}`);
+    return null;
+  }
+  return new Date(Date.UTC(year, month, day));
+};
+
 export const calculateDailyTotals = (
   data: any[],
   startDate: Date | null,
@@ -822,24 +840,24 @@ export const calculateDailyTotals = (
 ): any[] => {
   if (!startDate || !endDate) return data;
 
-  // Check if the selected date range is for a single day
+  // Check if the selected date range is for a single day (using UTC dates for consistency)
   const isSingleDay =
-    startDate.getDate() === endDate.getDate() &&
-    startDate.getMonth() === endDate.getMonth() &&
-    startDate.getFullYear() === endDate.getFullYear();
+    startDate.getUTCFullYear() === endDate.getUTCFullYear() &&
+    startDate.getUTCMonth() === endDate.getUTCMonth() &&
+    startDate.getUTCDate() === endDate.getUTCDate();
 
   if (isSingleDay) {
     console.log("CALCULATE DAILY TOTALS - Single day selected, skipping daily totals generation.");
     return data; // No daily totals if only one day is selected
   }
 
-  const dailyAggregates: { [date: string]: { totalChecks: number; loyaltyScans: number } } = {};
+  const dailyAggregates: { [date: string]: { totalChecks: number; loyaltyScans: number; originalDateString?: string } } = {};
   const dateFieldAccessor = config.transactionDateField;
   const totalChecksFieldAccessor = config.dailyUsageCountField;
-  const loyaltyScansFieldAccessor = config.additionalFields?.['Loyalty Scans'];
+  const loyaltyScansFieldAccessor = config.additionalFields?.['Loyalty Scans']; // This is specific to summary
 
   if (!dateFieldAccessor || !totalChecksFieldAccessor || !loyaltyScansFieldAccessor || !config.locationIdentifierField) {
-    console.warn("CALCULATE DAILY TOTALS - Missing required config fields (transactionDateField, dailyUsageCountField, 'Loyalty Scans', or locationIdentifierField) for daily totals calculation. Returning original data.");
+    console.warn("CALCULATE DAILY TOTALS - Missing required config fields (date, totalChecks, 'Loyalty Scans', or locationId) for daily totals. Returning original data.");
     return data;
   }
 
@@ -850,38 +868,61 @@ export const calculateDailyTotals = (
       return; // Skip this row in aggregation
     }
 
-    const date = getFieldValue(row, dateFieldAccessor);
+    const dateValue = getFieldValue(row, dateFieldAccessor); // Expected "MM/DD/YYYY" string or Date object
+    let parsedDate: Date | null = null;
+    let originalDateStr: string | undefined = undefined;
+
+    if (dateValue instanceof Date) {
+      // If it's already a Date object, ensure it's set to UTC midnight for consistent key generation
+      parsedDate = new Date(Date.UTC(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate()));
+      originalDateStr = dateValue.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+    } else if (typeof dateValue === 'string') {
+      parsedDate = parseMMDDYYYYtoUTCDate(dateValue);
+      if (parsedDate) { // Only assign originalDateStr if parsing was successful
+        originalDateStr = dateValue;
+      }
+    }
+    
+    if (!parsedDate) {
+      // console.warn(`CALCULATE DAILY TOTALS - Could not parse date for row:`, row); // Reduced bloat
+      return; // Skip row if date cannot be parsed
+    }
+    
+    const dateKey = parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
     const totalChecks = getFieldValue(row, totalChecksFieldAccessor) || 0;
     const loyaltyScans = getFieldValue(row, loyaltyScansFieldAccessor) || 0;
 
-    if (date) { // Only aggregate if date is valid
-      const dateKey = new Date(date).toISOString().split('T')[0]; // Normalize date to YYYY-MM-DD for consistent key
-      if (!dailyAggregates[dateKey]) {
-        dailyAggregates[dateKey] = { totalChecks: 0, loyaltyScans: 0 };
-      }
-      dailyAggregates[dateKey].totalChecks += totalChecks;
-      dailyAggregates[dateKey].loyaltyScans += loyaltyScans;
+    if (!dailyAggregates[dateKey]) {
+      dailyAggregates[dateKey] = { totalChecks: 0, loyaltyScans: 0, originalDateString: originalDateStr };
+    } else if (originalDateStr && !dailyAggregates[dateKey].originalDateString) {
+      // Prefer the first encountered original date string for a given normalized key
+      dailyAggregates[dateKey].originalDateString = originalDateStr;
     }
+    dailyAggregates[dateKey].totalChecks += totalChecks;
+    dailyAggregates[dateKey].loyaltyScans += loyaltyScans;
   });
 
   const totalRows: any[] = [];
-  for (const dateKey in dailyAggregates) {
+  for (const dateKey in dailyAggregates) { // dateKey is YYYY-MM-DD
     const aggregate = dailyAggregates[dateKey];
     const scanRate =
       aggregate.totalChecks > 0
         ? ((aggregate.loyaltyScans / aggregate.totalChecks) * 100).toFixed(2) + '%'
         : '0.00%';
 
+    // Use the originalDateString for display if available, otherwise format from dateKey (YYYY-MM-DD)
+    // Ensure dateKey is treated as UTC when creating a new Date object for formatting
+    const displayDate = aggregate.originalDateString ||
+                        new Date(dateKey + 'T00:00:00Z').toLocaleDateString('en-US', {
+                            timeZone: 'UTC', // Specify UTC for toLocaleDateString from YYYY-MM-DD
+                            month: '2-digit', day: '2-digit', year: 'numeric'
+                        });
+    
     totalRows.push({
-      // Ensure the 'Date' column is formatted correctly, similar to existing data
-      // For summary, 'Date' column is typically 'MM/DD/YYYY'
-      [dateFieldAccessor.sourceNames[0]]: new Date(dateKey).toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-      }),
-      'Location': 'TOTAL', // Label for totals
-      'Location ID': '', // Empty for total row
+      [dateFieldAccessor.sourceNames[0]]: displayDate,
+      'Location': 'TOTAL',
+      'Location ID': '',
       [totalChecksFieldAccessor.sourceNames[0]]: aggregate.totalChecks,
       [loyaltyScansFieldAccessor.sourceNames[0]]: aggregate.loyaltyScans,
       'Scan Rate': scanRate,
@@ -890,17 +931,32 @@ export const calculateDailyTotals = (
   
   console.log("CALCULATE DAILY TOTALS - Generated daily total rows:", totalRows.length);
 
-  // Combine original data with total rows
   const combined = [...data, ...totalRows];
 
   // Sort by date primarily, then by 'TOTAL' last for each date
   combined.sort((a, b) => {
-    const dateA = new Date(getFieldValue(a, dateFieldAccessor));
-    const dateB = new Date(getFieldValue(b, dateFieldAccessor));
+    const dateValA = getFieldValue(a, dateFieldAccessor);
+    const dateValB = getFieldValue(b, dateFieldAccessor);
+
+    // Prioritize parsing as MM/DD/YYYY string, then as Date object
+    let parsedDateA: Date | null = null;
+    if (typeof dateValA === 'string') parsedDateA = parseMMDDYYYYtoUTCDate(dateValA);
+    else if (dateValA instanceof Date) parsedDateA = new Date(Date.UTC(dateValA.getUTCFullYear(), dateValA.getUTCMonth(), dateValA.getUTCDate()));
+
+    let parsedDateB: Date | null = null;
+    if (typeof dateValB === 'string') parsedDateB = parseMMDDYYYYtoUTCDate(dateValB);
+    else if (dateValB instanceof Date) parsedDateB = new Date(Date.UTC(dateValB.getUTCFullYear(), dateValB.getUTCMonth(), dateValB.getUTCDate()));
+
+    // Handle cases where dates might not be parseable or are null/undefined
+    if (!parsedDateA && parsedDateB) return 1; // Sort rows with unparseable dates last
+    if (parsedDateA && !parsedDateB) return -1;
+    if (!parsedDateA && !parsedDateB) return 0; // If both unparseable, keep original relative order
     
-    // Sort by date primarily
-    if (dateA.getTime() !== dateB.getTime()) {
-      return dateA.getTime() - dateB.getTime();
+    const timeA = parsedDateA!.getTime(); // Non-null assertion due to checks above
+    const timeB = parsedDateB!.getTime();
+
+    if (timeA !== timeB) {
+      return timeA - timeB;
     }
     
     // Within the same date, 'TOTAL' row should come last
