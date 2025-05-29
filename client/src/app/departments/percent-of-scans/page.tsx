@@ -180,6 +180,7 @@ const PercentOfScansPage = () => {
     setCSVError(null);
     setProcessingProgress("Filtering files by date and type...");
     setCSVData([]);
+    console.log("PERCENT OF SCANS PAGE - processCSVData dataType check. Actual state value:", dataType); // Diagnostic log
 
     try {
       // Filter files by date range and data type
