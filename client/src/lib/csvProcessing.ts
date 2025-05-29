@@ -671,16 +671,19 @@ export const filterData = (
       // If specific locations are selected, we must ensure the row's location ID
       // is either among the selected ones or is an aggregate 'TOTAL' row.
       // Any other location ID (including empty ones for non-TOTAL rows) should be filtered out.
+      // Explicitly exclude TOTAL rows as per new requirements
       if (locationIdStr === 'TOTAL') {
-        console.log(`FILTER DATA - Row passed location filter: TOTAL row. Location ID: '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
-        // Allow TOTAL rows to pass the location filter, as they are aggregates.
-        // Other filters (like discount) might still apply.
-      } else if (!locationIds.includes(locationIdStr)) {
+        console.log(`FILTER DATA - Excluding TOTAL row with Location ID: '${locationIdStr}'`);
+        return false;
+      }
+      // If specific locations are selected, filter out rows that don't match those locations.
+      if (locationIds.length > 0 && !locationIds.includes(locationIdStr)) {
         console.log(`FILTER DATA - Row filtered out by location: ID '${locationIdStr}' not in selected IDs: [${locationIds.join(', ')}]`);
         return false;
-      } else {
-        // Row has a matching location ID
-        console.log(`FILTER DATA - Row passed location filter: Matching ID '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
+      }
+      // Log for clarity if row passes location filter (if any applied)
+      if (locationIds.length > 0 && locationIds.includes(locationIdStr)) {
+          console.log(`FILTER DATA - Row passed location filter: Matching ID '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
       }
     }
     
@@ -833,4 +836,117 @@ export const enhanceCSVWithEmployeeNames = (
   - Success rate: ${enhancedRows > 0 ? Math.round((enhancedRows / (enhancedRows + unknownRows)) * 100) : 0}%`);
   
   return result;
+};
+
+/**
+ * Calculates daily totals for 'Total Checks', 'Loyalty Scans', and 'Scan Rate'
+ * for each date in the provided data, and appends them as new rows.
+ * Total rows are only generated if the date range spans more than one day.
+ *
+ * @param data Array of data objects (rows).
+ * @param startDate The start date of the selected range.
+ * @param endDate The end date of the selected range.
+ * @param config The CSVProcessingConfig to identify relevant fields.
+ * @returns The original data combined with dynamically calculated daily total rows, sorted by date.
+ */
+export const calculateDailyTotals = (
+  data: any[],
+  startDate: Date | null,
+  endDate: Date | null,
+  config: CSVProcessingConfig
+): any[] => {
+  if (!startDate || !endDate) return data;
+
+  // Check if the selected date range is for a single day
+  const isSingleDay =
+    startDate.getDate() === endDate.getDate() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getFullYear() === endDate.getFullYear();
+
+  if (isSingleDay) {
+    console.log("CALCULATE DAILY TOTALS - Single day selected, skipping daily totals generation.");
+    return data; // No daily totals if only one day is selected
+  }
+
+  const dailyAggregates: { [date: string]: { totalChecks: number; loyaltyScans: number } } = {};
+  const dateFieldAccessor = config.transactionDateField;
+  const totalChecksFieldAccessor = config.dailyUsageCountField;
+  const loyaltyScansFieldAccessor = config.additionalFields?.['Loyalty Scans'];
+
+  if (!dateFieldAccessor || !totalChecksFieldAccessor || !loyaltyScansFieldAccessor || !config.locationIdentifierField) {
+    console.warn("CALCULATE DAILY TOTALS - Missing required config fields (transactionDateField, dailyUsageCountField, 'Loyalty Scans', or locationIdentifierField) for daily totals calculation. Returning original data.");
+    return data;
+  }
+
+  data.forEach(row => {
+    // Exclude any existing 'TOTAL' rows from aggregation if they slipped through filterData
+    const locationIdentifierValue = getFieldValue(row, config.locationIdentifierField);
+    if (String(locationIdentifierValue).trim().toUpperCase() === 'TOTAL') {
+      return; // Skip this row in aggregation
+    }
+
+    const date = getFieldValue(row, dateFieldAccessor);
+    const totalChecks = getFieldValue(row, totalChecksFieldAccessor) || 0;
+    const loyaltyScans = getFieldValue(row, loyaltyScansFieldAccessor) || 0;
+
+    if (date) { // Only aggregate if date is valid
+      const dateKey = new Date(date).toISOString().split('T')[0]; // Normalize date to YYYY-MM-DD for consistent key
+      if (!dailyAggregates[dateKey]) {
+        dailyAggregates[dateKey] = { totalChecks: 0, loyaltyScans: 0 };
+      }
+      dailyAggregates[dateKey].totalChecks += totalChecks;
+      dailyAggregates[dateKey].loyaltyScans += loyaltyScans;
+    }
+  });
+
+  const totalRows: any[] = [];
+  for (const dateKey in dailyAggregates) {
+    const aggregate = dailyAggregates[dateKey];
+    const scanRate =
+      aggregate.totalChecks > 0
+        ? ((aggregate.loyaltyScans / aggregate.totalChecks) * 100).toFixed(2) + '%'
+        : '0.00%';
+
+    totalRows.push({
+      // Ensure the 'Date' column is formatted correctly, similar to existing data
+      // For summary, 'Date' column is typically 'MM/DD/YYYY'
+      [dateFieldAccessor.sourceNames[0]]: new Date(dateKey).toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+      }),
+      'Location': 'TOTAL', // Label for totals
+      'Location ID': '', // Empty for total row
+      [totalChecksFieldAccessor.sourceNames[0]]: aggregate.totalChecks,
+      [loyaltyScansFieldAccessor.sourceNames[0]]: aggregate.loyaltyScans,
+      'Scan Rate': scanRate,
+    });
+  }
+  
+  console.log("CALCULATE DAILY TOTALS - Generated daily total rows:", totalRows.length);
+
+  // Combine original data with total rows
+  const combined = [...data, ...totalRows];
+
+  // Sort by date primarily, then by 'TOTAL' last for each date
+  combined.sort((a, b) => {
+    const dateA = new Date(getFieldValue(a, dateFieldAccessor));
+    const dateB = new Date(getFieldValue(b, dateFieldAccessor));
+    
+    // Sort by date primarily
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateA.getTime() - dateB.getTime();
+    }
+    
+    // Within the same date, 'TOTAL' row should come last
+    const locA = (getFieldValue(a, config.locationIdentifierField) || '').toString().toUpperCase();
+    const locB = (getFieldValue(b, config.locationIdentifierField) || '').toString().toUpperCase();
+
+    if (locA === 'TOTAL' && locB !== 'TOTAL') return 1;
+    if (locA !== 'TOTAL' && locB === 'TOTAL') return -1;
+    
+    return 0; // Maintain original order for other rows on the same date
+  });
+
+  return combined;
 };

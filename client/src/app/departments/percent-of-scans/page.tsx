@@ -34,6 +34,7 @@ import {
   enhanceCSVWithLocationNames,
   fetchEmployeeData,
   enhanceCSVWithEmployeeNames,
+  calculateDailyTotals, // Import the new function
   CSVProcessingConfig // Import the new type
 } from "@/lib/csvProcessing";
 import {
@@ -266,7 +267,10 @@ const PercentOfScansPage = () => {
 
       console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering and location name enhancement.`);
       
-      setCSVData(filteredData);
+      // Calculate daily totals if applicable and append to data
+      const finalData = calculateDailyTotals(filteredData, startDate, endDate, percentOfScansCsvConfig);
+
+      setCSVData(finalData);
       setProcessingProgress("");
     } catch (error) {
       console.error("Error processing CSV files:", error);
