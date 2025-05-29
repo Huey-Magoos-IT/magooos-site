@@ -255,20 +255,31 @@ const PercentOfScansPage = () => {
       
       // Remove 'Location ID' and 'Location Name' columns for display on this specific page
       // This is done after all filtering and enhancement to ensure data integrity for those operations
-      filteredData = filteredData.map(row => {
-        const newRow = { ...row };
-        delete newRow['Location ID'];
-        delete newRow['Location Name'];
-        return newRow;
-      });
+      // Removed deletion of 'Location ID' and 'Location Name' to ensure they are displayed
+      // as per user's request.
+      // filteredData = filteredData.map(row => {
+      //   const newRow = { ...row };
+      //   delete newRow['Location ID'];
+      //   delete newRow['Location Name'];
+      //   return newRow;
+      // });
 
       // Employee name enhancement and related data fetching are removed entirely.
       // The 'Employee' column from the detail CSV will be part of 'filteredData' as is.
 
       console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering and location name enhancement.`);
       
-      // Calculate daily totals if applicable and append to data
-      const finalData = calculateDailyTotals(filteredData, startDate, endDate, percentOfScansCsvConfig);
+      // Only calculate daily totals for summary reports spanning multiple days
+      const isSingleDay =
+        startDate?.getDate() === endDate?.getDate() &&
+        startDate?.getMonth() === endDate?.getMonth() &&
+        startDate?.getFullYear() === endDate?.getFullYear();
+
+      let finalData = filteredData;
+
+      if (dataType === 'loyalty_scan_summary' && !isSingleDay) {
+        finalData = calculateDailyTotals(filteredData, startDate, endDate, percentOfScansCsvConfig);
+      }
 
       setCSVData(finalData);
       setProcessingProgress("");

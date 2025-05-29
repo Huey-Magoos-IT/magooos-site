@@ -609,58 +609,43 @@ export const filterData = (
   dailyUsageCountFilter: string = '',
   config: CSVProcessingConfig // Added config parameter
 ): any[] => {
-  // Debug info
+  // Debug info (reduced for log bloat)
   console.log("FILTER DATA - Starting with rows:", data.length);
   console.log("FILTER DATA - Selected location IDs:", locationIds);
   console.log("FILTER DATA - Selected discount IDs:", discountIds);
-  console.log("FILTER DATA - Daily Usage Count Filter:", dailyUsageCountFilter);
-  console.log("FILTER DATA - Config:", JSON.stringify(config));
+  console.log("FILTER DATA - Config (partial):", {
+    locationIdentifierField: config?.locationIdentifierField?.sourceNames,
+    dailyUsageCountField: config?.dailyUsageCountField?.sourceNames,
+    discountIdentifierField: config?.discountIdentifierField?.sourceNames
+  });
 
   // Parse the usage count filter value once
   const minUsageCount = dailyUsageCountFilter ? parseInt(dailyUsageCountFilter, 10) : null;
   const isUsageFilterActive = minUsageCount !== null && !isNaN(minUsageCount) && minUsageCount >= 0;
 
-  console.log("FILTER DATA - Parsed Min Usage Count:", minUsageCount);
-  console.log("FILTER DATA - Usage Filter Active:", isUsageFilterActive);
-
-  // If no filters applied AND no relevant config fields are set, return all data
+  // If no filters applied AND no relevant config fields are set, log it.
   const noOperationalFilters = locationIds.length === 0 && discountIds.length === 0 && !isUsageFilterActive;
-  // Check if config exists and if the relevant fields for filtering are defined
   const noConfigForFiltering = !config || (!config.locationIdentifierField && !config.discountIdentifierField && !config.dailyUsageCountField);
 
   if (noOperationalFilters && noConfigForFiltering) {
-     console.log("FILTER DATA - No operational filters and no relevant config fields for filtering, returning all data");
-     return data;
+     console.log("FILTER DATA - No operational filters and no relevant config fields for filtering (no filter applied).");
   }
 
-  // Create a mapping of location IDs to location names
+  // Create a mapping of location IDs to location names (used within filter logic)
   const locationNameMap: Record<string, string> = {};
   locations.forEach(loc => {
     locationNameMap[loc.id] = loc.name;
   });
   
-  // Get location names that correspond to the selected location IDs
-  const locationNames = locationIds
-    .map(id => locationNameMap[id])
-    .filter(Boolean);
-  
-  console.log("FILTER DATA - Location names for filtering:", locationNames);
-  
-  // Sample the first row to see what columns are available
+  // Log sample row keys (less verbose)
   if (data.length > 0 && data[0]) {
-    console.log("FILTER DATA - Sample row columns:", Object.keys(data[0]));
-    if(config?.locationIdentifierField) console.log("FILTER DATA - Sample Store value (via config):", getFieldValue(data[0], config.locationIdentifierField));
-    if(config?.dailyUsageCountField) console.log("FILTER DATA - Sample Daily Usage Count value (via config):", getFieldValue(data[0], config.dailyUsageCountField));
-    if(config?.discountIdentifierField) console.log("FILTER DATA - Sample Discount ID value (via config):", getFieldValue(data[0], config.discountIdentifierField));
+    console.log("FILTER DATA - Sample row keys:", Object.keys(data[0]).slice(0, 5).join(', ') + (Object.keys(data[0]).length > 5 ? ', ...' : ''));
   }
-  
-  const filteredData = data.filter(row => {
 
+  const filteredData = data.filter(row => {
     // Apply location filter if needed
     if (locationIds.length > 0) { // Only filter if locationIds are provided
       if (!config?.locationIdentifierField) {
-        // If location filtering is requested but no identifier field is configured,
-        // we cannot apply the filter.
         console.warn("FILTER DATA - Location filter active but no `locationIdentifierField` in config. Excluding row.");
         return false; // Exclude row if location filter is active but cannot be applied
       }
@@ -668,29 +653,23 @@ export const filterData = (
       const locationIdValue = getFieldValue(row, config.locationIdentifierField);
       const locationIdStr = locationIdValue !== undefined ? String(locationIdValue).trim() : '';
 
-      // If specific locations are selected, we must ensure the row's location ID
-      // is either among the selected ones or is an aggregate 'TOTAL' row.
-      // Any other location ID (including empty ones for non-TOTAL rows) should be filtered out.
       // Explicitly exclude TOTAL rows as per new requirements
       if (locationIdStr === 'TOTAL') {
-        console.log(`FILTER DATA - Excluding TOTAL row with Location ID: '${locationIdStr}'`);
+        // console.log(`FILTER DATA - Excluding TOTAL row with Location ID: '${locationIdStr}'`); // Reduced bloat
         return false;
       }
       // If specific locations are selected, filter out rows that don't match those locations.
-      if (locationIds.length > 0 && !locationIds.includes(locationIdStr)) {
-        console.log(`FILTER DATA - Row filtered out by location: ID '${locationIdStr}' not in selected IDs: [${locationIds.join(', ')}]`);
+      if (!locationIds.includes(locationIdStr)) {
+        // console.log(`FILTER DATA - Row filtered out by location: ID '${locationIdStr}' not in selected IDs: [${locationIds.join(', ')}]`); // Reduced bloat
         return false;
       }
-      // Log for clarity if row passes location filter (if any applied)
-      if (locationIds.length > 0 && locationIds.includes(locationIdStr)) {
-          console.log(`FILTER DATA - Row passed location filter: Matching ID '${locationIdStr}'. Selected IDs: [${locationIds.join(', ')}]`);
-      }
+      // No need for a `return true;` here, as the flow continues to other filters.
     }
     
-    // Apply discount ID filtering if needed
+    // Apply discount ID filtering if needed. Only apply if config has the field.
     if (discountIds.length > 0 && config?.discountIdentifierField) {
       const usingDefaultDiscounts = discountIds.length === 7 &&
-        discountIds.includes(77406) && // Keep the default check logic
+        discountIds.includes(77406) &&
         discountIds.includes(135733) &&
         discountIds.includes(135736) &&
         discountIds.includes(135737) &&
@@ -699,44 +678,30 @@ export const filterData = (
         discountIds.includes(135910);
 
       if (!usingDefaultDiscounts) {
-        // Use getFieldValue with the configured discount identifier
         const discountValueRaw = getFieldValue(row, config.discountIdentifierField);
         
         if (discountValueRaw !== undefined && discountValueRaw !== null && String(discountValueRaw).trim() !== '') {
           const discountValueFromRow = Number(discountValueRaw);
-          // Check if the retrieved value is a number and is included in the selected discount IDs
           if (isNaN(discountValueFromRow) || !discountIds.includes(discountValueFromRow)) {
             return false; // Not a number or not in the selected discount IDs
           }
-          // If it's a valid number and included, this part of the filter passes
         } else {
-          // If the discount identifier field specified in the config is empty or not found in the row
+          // If the discount identifier field is empty or not found, and filtering is active, exclude.
           return false;
         }
       }
-      // If using default discounts, this filter is skipped (all rows pass)
     }
     
-    // Apply Daily Usage Count filter if active
+    // Apply Daily Usage Count filter if active and configured
     if (isUsageFilterActive && minUsageCount !== null && config?.dailyUsageCountField) {
-      // Use getFieldValue with the configured daily usage count field
       const usageCountValueRaw = getFieldValue(row, config.dailyUsageCountField);
       
-      // Check if the value exists and is a number
-      if (usageCountValueRaw === undefined || usageCountValueRaw === null) {
-        // If the configured usage count field is missing, exclude the row when filtering is active
+      if (usageCountValueRaw === undefined || usageCountValueRaw === null || isNaN(Number(usageCountValueRaw))) {
+        // If the configured usage count field is missing or not a number, exclude the row when filtering is active
         return false;
       }
-      
       const rowUsageCount = Number(usageCountValueRaw);
       
-      // Check if it's a valid number before applying the filter condition
-      if (isNaN(rowUsageCount)) {
-         // If the value is not a number, exclude the row when filtering is active
-         return false;
-      }
-
-      // Apply the filter condition
       if (rowUsageCount < minUsageCount) {
         return false;
       }
