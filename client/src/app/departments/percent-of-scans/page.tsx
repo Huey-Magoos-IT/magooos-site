@@ -230,7 +230,7 @@ const PercentOfScansPage = () => {
       } else { // For 'loyalty_scan_summary'
         percentOfScansCsvConfig = {
           // For loyalty_scan_summary report:
-          locationIdentifierField: { sourceNames: ['Location', 'Location ID', 'LocationId', 'Location_ID'], dataType: 'string' },
+          locationIdentifierField: { sourceNames: ['Location ID', 'LocationId', 'Location_ID', 'Location'], dataType: 'string' }, // Prioritize ID fields
           transactionDateField: { sourceNames: ['Date'], dataType: 'string' },
           dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' },
           additionalFields: {
