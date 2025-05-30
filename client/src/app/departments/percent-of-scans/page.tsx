@@ -34,7 +34,7 @@ import {
   enhanceCSVWithLocationNames,
   fetchEmployeeData,
   enhanceCSVWithEmployeeNames,
-  calculateDailyTotals, // Import the new function
+  
   CSVProcessingConfig // Import the new type
 } from "@/lib/csvProcessing";
 import {
@@ -270,17 +270,8 @@ const PercentOfScansPage = () => {
 
       console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering and location name enhancement.`);
       
-      // Only calculate daily totals for summary reports spanning multiple days
-      const isSingleDay =
-        startDate?.getDate() === endDate?.getDate() &&
-        startDate?.getMonth() === endDate?.getMonth() &&
-        startDate?.getFullYear() === endDate?.getFullYear();
-
-      let finalData = filteredData;
-
-      if (dataType === 'loyalty_scan_summary' && !isSingleDay) {
-        finalData = calculateDailyTotals(filteredData, startDate, endDate, percentOfScansCsvConfig);
-      }
+      // Totals calculation logic removed. finalData is now directly the filteredData.
+      const finalData = filteredData;
 
       setCSVData(finalData);
       setProcessingProgress("");
