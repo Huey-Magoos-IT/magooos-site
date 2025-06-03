@@ -246,7 +246,7 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
                 </MenuItem>
               ) : (
                 <MenuItem value="">
-                  <em>'Location User' team not found</em>
+                  <em>&apos;Location User&apos; team not found</em>
                 </MenuItem>
               )}
             </Select>
