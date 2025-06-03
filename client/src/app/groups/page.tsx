@@ -19,8 +19,10 @@ import { useGetAuthUserQuery } from "@/state/api";
 import { hasRole } from "@/lib/accessControl";
 import GroupCard from "@/components/GroupCard";
 import LocationTable, { Location } from "@/components/LocationTable";
+import ModalCreateLocationUser from "@/components/ModalCreateLocationUser"; // Import new modal
 import Header from "@/components/Header";
 import { X } from "lucide-react";
+import { signUp } from 'aws-amplify/auth'; // Import signUp
 import {
   FormControl,
   InputLabel,
@@ -53,6 +55,7 @@ const GroupsPage = () => {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [openUserDialog, setOpenUserDialog] = useState(false);
+  const [openLocationUserDialog, setOpenLocationUserDialog] = useState(false); // New state for location user modal
   const [currentGroup, setCurrentGroup] = useState<Group | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -230,6 +233,12 @@ const GroupsPage = () => {
     setOpenUserDialog(true);
   };
 
+  // Handle Location User creation dialog
+  const handleOpenLocationUserDialog = (group: Group) => {
+    setCurrentGroup(group); // Set the group context for creating the user
+    setOpenLocationUserDialog(true);
+  };
+
   // Handle user assignment
   const handleAssignUser = async () => {
     if (currentGroup && selectedUserId !== "") {
@@ -244,8 +253,42 @@ const GroupsPage = () => {
       }
     }
   };
+
+  // Handler for submitting the new location user
+  const handleSubmitLocationUser = async (formData: {
+    username: string;
+    email: string;
+    tempPassword: string;
+    teamId: number; // This will be the "Location User" team ID
+    locationIds: string[];
+    groupId: number;
+  }) => {
+    try {
+      console.log("Creating location user via Amplify signUp:", formData.username, formData.email);
+      const { isSignUpComplete, userId, nextStep } = await signUp({
+        username: formData.username,
+        password: formData.tempPassword,
+        options: {
+          userAttributes: {
+            email: formData.email,
+            'custom:teamId': String(formData.teamId),
+            'custom:locationIds': JSON.stringify(formData.locationIds || []),
+            'custom:groupId': String(formData.groupId), // Add groupId as custom attribute
+          },
+        }
+      });
+      console.log("Cognito signUp response for location user:", { isSignUpComplete, userId, nextStep });
+      alert(`Location User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created.`);
+      setOpenLocationUserDialog(false); // Close the modal on success
+    } catch (error: any) {
+      console.error("Error creating location user via Amplify signUp:", error);
+      throw new Error(error.message || "Failed to initiate location user creation");
+    }
+  };
+
   // Get all teams from the API
   const { data: teamsData } = useGetTeamsQuery();
+  const allTeams = teamsData?.teams || []; // Ensure allTeams is always an array for the modal
   
   // Find teams that have the LOCATION_ADMIN role
   const teamsWithLocationAdminRole = teamsData?.teams?.filter((team: Team) =>
@@ -336,9 +379,11 @@ const GroupsPage = () => {
               key={group.id}
               group={group}
               isAdmin={isAdmin}
+              isLocationAdmin={isLocationAdmin && authData?.userDetails?.groupId === group.id} // Pass isLocationAdmin only if they manage THIS group
               onEdit={isAdmin ? (group) => handleOpenDialog(group) : undefined}
               onDelete={isAdmin ? handleDeleteGroup : undefined}
               onManageUsers={isAdmin ? handleOpenUserDialog : undefined}
+              onCreateLocationUser={isLocationAdmin && authData?.userDetails?.groupId === group.id ? handleOpenLocationUserDialog : undefined} // Pass handler
             />
           ))}
         </div>
@@ -525,6 +570,18 @@ const GroupsPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+      )}
+
+      {/* Create Location User Dialog */}
+      {currentGroup && (
+        <ModalCreateLocationUser
+          open={openLocationUserDialog}
+          onClose={() => setOpenLocationUserDialog(false)}
+          onSubmit={handleSubmitLocationUser}
+          groupLocationIds={currentGroup.locationIds || []}
+          groupId={currentGroup.id}
+          allTeams={allTeams}
+        />
       )}
     </div>
   );

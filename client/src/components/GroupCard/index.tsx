@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Edit, Trash2, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, Users, UserPlus } from "lucide-react"; // Added UserPlus
 import { Group, User, useRemoveUserFromGroupMutation } from "@/state/api";
 
 interface GroupCardProps {
@@ -9,15 +9,19 @@ interface GroupCardProps {
   onEdit?: (group: Group) => void;
   onDelete?: (groupId: number) => void;
   onManageUsers?: (group: Group) => void;
+  onCreateLocationUser?: (group: Group) => void; // New prop
   isAdmin: boolean;
+  isLocationAdmin?: boolean; // New prop
 }
 
-const GroupCard: React.FC<GroupCardProps> = ({ 
-  group, 
-  onEdit, 
-  onDelete, 
+const GroupCard: React.FC<GroupCardProps> = ({
+  group,
+  onEdit,
+  onDelete,
   onManageUsers,
-  isAdmin 
+  onCreateLocationUser, // New prop
+  isAdmin,
+  isLocationAdmin // New prop
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -97,6 +101,16 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 )}
               </>
             )}
+            {isLocationAdmin && !isAdmin && onCreateLocationUser && (
+              <button
+                onClick={() => onCreateLocationUser(group)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-green-600 dark:text-green-400"
+                aria-label="Create Location User"
+                title="Create Location User"
+              >
+                <UserPlus size={16} />
+              </button>
+            )}
             <button
               onClick={() => setExpanded(!expanded)}
               className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -142,6 +156,15 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
               >
                 <span>Manage Users</span>
+              </button>
+            )}
+            {isLocationAdmin && !isAdmin && onCreateLocationUser && (
+                 <button
+                onClick={() => onCreateLocationUser(group)}
+                className="text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 flex items-center"
+              >
+                <UserPlus size={14} className="mr-1" />
+                <span>Create Location User</span>
               </button>
             )}
           </div>
