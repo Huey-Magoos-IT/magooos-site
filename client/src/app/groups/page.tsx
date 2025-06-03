@@ -70,8 +70,23 @@ const GroupsPage = () => {
   // Check if user is admin
   const userRoles = authData?.userDetails?.team?.teamRoles || [];
   const isAdmin = hasRole(userRoles, "ADMIN");
-  // Check if user is admin or location admin
   const isLocationAdmin = hasRole(userRoles, "LOCATION_ADMIN");
+  const currentUserGroupId = authData?.userDetails?.groupId;
+
+  // Determine if the current user can view the groups page at all
+  // Admins can always view. Location Admins can only view if they are assigned to a group.
+  const canViewThisPage = isAdmin || (isLocationAdmin && !!currentUserGroupId);
+
+  // Determine which groups to display
+  const displayGroups = React.useMemo(() => {
+    if (isAdmin) {
+      return groups;
+    }
+    if (isLocationAdmin && currentUserGroupId) {
+      return groups.filter(g => g.id === currentUserGroupId);
+    }
+    return [];
+  }, [groups, isAdmin, isLocationAdmin, currentUserGroupId]);
 
   // Get available locations from all groups
   const allLocations = Array.from(
@@ -326,11 +341,32 @@ const GroupsPage = () => {
     username: user.username
   })));
 
-  if (isLoadingGroups || isLoadingUsers) {
-    return <div className="p-6">Loading...</div>;
+  if (isLoadingGroups || isLoadingUsers || !authData) {
+    return <div className="p-6">Loading...</div>; // Standard loading state
   }
 
-  // We already determined if the user is a LocationAdmin above
+  // Specific message for Location Admins not yet assigned to a group
+  if (isLocationAdmin && !isAdmin && !currentUserGroupId) {
+    return (
+      <div className="flex w-full flex-col p-8 items-center justify-center text-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <Typography variant="h5" className="mb-4">Group Access Pending</Typography>
+        <Typography>
+          You have the Location Admin role but have not yet been assigned to a specific group by an administrator.
+        </Typography>
+        <Typography className="mt-2">
+          Once assigned, you will be able to manage users and locations for your group here.
+        </Typography>
+      </div>
+    );
+  }
+
+  // General redirection if user does not meet criteria to view any groups content
+  if (!canViewThisPage) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/home"; // Or another default page
+    }
+    return <div className="p-6">Redirecting...</div>; // Fallback
+  }
   
   // Only admins can see the Assign Admin dialog, LocationAdmins will have a different UI
   return (
@@ -360,10 +396,10 @@ const GroupsPage = () => {
         )}
       </div>
 
-      {groups.length === 0 ? (
+      {displayGroups.length === 0 && isAdmin ? (
         <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
           <p className="text-gray-500 dark:text-gray-400">No groups found</p>
-          {isAdmin && (
+          {isAdmin && ( // This button should only be for admins
             <button
               onClick={() => handleOpenDialog()}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -372,29 +408,35 @@ const GroupsPage = () => {
             </button>
           )}
         </div>
+      ) : displayGroups.length === 0 && isLocationAdmin && !currentUserGroupId ? (
+        // This case is handled by the redirect/message above, but as a fallback:
+        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+          <p className="text-gray-500 dark:text-gray-400">You are not assigned to any group.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {groups.map(group => (
+          {displayGroups.map(group => (
             <GroupCard
               key={group.id}
               group={group}
               isAdmin={isAdmin}
-              isLocationAdmin={isLocationAdmin && authData?.userDetails?.groupId === group.id} // Pass isLocationAdmin only if they manage THIS group
-              onEdit={isAdmin ? (group) => handleOpenDialog(group) : undefined}
-              onDelete={isAdmin ? handleDeleteGroup : undefined}
-              onManageUsers={isAdmin ? handleOpenUserDialog : undefined}
-              onCreateLocationUser={isLocationAdmin && authData?.userDetails?.groupId === group.id ? handleOpenLocationUserDialog : undefined} // Pass handler
+              isLocationAdmin={isLocationAdmin && currentUserGroupId === group.id}
+              onEdit={isAdmin ? () => handleOpenDialog(group) : undefined}
+              onDelete={isAdmin ? () => handleDeleteGroup(group.id) : undefined}
+              onManageUsers={isAdmin ? () => handleOpenUserDialog(group) : undefined}
+              onCreateLocationUser={(isLocationAdmin && currentUserGroupId === group.id) ? () => handleOpenLocationUserDialog(group) : undefined}
             />
           ))}
         </div>
       )}
 
-      {/* Create/Edit Group Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
-        <DialogTitle>
-          {currentGroup ? "Edit Group" : "Create Group"}
-        </DialogTitle>
-        <DialogContent>
+      {/* Create/Edit Group Dialog - Only for Admins */}
+      {isAdmin && ( // This entire dialog is only for admins
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
+          <DialogTitle>
+            {currentGroup ? "Edit Group" : "Create Group"}
+          </DialogTitle>
+          <DialogContent>
           <Grid container spacing={3}>
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
@@ -524,12 +566,13 @@ const GroupsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      )} {/* Correctly close the isAdmin conditional rendering for Create/Edit Group Dialog */}
 
       {/* Assign Admin Dialog - Only shown to regular admins */}
-      {isAdmin && (
+      {isAdmin && currentGroup && ( // Also ensure currentGroup is set before showing this
         <Dialog open={openUserDialog} onClose={() => setOpenUserDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>
-            Assign Admin to {currentGroup?.name}
+            Assign Location Admin to {currentGroup?.name}
           </DialogTitle>
           <DialogContent>
             <FormControl fullWidth sx={{ mt: 1 }}>
@@ -572,8 +615,8 @@ const GroupsPage = () => {
         </Dialog>
       )}
 
-      {/* Create Location User Dialog */}
-      {currentGroup && (
+      {/* Create Location User Dialog - For Admins or Assigned Location Admins for the current group */}
+      {currentGroup && (isAdmin || (isLocationAdmin && currentUserGroupId === currentGroup.id)) && (
         <ModalCreateLocationUser
           open={openLocationUserDialog}
           onClose={() => setOpenLocationUserDialog(false)}

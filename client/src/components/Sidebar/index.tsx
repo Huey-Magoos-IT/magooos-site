@@ -34,9 +34,15 @@ const Sidebar = () => {
   const [showDepartments, setShowDepartments] = useState(true);
   const { data: currentUser } = useGetAuthUserQuery({});
   const { data: projects } = useGetProjectsQuery();
-  const userTeam = currentUser?.userDetails?.team;
-  const isAdmin = userTeam?.isAdmin;
-  const teamRoles = userTeam?.teamRoles;
+  const userDetails = currentUser?.userDetails;
+  const userTeam = userDetails?.team;
+  const teamRoles = userTeam?.teamRoles || []; // Ensure teamRoles is an array
+  const currentUserGroupId = userDetails?.groupId;
+
+  // Determine roles more clearly
+  const isTrueAdmin = userTeam?.isAdmin || teamRoles.some(tr => tr.role.name === 'ADMIN');
+  const isLocationAdminRolePresent = teamRoles.some(tr => tr.role.name === 'LOCATION_ADMIN');
+
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
@@ -92,13 +98,13 @@ const Sidebar = () => {
           {/* <SidebarLink icon={Search} label="Search" href="/search" /> */}
           {/* Settings link hidden as requested */}
           {/* <SidebarLink icon={Settings} label="Settings" href="/settings" /> */}
-          {/* Only show Users link to admins and location admins */}
-          {(isAdmin || hasRole(teamRoles, 'LOCATION_ADMIN') || hasRole(teamRoles, 'ADMIN')) && (
+          {/* Only show Users link to true admins */}
+          {isTrueAdmin && (
             <SidebarLink icon={User} label="Users" href="/users" />
           )}
           <SidebarLink icon={Users} label="Teams" href="/teams" />
-          {/* Only show Groups link to admins and location admins */}
-          {(isAdmin || hasRole(teamRoles, 'LOCATION_ADMIN')) && (
+          {/* Show Groups link to true admins OR location admins who are assigned to a group */}
+          {(isTrueAdmin || (isLocationAdminRolePresent && !!currentUserGroupId)) && (
             <SidebarLink icon={FolderKanban} label="Groups" href="/groups" />
           )}
         </nav>
@@ -142,7 +148,7 @@ const Sidebar = () => {
         {showDepartments && (
           <>
             {/* Show Data department if user has ADMIN or DATA role */}
-            {(isAdmin || hasRole(teamRoles, 'DATA')) && (
+            {(isTrueAdmin || hasRole(teamRoles, 'DATA')) && (
               <SidebarLink
                 icon={Layers3}
                 label="Data"
@@ -150,7 +156,7 @@ const Sidebar = () => {
               />
             )}
             {/* Show % of Scans department if user has ADMIN or SCANS role */}
-            {(isAdmin || hasRole(teamRoles, 'SCANS')) && (
+            {(isTrueAdmin || hasRole(teamRoles, 'SCANS')) && (
               <SidebarLink
                 icon={Layers3} // Using the same icon for now
                 label="% of Scans"
@@ -159,7 +165,7 @@ const Sidebar = () => {
             )}
             
             {/* Show Reporting department if user has ADMIN or REPORTING role */}
-            {(isAdmin || hasRole(teamRoles, 'REPORTING')) && (
+            {(isTrueAdmin || hasRole(teamRoles, 'REPORTING')) && (
               <SidebarLink
                 icon={Layers3}
                 label="Reporting"

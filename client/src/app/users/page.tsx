@@ -99,13 +99,15 @@ const Users = () => {
   
   const isLocationAdmin = authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'LOCATION_ADMIN') || false;
   
-  // Redirect if user is not an admin or location admin
+  // Redirect if user is not a true admin
   useEffect(() => {
-    if (authData && !isUserAdmin && !isLocationAdmin) {
-      // Redirect to teams page instead of home
-      window.location.href = '/teams';
+    if (authData && !isUserAdmin) { // Only allow if isUserAdmin (true ADMIN)
+      // Redirect non-admins to home page or another appropriate page
+      if (typeof window !== "undefined") {
+        window.location.href = '/home';
+      }
     }
-  }, [authData, isUserAdmin, isLocationAdmin]);
+  }, [authData, isUserAdmin]);
   
   // Extract teams, roles, and locations using useMemo to prevent re-renders
   const teams = useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
