@@ -231,26 +231,7 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
             InputProps={{ style: { color: isDarkMode ? 'white' : undefined }}}
           />
 
-          <FormControl fullWidth margin="normal" required disabled>
-            <InputLabel id="team-select-label-loc-user" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined }}>Team</InputLabel>
-            <Select
-              labelId="team-select-label-loc-user"
-              value={locationUserTeamId}
-              label="Team"
-              readOnly
-              sx={{ color: isDarkMode ? 'white' : undefined }}
-            >
-              {locationUserTeamId !== "" ? (
-                <MenuItem value={locationUserTeamId}>
-                  {allTeams.find(t => t.id === locationUserTeamId)?.teamName || "Location User"} (Auto-assigned)
-                </MenuItem>
-              ) : (
-                <MenuItem value="">
-                  <em>&apos;Location User&apos; team not found</em>
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+          {/* Team FormControl is now removed as it's auto-assigned and should not be visible */}
 
           <Box sx={{ mt: 3, mb: 2 }}>
             <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
