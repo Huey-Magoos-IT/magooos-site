@@ -3,7 +3,7 @@
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsSidebarCollapsed } from "@/state";
 import { useGetAuthUserQuery, useGetProjectsQuery } from "@/state/api";
-import { hasRole } from "@/lib/accessControl";
+import { hasRole, hasAnyRole } from "@/lib/accessControl";
 import { signOut } from "aws-amplify/auth";
 import {
   AlertCircle,
@@ -107,6 +107,10 @@ const Sidebar = () => {
           {(isTrueAdmin || (isLocationAdminRolePresent && !!currentUserGroupId)) && (
             <SidebarLink icon={FolderKanban} label="Groups" href="/groups" />
           )}
+          {/* Show Price Users link to users with PRICE_ADMIN role */}
+          {hasRole(teamRoles, 'PRICE_ADMIN') && (
+            <SidebarLink icon={User} label="Price Users" href="/price-users" />
+          )}
         </nav>
 
         {/* PROJECTS SECTION HIDDEN AS REQUESTED */}
@@ -170,6 +174,15 @@ const Sidebar = () => {
                 icon={Layers3}
                 label="Reporting"
                 href="/departments/reporting"
+              />
+            )}
+            
+            {/* Show Price Portal if user has LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role */}
+            {hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']) && (
+              <SidebarLink
+                icon={Layers3}
+                label="Price Portal"
+                href="/departments/price-portal"
               />
             )}
           </>
