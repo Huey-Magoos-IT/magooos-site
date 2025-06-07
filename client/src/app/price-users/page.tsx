@@ -9,7 +9,7 @@ interface PriceChangeReport {
   id: string;
   franchiseeId: string;
   franchiseeName: string;
-  teamName: string;
+  groupName: string;
   locationIds: string[];
   submittedDate: string;
   status: 'pending' | 'sent' | 'archived';
@@ -26,7 +26,7 @@ interface FranchiseeUser {
   id: string;
   username: string;
   email: string;
-  teamName: string;
+  groupName: string;
   locationIds: string[];
   priceDisabled: boolean;
   status: 'unlocked' | 'locked';
@@ -62,7 +62,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Send Report - {report.teamName}
+          Send Report - {report.groupName}
         </h3>
         
         <div className="space-y-4">
@@ -188,46 +188,46 @@ const PriceUsersPage = () => {
       id: 'report_1',
       franchiseeId: '1',
       franchiseeName: 'franchise_owner_1',
-      teamName: 'Downtown Franchise',
-      locationIds: ['101', '102'],
+      groupName: 'Florida East Coast',
+      locationIds: ['4146', '4149'],
       submittedDate: '2024-01-15T10:30:00Z',
       status: 'pending',
       totalChanges: 5,
       changes: [
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '101', oldPrice: 12.99, newPrice: 13.49 },
-        { itemName: '3 Tender Meal', locationId: '101', oldPrice: 10.99, newPrice: 11.49 },
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '102', oldPrice: 12.99, newPrice: 13.49 },
-        { itemName: '3 Tender Meal', locationId: '102', oldPrice: 10.99, newPrice: 11.49 },
-        { itemName: 'Sweet Tea', locationId: '101', oldPrice: 2.99, newPrice: 3.29 }
+        { itemName: 'Buffalo Chicken Sandwich', locationId: '4146', oldPrice: 12.99, newPrice: 13.49 },
+        { itemName: '3 Tender Meal', locationId: '4146', oldPrice: 10.99, newPrice: 11.49 },
+        { itemName: 'Buffalo Chicken Sandwich', locationId: '4149', oldPrice: 12.99, newPrice: 13.49 },
+        { itemName: '3 Tender Meal', locationId: '4149', oldPrice: 10.99, newPrice: 11.49 },
+        { itemName: 'Sweet Tea', locationId: '4146', oldPrice: 2.99, newPrice: 3.29 }
       ]
     },
     {
       id: 'report_2',
       franchiseeId: '2',
       franchiseeName: 'franchise_owner_2',
-      teamName: 'Mall Locations',
-      locationIds: ['103', '104'],
+      groupName: 'North Carolina Region',
+      locationIds: ['4244', '4350'],
       submittedDate: '2024-01-14T14:15:00Z',
       status: 'sent',
       totalChanges: 3,
       changes: [
-        { itemName: 'Kids 2 Tender Meal', locationId: '103', oldPrice: 7.99, newPrice: 8.49 },
-        { itemName: 'Kids 2 Tender Meal', locationId: '104', oldPrice: 7.99, newPrice: 8.49 },
-        { itemName: 'Sweet Tea', locationId: '103', oldPrice: 2.99, newPrice: 3.29 }
+        { itemName: 'Kids 2 Tender Meal', locationId: '4244', oldPrice: 7.99, newPrice: 8.49 },
+        { itemName: 'Kids 2 Tender Meal', locationId: '4350', oldPrice: 7.99, newPrice: 8.49 },
+        { itemName: 'Sweet Tea', locationId: '4244', oldPrice: 2.99, newPrice: 3.29 }
       ]
     },
     {
       id: 'report_3',
       franchiseeId: '3',
       franchiseeName: 'franchise_owner_3',
-      teamName: 'Airport Franchise',
-      locationIds: ['106'],
+      groupName: 'Missouri Operations',
+      locationIds: ['10497'],
       submittedDate: '2024-01-10T09:00:00Z',
       status: 'archived',
       totalChanges: 2,
       changes: [
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '106', oldPrice: 12.99, newPrice: 14.99 },
-        { itemName: '3 Tender Meal', locationId: '106', oldPrice: 10.99, newPrice: 12.99 }
+        { itemName: 'Buffalo Chicken Sandwich', locationId: '10497', oldPrice: 12.99, newPrice: 14.99 },
+        { itemName: '3 Tender Meal', locationId: '10497', oldPrice: 10.99, newPrice: 12.99 }
       ]
     }
   ];
@@ -238,8 +238,8 @@ const PriceUsersPage = () => {
       id: '1',
       username: 'franchise_owner_1',
       email: 'owner1@franchise.com',
-      teamName: 'Downtown Franchise',
-      locationIds: ['101', '102'],
+      groupName: 'Florida East Coast',
+      locationIds: ['4146', '4149'],
       priceDisabled: false,
       status: 'unlocked'
     },
@@ -247,8 +247,8 @@ const PriceUsersPage = () => {
       id: '2',
       username: 'franchise_owner_2',
       email: 'owner2@franchise.com',
-      teamName: 'Mall Locations',
-      locationIds: ['103', '104', '105'],
+      groupName: 'North Carolina Region',
+      locationIds: ['4244', '4350', '4885'],
       priceDisabled: true,
       status: 'locked'
     }
@@ -284,14 +284,18 @@ const PriceUsersPage = () => {
   };
 
   const getLocationNames = (locationIds: string[]) => {
-    // Mock location mapping (will be replaced with real data)
+    // Real location mapping from the provided list
     const locationMap: {[key: string]: string} = {
-      '101': 'Downtown Main',
-      '102': 'Downtown West',
-      '103': 'Mall Food Court',
-      '104': 'Mall Entrance',
-      '105': 'Mall Upper Level',
-      '106': 'Airport Terminal A'
+      '4146': 'Altamonte Springs, FL',
+      '4149': 'Apopka, FL (Hunt Club)',
+      '4244': 'Arden, NC',
+      '4885': 'Auburndale, FL',
+      '10497': 'Battlefield, MO',
+      '4814': 'Beaumont/Wildwood, FL',
+      '10093': 'Bellefontaine',
+      '6778': 'Boca Raton, FL',
+      '5359': 'Brookhaven, MS',
+      '4350': 'Brooksville/Spring Hill, FL'
     };
     
     return locationIds.map(id => locationMap[id] || `Location ${id}`).join(', ');
@@ -370,7 +374,7 @@ const PriceUsersPage = () => {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Franchisee Team
+                    Group
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Locations
@@ -401,10 +405,10 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {report.teamName}
+                          {report.franchiseeName}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {report.franchiseeName}
+                          {report.groupName}
                         </div>
                       </div>
                     </td>
@@ -489,7 +493,7 @@ const PriceUsersPage = () => {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Franchisee Team
+                    Group
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Locations
@@ -508,10 +512,10 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {user.teamName}
+                          {user.username}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {user.username} • {user.email}
+                          {user.groupName} • {user.email}
                         </div>
                       </div>
                     </td>
