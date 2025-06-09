@@ -146,26 +146,35 @@ const PricePortalPage = () => {
         </div>
 
         {/* Sauced Tender Price Control */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 max-w-md mx-auto">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-lg mx-auto">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
             Sauced Tender Price Control
           </h3>
-          <div className="space-y-3">
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              <span className="font-medium">Current Per Tender Sauce Price:</span> $0.50
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Current Per Tender Sauce Price:
+              </span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
+                $0.50
+              </span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 NEW Per Tender Sauced Price:
               </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={newSaucedPrice}
-                onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newSaucedPrice}
+                  onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -233,23 +242,23 @@ const PricePortalPage = () => {
                     Item Name
                   </th>
                   {userLocations.map(location => (
-                    <th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {location.name}
+                    <th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">
+                      {location.name.toUpperCase()}
                     </th>
                   ))}
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Sync
                   </th>
                 </tr>
-                <tr>
+                <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                   <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">
                     {/* Empty for item name column */}
                   </th>
                   {userLocations.map(location => (
-                    <th key={location.id} className="px-3 py-2">
-                      <div className="flex justify-center space-x-4 text-xs text-gray-500 dark:text-gray-300">
-                        <span>Current</span>
-                        <span>New</span>
+                    <th key={location.id} className="px-6 py-2">
+                      <div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <span className="w-16 text-center">Current</span>
+                        <span className="w-16 text-center">New</span>
                       </div>
                     </th>
                   ))}
@@ -265,21 +274,25 @@ const PricePortalPage = () => {
                       {item.name}
                     </td>
                     {userLocations.map(location => (
-                      <td key={location.id} className="px-3 py-4 text-center">
-                        <div className="flex justify-center space-x-2">
-                          <span className="text-sm text-gray-900 dark:text-white">
-                            ${item.currentPrice.toFixed(2)}
-                          </span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder={item.currentPrice.toFixed(2)}
-                            value={priceChanges[`${item.id}-${location.id}`] || ''}
-                            onChange={(e) => handlePriceChange(`${item.id}-${location.id}`, parseFloat(e.target.value) || 0)}
-                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
-                            disabled={syncedItems[item.id] && location.id !== userLocations[0]?.id}
-                          />
+                      <td key={location.id} className="px-6 py-4 text-center">
+                        <div className="flex justify-center items-center space-x-4">
+                          <div className="w-16 text-center">
+                            <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">
+                              ${item.currentPrice.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="w-16">
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder={item.currentPrice.toFixed(2)}
+                              value={priceChanges[`${item.id}-${location.id}`] || ''}
+                              onChange={(e) => handlePriceChange(`${item.id}-${location.id}`, parseFloat(e.target.value) || 0)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              disabled={syncedItems[item.id] && location.id !== userLocations[0]?.id}
+                            />
+                          </div>
                         </div>
                       </td>
                     ))}
@@ -288,7 +301,7 @@ const PricePortalPage = () => {
                         type="checkbox"
                         checked={syncedItems[item.id] || false}
                         onChange={() => handleSyncToggle(item.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </td>
                   </tr>
