@@ -13,7 +13,8 @@ const PricePortalPage = () => {
   // State for price management
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [newSaucedPrice, setNewSaucedPrice] = useState<number>(0);
+  const CURRENT_SAUCE_PRICE = 0.50; // Define current sauce price
+  const [newSaucedPrice, setNewSaucedPrice] = useState<number>(CURRENT_SAUCE_PRICE); // Initialize with current price
   const [priceChanges, setPriceChanges] = useState<{[key: string]: number}>({});
   const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
   const [syncAll, setSyncAll] = useState<boolean>(false);
@@ -156,7 +157,7 @@ const PricePortalPage = () => {
                 Current Per Tender Sauce Price:
               </span>
               <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">
-                $0.50
+                ${CURRENT_SAUCE_PRICE.toFixed(2)}
               </span>
             </div>
             <div>
