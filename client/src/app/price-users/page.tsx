@@ -22,6 +22,13 @@ interface PriceChangeReport {
   totalChanges: number;
 }
 
+interface ReportChangeDetail {
+  itemName: string;
+  locationId: string;
+  oldPrice: number;
+  newPrice: number;
+}
+
 interface FranchiseeUser {
   id: string;
   username: string;
@@ -178,6 +185,15 @@ const PriceUsersPage = () => {
     isOpen: false,
     report: null
   });
+  const [changesModalData, setChangesModalData] = useState<{
+    isOpen: boolean;
+    changes: ReportChangeDetail[] | null;
+    reportGroupName: string;
+  }>({
+    isOpen: false,
+    changes: null,
+    reportGroupName: ''
+  });
 
   // Check if user has ADMIN role (since this is admin functionality)
   const hasAdminAccess = hasRole(teamRoles, 'ADMIN');
@@ -274,13 +290,25 @@ const PriceUsersPage = () => {
     console.log('Clear all archived reports');
   };
 
+  const handleClearSingleReport = (reportId: string) => {
+    // TODO: Implement clear single archived report logic
+    console.log('Clear single archived report:', reportId);
+  };
+
   const handleSendReport = (report: PriceChangeReport) => {
     setSendReportModal({ isOpen: true, report });
   };
 
   const handleViewReport = (report: PriceChangeReport) => {
-    // TODO: Implement view report details logic
-    console.log('View report details:', report);
+    setChangesModalData({
+      isOpen: true,
+      changes: report.changes,
+      reportGroupName: report.groupName || report.franchiseeName
+    });
+  };
+
+  const closeChangesModal = () => {
+    setChangesModalData({ isOpen: false, changes: null, reportGroupName: '' });
   };
 
   const getLocationNames = (locationIds: string[]) => {
@@ -431,9 +459,13 @@ const PriceUsersPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      <button
+                        onClick={() => handleViewReport(report)}
+                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                        title="View changed items"
+                      >
                         {report.totalChanges} items
-                      </span>
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -464,7 +496,14 @@ const PriceUsersPage = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {!showArchived && (
+                      {showArchived ? (
+                        <button
+                          onClick={() => handleClearSingleReport(report.id)}
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      ) : (
                         <button
                           onClick={() => handleArchiveReport(report.id)}
                           className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
@@ -572,6 +611,106 @@ const PriceUsersPage = () => {
         onClose={() => setSendReportModal({ isOpen: false, report: null })}
         report={sendReportModal.report}
       />
+
+      {/* Report Changes Modal */}
+      <ReportChangesModal
+        isOpen={changesModalData.isOpen}
+        onClose={closeChangesModal}
+        changes={changesModalData.changes}
+        reportGroupName={changesModalData.reportGroupName}
+        locationMap={locationMap}
+      />
+    </div>
+  );
+};
+
+// Define locationMap outside the component if it's static, or pass as prop if dynamic
+// For this example, it's defined within PriceUsersPage scope, so we'll pass it.
+const locationMap: {[key: string]: string} = {
+  '4146': 'Altamonte Springs, FL',
+  '4149': 'Apopka, FL (Hunt Club)',
+  '4244': 'Arden, NC',
+  '4885': 'Auburndale, FL',
+  '10497': 'Battlefield, MO',
+  '4814': 'Beaumont/Wildwood, FL',
+  '10093': 'Bellefontaine',
+  '6778': 'Boca Raton, FL',
+  '5359': 'Brookhaven, MS',
+  '4350': 'Brooksville/Spring Hill, FL'
+};
+
+interface ReportChangesModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  changes: ReportChangeDetail[] | null;
+  reportGroupName: string;
+  locationMap: {[key: string]: string};
+}
+
+const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
+  isOpen,
+  onClose,
+  changes,
+  reportGroupName,
+  locationMap
+}) => {
+  if (!isOpen || !changes) return null;
+
+  const getLocationName = (locationId: string) => {
+    return locationMap[locationId] || `ID: ${locationId}`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Price Changes: {reportGroupName}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        {changes.length === 0 ? (
+          <p className="text-gray-600 dark:text-gray-400">No specific item changes found in this report.</p>
+        ) : (
+          <div className="overflow-y-auto flex-grow">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+                <tr>
+                  <th scope="col" className="px-4 py-3">Item Name</th>
+                  <th scope="col" className="px-4 py-3">Location</th>
+                  <th scope="col" className="px-4 py-3 text-right">Old Price</th>
+                  <th scope="col" className="px-4 py-3 text-right">New Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y dark:divide-gray-700">
+                {changes.map((change, index) => (
+                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-600/50">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{change.itemName}</td>
+                    <td className="px-4 py-3">{getLocationName(change.locationId)}</td>
+                    <td className="px-4 py-3 text-right">${change.oldPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400">${change.newPrice.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

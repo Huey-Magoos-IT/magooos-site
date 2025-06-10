@@ -5,6 +5,16 @@ import { useGetAuthUserQuery } from "@/state/api";
 import { hasAnyRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
 
+interface PriceItem {
+  id: string;
+  name: string;
+  category: string;
+  currentPrice: number;
+  isOriginal: boolean;
+  sauceUnitCount?: number;
+  originalId?: string;
+}
+
 const PricePortalPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
   const teamRoles = userData?.userDetails?.team?.teamRoles;
@@ -18,6 +28,19 @@ const PricePortalPage = () => {
   const [priceChanges, setPriceChanges] = useState<{[key: string]: number}>({});
   const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
   const [syncAll, setSyncAll] = useState<boolean>(false);
+  const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+
+  // Initialize expandedCategories state once categories are available
+  useEffect(() => {
+    const initialExpansionState: {[key: string]: boolean} = {};
+    categories.forEach(cat => {
+      if (cat.value !== 'all') { // 'all' is not a displayable category group
+        initialExpansionState[cat.label] = true; // Default to all expanded
+      }
+    });
+    setExpandedCategories(initialExpansionState);
+  }, []); // Run once on mount
+
 
   // Check if user has access to price portal
   const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
@@ -46,30 +69,68 @@ const PricePortalPage = () => {
   ];
 
   // Mock price items (will be replaced with real API data)
-  const mockPriceItems = [
-    { id: '1', name: 'Buffalo Chicken Sandwich', category: 'sandwiches', currentPrice: 12.99, isOriginal: true },
+  const mockPriceItems: PriceItem[] = [
+    { id: '1', name: 'Buffalo Chicken Sandwich', category: 'sandwiches', currentPrice: 12.99, isOriginal: true, sauceUnitCount: 1 },
     { id: '2', name: 'Buffalo Chicken Sandwich - Sauced', category: 'sandwiches', currentPrice: 13.99, isOriginal: false, originalId: '1' },
-    { id: '3', name: '3 Tender Meal', category: 'tenders', currentPrice: 10.99, isOriginal: true },
+    { id: '3', name: '3 Tender Meal', category: 'tenders', currentPrice: 10.99, isOriginal: true, sauceUnitCount: 3 },
     { id: '4', name: '3 Tender Meal - Sauced', category: 'tenders', currentPrice: 11.99, isOriginal: false, originalId: '3' },
-    { id: '5', name: 'Kids 2 Tender Meal', category: 'kids', currentPrice: 7.99, isOriginal: true },
-    { id: '6', name: 'Sweet Tea', category: 'drinks', currentPrice: 2.99, isOriginal: true },
+    { id: '5', name: 'Kids 2 Tender Meal', category: 'kids', currentPrice: 7.99, isOriginal: true, sauceUnitCount: 2 },
+    { id: '6', name: 'Sweet Tea', category: 'drinks', currentPrice: 2.99, isOriginal: true }, // No sauceUnitCount needed as it's not sauced
   ];
 
-  const filteredItems = selectedCategory === 'all'
+  const filteredItems: PriceItem[] = selectedCategory === 'all'
     ? mockPriceItems
     : mockPriceItems.filter(item => item.category === selectedCategory);
-
-  const sortedItems = [...filteredItems].sort((a, b) => {
+  
+  const sortedItems: PriceItem[] = [...filteredItems].sort((a, b) => {
     return sortOrder === 'asc'
       ? a.name.localeCompare(b.name)
       : b.name.localeCompare(a.name);
   });
 
-  const handlePriceChange = (itemId: string, newPrice: number) => {
-    setPriceChanges(prev => ({
+  // Group items by category
+  const groupedItems = sortedItems.reduce((acc: {[key: string]: PriceItem[]}, item: PriceItem) => {
+    const categoryLabel = categories.find(c => c.value === item.category)?.label || 'Uncategorized';
+    if (!acc[categoryLabel]) {
+      acc[categoryLabel] = [];
+    }
+    acc[categoryLabel].push(item);
+    return acc;
+  }, {} as {[key: string]: PriceItem[]});
+
+  const toggleCategoryExpansion = (categoryName: string) => {
+    setExpandedCategories(prev => ({
       ...prev,
-      [itemId]: newPrice
+      [categoryName]: !prev[categoryName]
     }));
+  };
+
+  const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
+    setPriceChanges(prevChanges => {
+      const updatedChanges = {
+        ...prevChanges,
+        [itemLocationKey]: newRegularPrice
+      };
+
+      const [itemId, locationId] = itemLocationKey.split('-');
+      const changedItem = mockPriceItems.find(pItem => pItem.id === itemId);
+
+      // If the changed item is an original item, try to update its sauced version
+      if (changedItem && changedItem.isOriginal) {
+        const saucedItem = mockPriceItems.find(pItem => pItem.originalId === itemId);
+        
+        if (saucedItem) {
+          // Use sauceUnitCount from the item data, default to 1 if not specified
+          const unitCount = (changedItem as any).sauceUnitCount || 1;
+          // newSaucedPrice state holds the per-tender sauce upcharge
+          const calculatedSaucedItemPrice = newRegularPrice + (unitCount * newSaucedPrice);
+          
+          const saucedItemKey = `${saucedItem.id}-${locationId}`;
+          updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
+        }
+      }
+      return updatedChanges;
+    });
   };
 
   const handleSyncToggle = (itemId: string) => {
@@ -161,12 +222,30 @@ const PricePortalPage = () => {
               </span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                NEW Per Tender Sauced Price:
-              </label>
+              <div className="flex items-center mb-2">
+                <label htmlFor="newSaucedPriceInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  NEW Per Tender Sauced Price:
+                </label>
+                <div className="relative ml-2 group">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+                    This is the additional upcharge for making a tender meal 'sauced'. Modifying this value will be used to calculate prices for "Sauced" menu items if automatic calculation is implemented.
+                    <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                  </div>
+                </div>
+              </div>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
                 <input
+                  id="newSaucedPriceInput"
                   type="number"
                   step="0.01"
                   min="0"
@@ -242,18 +321,21 @@ const PricePortalPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Item Name
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Sync
+                  </th>
                   {userLocations.map(location => (
                     <th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">
                       {location.name.toUpperCase()}
                     </th>
                   ))}
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Sync
-                  </th>
                 </tr>
                 <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                   <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">
                     {/* Empty for item name column */}
+                  </th>
+                  <th className="px-6 py-2">
+                    {/* Empty for sync column */}
                   </th>
                   {userLocations.map(location => (
                     <th key={location.id} className="px-6 py-2">
@@ -263,49 +345,62 @@ const PricePortalPage = () => {
                       </div>
                     </th>
                   ))}
-                  <th className="px-6 py-2">
-                    {/* Empty for sync column */}
-                  </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {sortedItems.map(item => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {item.name}
-                    </td>
-                    {userLocations.map(location => (
-                      <td key={location.id} className="px-6 py-4 text-center">
-                        <div className="flex justify-center items-center space-x-4">
-                          <div className="w-16 text-center">
-                            <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">
-                              ${item.currentPrice.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="w-16">
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder={item.currentPrice.toFixed(2)}
-                              value={priceChanges[`${item.id}-${location.id}`] || ''}
-                              onChange={(e) => handlePriceChange(`${item.id}-${location.id}`, parseFloat(e.target.value) || 0)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              disabled={syncedItems[item.id] && location.id !== userLocations[0]?.id}
-                            />
-                          </div>
+              <tbody className="bg-white dark:bg-gray-800">
+                {Object.entries(groupedItems).map(([categoryName, itemsInCategory]) => (
+                  <React.Fragment key={categoryName}>
+                    <tr
+                      className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600"
+                      onClick={() => toggleCategoryExpansion(categoryName)}
+                    >
+                      <td colSpan={2 + userLocations.length} className="px-6 py-3 text-left">
+                        <div className="flex items-center">
+                          <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+                            {expandedCategories[categoryName] ? '▼' : '►'} {categoryName} ({itemsInCategory.length})
+                          </span>
                         </div>
                       </td>
+                    </tr>
+                    {expandedCategories[categoryName] && itemsInCategory.map(item => (
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {item.name}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={syncedItems[item.id] || false}
+                            onChange={() => handleSyncToggle(item.id)}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        {userLocations.map(location => (
+                          <td key={location.id} className="px-6 py-4 text-center">
+                            <div className="flex justify-center items-center space-x-4">
+                              <div className="w-16 text-center">
+                                <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">
+                                  ${item.currentPrice.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="w-16">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder={item.currentPrice.toFixed(2)}
+                                  value={priceChanges[`${item.id}-${location.id}`] || ''}
+                                  onChange={(e) => handlePriceChange(`${item.id}-${location.id}`, parseFloat(e.target.value) || 0)}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  disabled={syncedItems[item.id] && location.id !== userLocations[0]?.id}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                    <td className="px-6 py-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={syncedItems[item.id] || false}
-                        onChange={() => handleSyncToggle(item.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                  </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
