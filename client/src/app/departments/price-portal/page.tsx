@@ -30,6 +30,23 @@ const PricePortalPage = () => {
   const [syncAll, setSyncAll] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
 
+  // Mock price categories - Moved up
+  const categories = [
+    { value: 'all', label: 'All Categories' },
+    { value: 'sandwiches', label: 'Sandwiches & Wraps' },
+    { value: 'tenders', label: 'Tender Meals' },
+    { value: 'kids', label: 'For The Little Magoos' },
+    { value: 'drinks', label: 'Craft Drinks' },
+    { value: 'family', label: 'Tenders For The Fam' },
+    { value: 'piece', label: 'By The Piece' },
+    { value: 'salads', label: 'Fresh-Made Salads' },
+    { value: 'sides', label: 'Sides' },
+    { value: 'catering', label: 'InStore Catering' }
+    // Note: The user's larger list implies more categories.
+    // This `categories` array will need to be updated when the large item list is integrated.
+    // For now, using the existing small set for the useEffect dependency.
+  ];
+
   // Initialize expandedCategories state once categories are available
   useEffect(() => {
     const initialExpansionState: {[key: string]: boolean} = {};
@@ -39,7 +56,7 @@ const PricePortalPage = () => {
       }
     });
     setExpandedCategories(initialExpansionState);
-  }, []); // Run once on mount
+  }, [categories]); // Add categories to dependency array
 
 
   // Check if user has access to price portal
@@ -52,20 +69,6 @@ const PricePortalPage = () => {
   const userLocations = [
     { id: '101', name: 'Downtown Location' },
     { id: '102', name: 'Mall Location' }
-  ];
-
-  // Mock price categories
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'sandwiches', label: 'Sandwiches & Wraps' },
-    { value: 'tenders', label: 'Tender Meals' },
-    { value: 'kids', label: 'For The Little Magoos' },
-    { value: 'drinks', label: 'Craft Drinks' },
-    { value: 'family', label: 'Tenders For The Fam' },
-    { value: 'piece', label: 'By The Piece' },
-    { value: 'salads', label: 'Fresh-Made Salads' },
-    { value: 'sides', label: 'Sides' },
-    { value: 'catering', label: 'InStore Catering' }
   ];
 
   // Mock price items (will be replaced with real API data)
@@ -237,7 +240,7 @@ const PricePortalPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                    This is the additional upcharge for making a tender meal 'sauced'. Modifying this value will be used to calculate prices for "Sauced" menu items if automatic calculation is implemented.
+                    This is the additional upcharge for making a tender meal &lsquo;sauced&rsquo;. Modifying this value will be used to calculate prices for &ldquo;Sauced&rdquo; menu items if automatic calculation is implemented.
                     <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                   </div>
                 </div>
