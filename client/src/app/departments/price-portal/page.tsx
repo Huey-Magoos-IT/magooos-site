@@ -15,6 +15,22 @@ interface PriceItem {
   originalId?: string;
 }
 
+// Define categories outside the component for stable reference
+const categories = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'sandwiches', label: 'Sandwiches & Wraps' },
+  { value: 'tenders', label: 'Tender Meals' },
+  { value: 'kids', label: 'For The Little Magoos' },
+  { value: 'drinks', label: 'Craft Drinks' },
+  { value: 'family', label: 'Tenders For The Fam' },
+  { value: 'piece', label: 'By The Piece' },
+  { value: 'salads', label: 'Fresh-Made Salads' },
+  { value: 'sides', label: 'Sides' },
+  { value: 'catering', label: 'InStore Catering' }
+  // Note: The user's larger list implies more categories.
+  // This `categories` array will need to be updated when the large item list is integrated.
+];
+
 const PricePortalPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
   const teamRoles = userData?.userDetails?.team?.teamRoles;
@@ -30,35 +46,16 @@ const PricePortalPage = () => {
   const [syncAll, setSyncAll] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
 
-  // Mock price categories - Moved up
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'sandwiches', label: 'Sandwiches & Wraps' },
-    { value: 'tenders', label: 'Tender Meals' },
-    { value: 'kids', label: 'For The Little Magoos' },
-    { value: 'drinks', label: 'Craft Drinks' },
-    { value: 'family', label: 'Tenders For The Fam' },
-    { value: 'piece', label: 'By The Piece' },
-    { value: 'salads', label: 'Fresh-Made Salads' },
-    { value: 'sides', label: 'Sides' },
-    { value: 'catering', label: 'InStore Catering' }
-    // Note: The user's larger list implies more categories.
-    // This `categories` array will need to be updated when the large item list is integrated.
-    // For now, using the existing small set for the useEffect dependency.
-  ];
-
   // Initialize expandedCategories state once categories are available
   useEffect(() => {
-    console.log('[PricePortalPage] useEffect for expandedCategories running. Categories:', categories);
     const initialExpansionState: {[key: string]: boolean} = {};
     categories.forEach(cat => {
       if (cat.value !== 'all') { // 'all' is not a displayable category group
         initialExpansionState[cat.label] = true; // Default to all expanded
       }
     });
-    console.log('[PricePortalPage] Initializing expandedCategories to:', initialExpansionState);
     setExpandedCategories(initialExpansionState);
-  }, [categories]); // Add categories to dependency array
+  }, []); // Dependency array is now empty as `categories` is stable and defined outside
 
 
   // Check if user has access to price portal
@@ -104,16 +101,10 @@ const PricePortalPage = () => {
   }, {} as {[key: string]: PriceItem[]});
 
   const toggleCategoryExpansion = (categoryName: string) => {
-    console.log('[PricePortalPage] Toggling category:', categoryName);
-    setExpandedCategories(prev => {
-      console.log('[PricePortalPage] Previous expandedCategories:', prev);
-      const newState = {
-        ...prev,
-        [categoryName]: !prev[categoryName]
-      };
-      console.log('[PricePortalPage] New expandedCategories state:', newState);
-      return newState;
-    });
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
+    }));
   };
 
   const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
