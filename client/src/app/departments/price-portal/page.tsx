@@ -4,85 +4,312 @@ import React, { useState, useEffect } from "react";
 import { useGetAuthUserQuery } from "@/state/api";
 import { hasAnyRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
+import { PriceItem, parsePriceDataFromCsv, extractUniqueCategories } from "@/lib/priceDataUtils";
 
-interface PriceItem {
-  id: string;
-  name: string;
-  category: string;
-  currentPrice: number;
-  isOriginal: boolean;
-  sauceUnitCount?: number;
-  originalId?: string;
-}
-
-// Define categories outside the component for stable reference
-const categories = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'sandwiches', label: 'Sandwiches & Wraps' },
-  { value: 'tenders', label: 'Tender Meals' },
-  { value: 'kids', label: 'For The Little Magoos' },
-  { value: 'drinks', label: 'Craft Drinks' },
-  { value: 'family', label: 'Tenders For The Fam' },
-  { value: 'piece', label: 'By The Piece' },
-  { value: 'salads', label: 'Fresh-Made Salads' },
-  { value: 'sides', label: 'Sides' },
-  { value: 'catering', label: 'InStore Catering' }
-  // Note: The user's larger list implies more categories.
-  // This `categories` array will need to be updated when the large item list is integrated.
-];
+// CSV data embedded as a string for simulation
+const csvDataString = `Category,Item Name,Current Price
+Sandwiches & Wraps,MEALS-SANDW-Buffalo Sandwich,9.99
+Sandwiches & Wraps,MEALS-SANDW-Buffalo Sandwich-AlaCarte,7.99
+Sandwiches & Wraps,MEALS-SANDW-Buffalo Wrap-AlaCarte,7.99
+Sandwiches & Wraps,MEALS-SANDW-Hot Chicken Sandwich,9.99
+Sandwiches & Wraps,MEALS-SANDW-Magoo Sandwich-AlaCarte,7.19
+Sandwiches & Wraps,MEALS-SANDW-Magoo Wrap-AlaCarte,7.99
+Sandwiches & Wraps,MEALS-SANDW-Magoo's Sandwich,8.99
+Sandwiches & Wraps,MEALS-SANDW-Sweet Caroline Sandwich,9.99
+Sandwiches & Wraps,MEALS-SANDW-Sweet Caroline Sandwich-AlaCarte,7.99
+Sandwiches & Wraps,MEALS-WRAP-Buffalo Wrap,9.99
+Sandwiches & Wraps,MEALS-WRAP-Magoo's Wrap,9.99
+For The Little Magoo's,Apple Juice,1.29
+For The Little Magoo's,DRINK- Kids upgrade to Btld Water,1.30
+For The Little Magoo's,DRINK- Kids upgrade to Large,0.60
+For The Little Magoo's,DRINK- Kids upgrade to Regular,0.00
+For The Little Magoo's,Kids- Goldfish Grahams,0.99
+For The Little Magoo's,MEALS-KID-2 Piece,6.99
+For The Little Magoo's,MEALS-KID-2 Piece-Sauced,7.49
+Craft Drinks,DRINK-Bottled Water,2.59
+Craft Drinks,DRINK-Gallon,7.99
+Craft Drinks,DRINK-Gallon-Lemonade,7.99
+Craft Drinks,DRINK-Gallon-Specialty Lemonade,9.99
+Craft Drinks,DRINK-Large,2.99
+Craft Drinks,DRINK-Large Lemonade,3.19
+Craft Drinks,DRINK-Regular,2.69
+Craft Drinks,DRINK-Regular Lemonade,2.69
+Craft Drinks,DRINK-Water cup,0.00
+Tender Meals,MEALS- 8 Bites Sauced Special,9.99
+Tender Meals,MEALS- 8 Bites Special,8.99
+Tender Meals,MEALS-10 Bites Original,10.49
+Tender Meals,MEALS-10 Bites Sauced,11.49
+Tender Meals,MEALS-3 Original,7.99
+Tender Meals,MEALS-3 Sauced,8.74
+Tender Meals,Meals-4 Original,10.49
+Tender Meals,Meals-4 Sauced,11.49
+Tender Meals,MEALS-5 Original,10.99
+Tender Meals,MEALS-5 Sauced,12.24
+Tender Meals,MEALS-7 Original,12.99
+Tender Meals,MEALS-7 Sauced,14.74
+Tender Meals,MEALS-8 Original,16.99
+Tender Meals,MEALS-8 Sauced,18.99
+Tenders For The Fam,FAMILY-Side Salad Upgrade,5.99
+Tenders For The Fam,MEALS-FAM-20 Original,39.99
+Tenders For The Fam,MEALS-FAM-30 Original,59.99
+Tenders For The Fam,MEALS-FAM-SaucedTender,2.50
+By The Piece,BTP- 3 Original Bites,0.00
+By The Piece,BTP-1 Original,1.69
+By The Piece,BTP-1 Sauced,1.94
+By The Piece,BTP-10 Original,15.99
+By The Piece,BTP-10 Sauced,18.49
+By The Piece,BTP-20 Original,31.99
+By The Piece,BTP-20 Sauced,36.99
+By The Piece,BTP-5 Bites Original_Nona_LMary,100.00
+By The Piece,BTP-5 Bites Sauced_Nona_LMary,100.00
+By The Piece,BTP-6 Original,9.99
+By The Piece,BTP-6 Sauced,11.49
+By The Piece,By The Piece- 5 Original Bites,3.75
+By The Piece,By The Piece- 5 Sauced Bites,4.25
+Fresh-Made Salads,SAL-4Tenders-ORG,7.56
+Fresh-Made Salads,SAL-4Tenders-Sauced,8.56
+Fresh-Made Salads,SAL-Buffalo,10.99
+Fresh-Made Salads,SAL-ExtraTender-ORG,2.78
+Fresh-Made Salads,SAL-ExtraTender-Sauced,3.18
+Fresh-Made Salads,SAL-Farm Fresh,10.99
+Fresh-Made Salads,SAL-Magoo's Favorite,10.99
+Fresh-Made Salads,SAL-Side Salad,4.99
+Fresh-Made Salads,"SAL-Side Salad, LG",6.99
+Fresh-Made Salads,Salad/SandW-Mods,0.59
+Sides,Side Salad Upgrade,2.00
+Sides,"SIDE-Cheese Sauce, Personal",1.39
+Sides,"SIDE-Cheese Sauce, Regular",2.49
+Sides,"SIDE-Cole Slaw, Large",3.99
+Sides,"SIDE-Cole Slaw, Regular",2.99
+Sides,"SIDE-Crinkle Cut Fries, Large",3.99
+Sides,"SIDE-Crinkle Cut Fries, Regular",2.99
+Sides,SIDE-DIP-2OZ,0.79
+Sides,SIDE-DIP-2OZ-HOMEMADE,0.59
+Sides,SIDE-DIP-LG,5.99
+Sides,"SIDE-Fresh Cut Chips, Large",3.99
+Sides,"SIDE-Fresh Cut Chips, Regular",2.99
+Sides,"SIDE-Texas Toast, 1 Piece",1.39
+Sides,"SIDE-Texas Toast, 3 Piece",4.17
+InStore Catering,CAT- 125 Tender Bites,69.99
+InStore Catering,CAT- Tender Bites Box,10.99
+InStore Catering,CAT-100 Tenders,139.99
+InStore Catering,CAT-250 Tender Bites,125.99
+InStore Catering,CAT-50 Tenders,79.99
+InStore Catering,CAT-75 Tenders,109.99
+InStore Catering,CAT-Bottled Water,2.59
+InStore Catering,CAT-DES-Banana Pudding,39.99
+InStore Catering,CAT-DES-Cookies,20.99
+InStore Catering,CAT-Fries,100.00
+InStore Catering,CAT-Gallon Drink,7.99
+InStore Catering,CAT-Garden Salad,39.99
+InStore Catering,CAT-Lunch Boxes,10.99
+InStore Catering,CAT-Mac and Ch,54.99
+InStore Catering,CAT-Party Pack 15,199.99
+InStore Catering,CAT-Party Pack 25,299.99
+InStore Catering,CAT-SIDE-Baked Beans,25.99
+InStore Catering,CAT-SIDE-Cole Slaw,20.99
+InStore Catering,CAT-SIDE-Dip,4.19
+InStore Catering,CAT-SIDE-Fresh Cut Chips,20.99
+InStore Catering,CAT-SIDE-Fries,20.99
+InStore Catering,CAT-SIDE-Texas Toast,14.99
+InStore Catering,CAT-Snack Wraps,79.99
+InStore Catering,CAT-Tailgate Box (10),99.00
+InStore Catering,CAT-Wrap Pack,179.99
+EZ Cater,100 Tenders-EZCATR,155.99
+EZ Cater,16 OZ Dips-EZCATR,5.99
+EZ Cater,50 Tenders-EZCATR,95.99
+EZ Cater,75 Tenders-EZCATR,119.99
+EZ Cater,Baked Beans-EZCATR,31.19
+EZ Cater,Banana Pudding-EZCATR,41.99
+EZ Cater,Bottled Water-EZCATR,2.39
+EZ Cater,CAT- Tender Bites Box- EZCATR,10.99
+EZ Cater,Cole Slaw-EZCATR,25.19
+EZ Cater,Cookies-EZCATR,25.19
+EZ Cater,Fresh Cut CHips-EZCATR,25.19
+EZ Cater,Garden Salad-EZCATR,47.99
+EZ Cater,Iced Tea-EZCATR,9.59
+EZ Cater,Lunch Boxes-EZCATR,12.99
+EZ Cater,Party Pack 15-EZCATR,215.99
+EZ Cater,Party Pack 25-EZCATR,359.99
+EZ Cater,Snack Wraps-EZCATR,65.99
+EZ Cater,Texas Toast-EZCATR,19.19
+EZ Cater,Wrap Pack-EZCATR,179.99
+3PD,BTP-1 Original-3PD,100.00
+3PD,"SAL-Side Salad, LG-3PD",7.99
+3PD,"SIDE-Cheese Sauce, Personal-3PD",1.69
+3PD,100 Tenders-3PD,180.99
+3PD,45 Bites 3pd,39.99
+3PD,50 Tenders-3PD,106.49
+3PD,70 Bites- 3pd,59.99
+3PD,75 Tenders-3PD,143.99
+3PD,BTP-1 Sauced-3PD,100.00
+3PD,BTP-10 Original-3PD,17.99
+3PD,BTP-10 Sauced-3PD,20.49
+3PD,BTP-20 Original-3PD,39.99
+3PD,BTP-20 Sauced-3PD,44.99
+3PD,BTP-6 Original-3PD,11.49
+3PD,BTP-6 Sauced-3PD,12.99
+3PD,By Piece - 10 Bites Original-3PD,9.10
+3PD,"By The Piece- 5 Original Bites- 3PD",4.50
+3PD,"By The Piece- 5 Sauced Bites- 3PD",5.10
+3PD,CAT-Gallon Drink - 3pd,8.99
+3PD,DES-Banana Pudding-Large-3PD,8.99
+3PD,DES-Banana Pudding-Reg-3PD,3.99
+3PD,DES-Cookies-3PD,1.99
+3PD,DES-Cookies-4-3PD,7.96
+3PD,DES-Cookies-6-3PD,11.94
+3PD,DRINK-Bottled Water-3PD,2.79
+3PD,DRINK-Large-3PD,3.29
+3PD,DRINK-Regular-3PD,2.99
+3PD,FAMILY-Side Salad Upgrade-3PD,7.49
+3PD,"MEALS-10 Bites Original- 3PD",12.59
+3PD,"MEALS-10 Bites Sauced- 3PD",13.79
+3PD,MEALS-3 Original-3PD,9.59
+3PD,MEALS-3 Sauced-3PD,10.34
+3PD,Meals-4 Original-3PD,13.49
+3PD,Meals-4 Sauced-3pd,100.00
+3PD,MEALS-5 Original-3PD,12.49
+3PD,MEALS-5 Sauced-3PD,13.74
+3PD,MEALS-7 Original-3PD,14.99
+3PD,MEALS-7 Sauced-3PD,16.74
+3PD,MEALS-8 Original-3PD,18.99
+3PD,MEALS-8 Sauced-3PD,20.99
+3PD,MEALS-FAM-20 Original-3PD,46.99
+3PD,MEALS-FAM-30 Original-3PD,69.99
+3PD,MEALS-KID-2 Piece-3PD,7.99
+3PD,MEALS-KID-2 Piece-sauced-3PD,8.49
+3PD,MEALS-SANDW-Buffalo Sandwich-3PD,11.49
+3PD,MEALS-SANDW-Buffalo Sandwich-AlaCarte-3PD,9.49
+3PD,MEALS-SANDW-Buffalo Wrap-AlaCarte-3PD,9.49
+3PD,MEALS-SANDW-Magoo Sandwich-AlaCarte-3PD,8.99
+3PD,MEALS-SANDW-Magoo Wrap-AlaCarte-3PD,9.49
+3PD,MEALS-SANDW-Magoo's Sandwich-3PD,9.99
+3PD,MEALS-SANDW-Sweet Caroline Sandwich-3PD,11.49
+3PD,MEALS-SANDW-Sweet Caroline Sandwich-AlaCarte-3PD,9.49
+3PD,MEALS-WRAP-Buffalo Wrap-3PD,11.49
+3PD,MEALS-WRAP-Magoo's Wrap-3PD,11.49
+3PD,SAL-Buffalo-3PD,12.99
+3PD,SAL-ExtraTender-ORG-3PD,3.34
+3PD,SAL-ExtraTender-Sauced-3PD,3.82
+3PD,SAL-Farm Fresh-3PD,12.99
+3PD,SAL-Magoo's Favorite-3PD,12.99
+3PD,SAL-Side Salad-3PD,5.99
+3PD,"Side Salad Upgrade - 3PD",2.00
+3PD,"SIDE-Cheese Sauce, Regular-3PD",2.99
+3PD,"SIDE-Cole Slaw, Large-3PD",4.49
+3PD,"SIDE-Cole Slaw, Regular-3PD",3.49
+3PD,"SIDE-Crinkle Cut Fries, Large-3PD",4.49
+3PD,"SIDE-Crinkle Cut Fries, Regular-3PD",3.49
+3PD,SIDE-DIP-2OZ-3PD,0.89
+3PD,SIDE-DIP-2OZ-HOMEMADE-3PD,0.59
+3PD,SIDE-DIP-LG-3PD,6.99
+3PD,"SIDE-Fresh Cut Chips, Large-3PD",4.49
+3PD,"SIDE-Fresh Cut Chips, Regular-3PD",3.49
+3PD,"SIDE-Texas Toast, 1 Piece-3PD",1.69
+3PD,"SIDE-Texas Toast, 3 Piece - 3PD",5.07
+3PD,"SSW Mods - 3PD",0.69
+Odds and Ends,CAT- 125 Tender Bites Sauced,82.49
+Odds and Ends,CAT- 250 Tender Bites Sauced,150.99
+Odds and Ends,"125 Sauced Tender Bites- EZ Cater",99.99
+Odds and Ends,"125 Tender Bites- EZ Cater",85.99
+Odds and Ends,20 Sauced Bites,2.00
+Odds and Ends,25 Sauced Bites,2.50
+Odds and Ends,"250 Sauced Tender Bites- EZ Cater",169.99
+Odds and Ends,"250 Tender Bites- EZ Cater",139.99
+Odds and Ends,35 Sauced Bites,3.50
+Odds and Ends,45 Bites,31.99
+Odds and Ends,50 for $50,50.00
+Odds and Ends,70 Bites,47.99
+Odds and Ends,"8 BITES MIXED SAUCE- (No Bev)",6.99
+Odds and Ends,"8 BITES ORIGINAL- (No Bev)",5.99
+Odds and Ends,99 Cent Bev Promo,0.99
+Odds and Ends,ADDON- 3 tenders,0.75
+Odds and Ends,ADDON-SaladTenders,1.00
+Odds and Ends,Addon-Sauced 50 Tenders,12.50
+Odds and Ends,Addon-Sauced25Tenders,6.25
+Odds and Ends,"Addon-Sauced25Tenders-3 PD",8.50
+Odds and Ends,Bag of Ice,1.00
+Odds and Ends,Breakfast Bowl,10.00
+Odds and Ends,Breakfast Burrito,10.00
+Odds and Ends,By Piece - 10 Bites Original,7.50
+Odds and Ends,Championship Platter,1799.99
+Odds and Ends,Concessions Meal,4.00
+Odds and Ends,"Cup of Ice - Large",1.50
+Odds and Ends,"Cup of Ice - Regular",1.00
+Odds and Ends,DES-Banana Pudding-Large,8.49
+Odds and Ends,DES-Banana Pudding-Reg,3.49
+Odds and Ends,DES-Cookies,1.89
+Odds and Ends,Des-Cookies-4,7.56
+Odds and Ends,Des-Cookies-6,11.34
+Odds and Ends,"Freebie- LM/LN- 45 BITES",8.00
+Odds and Ends,"Freebie- LM/LN-70 BITES",16.00
+Odds and Ends,Game Day Platter,719.19
+Odds and Ends,IncludedDip-Digital,0.00
+Odds and Ends,Overtime Platter,1199.99
+Odds and Ends,Tailgate Package,99.99
+Odds and Ends,Tailgate Package Sauced,112.49
+`;
 
 const PricePortalPage = () => {
-  const { data: userData, isLoading } = useGetAuthUserQuery({});
+  const { data: userData, isLoading: userIsLoading } = useGetAuthUserQuery({});
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   const user = userData?.userDetails;
   
-  // State for price management
+  const [priceItems, setPriceItems] = useState<PriceItem[]>([]);
+  const [categoryList, setCategoryList] = useState<{ value: string, label: string }[]>([]);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
+
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const CURRENT_SAUCE_PRICE = 0.50; // Define current sauce price
-  const [newSaucedPrice, setNewSaucedPrice] = useState<number>(CURRENT_SAUCE_PRICE); // Initialize with current price
+  const CURRENT_SAUCE_PRICE = 0.50; 
+  const [newSaucedPrice, setNewSaucedPrice] = useState<number>(CURRENT_SAUCE_PRICE);
   const [priceChanges, setPriceChanges] = useState<{[key: string]: number}>({});
   const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
   const [syncAll, setSyncAll] = useState<boolean>(false);
   const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
 
-  // Initialize expandedCategories state once categories are available
   useEffect(() => {
-    const initialExpansionState: {[key: string]: boolean} = {};
-    categories.forEach(cat => {
-      if (cat.value !== 'all') { // 'all' is not a displayable category group
-        initialExpansionState[cat.label] = true; // Default to all expanded
+    const loadData = async () => {
+      setDataLoading(true);
+      try {
+        const parsedItems = await parsePriceDataFromCsv(csvDataString);
+        setPriceItems(parsedItems);
+        const uniqueCategories = extractUniqueCategories(parsedItems);
+        setCategoryList(uniqueCategories);
+      } catch (error) {
+        console.error("Error loading or parsing price data:", error);
+        // Handle error appropriately, e.g., set an error state
+      } finally {
+        setDataLoading(false);
       }
-    });
-    setExpandedCategories(initialExpansionState);
-  }, []); // Dependency array is now empty as `categories` is stable and defined outside
+    };
+    loadData();
+  }, []); // Runs once on mount
+
+  useEffect(() => {
+    if (categoryList.length > 0) {
+      const initialExpansionState: {[key: string]: boolean} = {};
+      categoryList.forEach(cat => {
+        if (cat.value !== 'all') { 
+          initialExpansionState[cat.label] = true; 
+        }
+      });
+      setExpandedCategories(initialExpansionState);
+    }
+  }, [categoryList]);
 
 
-  // Check if user has access to price portal
   const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
-  
-  // Mock check for if user's price access is disabled (will be replaced with real API)
-  const isPriceDisabled = false; // TODO: Get from user.priceDisabled or API
+  const isPriceDisabled = false; 
 
-  // Mock user locations (will be replaced with real user.locationIds)
   const userLocations = [
     { id: '101', name: 'Downtown Location' },
     { id: '102', name: 'Mall Location' }
   ];
 
-  // Mock price items (will be replaced with real API data)
-  const mockPriceItems: PriceItem[] = [
-    { id: '1', name: 'Buffalo Chicken Sandwich', category: 'sandwiches', currentPrice: 12.99, isOriginal: true, sauceUnitCount: 1 },
-    { id: '2', name: 'Buffalo Chicken Sandwich - Sauced', category: 'sandwiches', currentPrice: 13.99, isOriginal: false, originalId: '1' },
-    { id: '3', name: '3 Tender Meal', category: 'tenders', currentPrice: 10.99, isOriginal: true, sauceUnitCount: 3 },
-    { id: '4', name: '3 Tender Meal - Sauced', category: 'tenders', currentPrice: 11.99, isOriginal: false, originalId: '3' },
-    { id: '5', name: 'Kids 2 Tender Meal', category: 'kids', currentPrice: 7.99, isOriginal: true, sauceUnitCount: 2 },
-    { id: '6', name: 'Sweet Tea', category: 'drinks', currentPrice: 2.99, isOriginal: true }, // No sauceUnitCount needed as it's not sauced
-  ];
-
   const filteredItems: PriceItem[] = selectedCategory === 'all'
-    ? mockPriceItems
-    : mockPriceItems.filter(item => item.category === selectedCategory);
+    ? priceItems // Use state variable
+    : priceItems.filter(item => item.category === selectedCategory);
   
   const sortedItems: PriceItem[] = [...filteredItems].sort((a, b) => {
     return sortOrder === 'asc'
@@ -90,9 +317,9 @@ const PricePortalPage = () => {
       : b.name.localeCompare(a.name);
   });
 
-  // Group items by category
   const groupedItems = sortedItems.reduce((acc: {[key: string]: PriceItem[]}, item: PriceItem) => {
-    const categoryLabel = categories.find(c => c.value === item.category)?.label || 'Uncategorized';
+    const categoryInfo = categoryList.find(c => c.value === item.category); // Use categoryList state
+    const categoryLabel = categoryInfo?.label || 'Uncategorized';
     if (!acc[categoryLabel]) {
       acc[categoryLabel] = [];
     }
@@ -114,19 +341,20 @@ const PricePortalPage = () => {
         [itemLocationKey]: newRegularPrice
       };
 
-      const [itemId, locationId] = itemLocationKey.split('-');
-      const changedItem = mockPriceItems.find(pItem => pItem.id === itemId);
+      const [itemId] = itemLocationKey.split('-'); // locationId not used here currently for update logic
+      const changedItem = priceItems.find(pItem => pItem.id === itemId); // Use priceItems state
 
-      // If the changed item is an original item, try to update its sauced version
       if (changedItem && changedItem.isOriginal) {
-        const saucedItem = mockPriceItems.find(pItem => pItem.originalId === itemId);
+        const saucedItem = priceItems.find(pItem => pItem.originalId === itemId); // Use priceItems state
         
         if (saucedItem) {
-          // Use sauceUnitCount from the item data, default to 1 if not specified
-          const unitCount = (changedItem as any).sauceUnitCount || 1;
-          // newSaucedPrice state holds the per-tender sauce upcharge
+          const unitCount = changedItem.sauceUnitCount || 1;
           const calculatedSaucedItemPrice = newRegularPrice + (unitCount * newSaucedPrice);
           
+          // Need to find all locations for this sauced item if we are to update them all
+          // For now, this logic assumes the itemLocationKey implies the specific sauced item instance to update
+          // This might need refinement if a single price change for an original should update sauced items across all locations shown
+          const locationId = itemLocationKey.substring(itemId.length + 1); // Extract locationId
           const saucedItemKey = `${saucedItem.id}-${locationId}`;
           updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
         }
@@ -143,14 +371,13 @@ const PricePortalPage = () => {
   };
 
   const handleSubmitChanges = () => {
-    // TODO: Implement price submission logic
     console.log('Submitting price changes:', priceChanges);
   };
 
-  if (isLoading) {
+  if (userIsLoading || dataLoading) { // Check both user loading and data loading
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading...</div>
+        <div className="text-lg">Loading page data...</div>
       </div>
     );
   }
@@ -273,7 +500,7 @@ const PricePortalPage = () => {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                {categories.map(category => (
+                {categoryList.map(category => ( // Use categoryList state
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
