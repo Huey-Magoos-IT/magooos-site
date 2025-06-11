@@ -4,9 +4,6 @@ import { Role, TeamRole } from "@/state/api";
 export const hasRole = (teamRoles: TeamRole[] | undefined, requiredRole: string): boolean => {
   if (!teamRoles || teamRoles.length === 0) return false;
   
-  console.log("Checking roles:", teamRoles.map(tr => tr.role.name));
-  console.log("Required role:", requiredRole);
-  
   // Make case-insensitive comparison
   const normalizedRequiredRole = requiredRole.toUpperCase();
   
@@ -19,9 +16,6 @@ export const hasRole = (teamRoles: TeamRole[] | undefined, requiredRole: string)
 // Check if user's team has any of the required roles
 export const hasAnyRole = (teamRoles: TeamRole[] | undefined, requiredRoles: string[]): boolean => {
   if (!teamRoles || teamRoles.length === 0) return false;
-  
-  console.log("Checking any roles:", teamRoles.map(tr => tr.role.name));
-  console.log("Required roles:", requiredRoles);
   
   // Make case-insensitive comparison
   const normalizedRequiredRoles = requiredRoles.map(role => role.toUpperCase());

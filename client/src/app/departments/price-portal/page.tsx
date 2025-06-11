@@ -49,12 +49,14 @@ const PricePortalPage = () => {
 
   // Initialize expandedCategories state once categories are available
   useEffect(() => {
+    console.log('[PricePortalPage] useEffect for expandedCategories running. Categories:', categories);
     const initialExpansionState: {[key: string]: boolean} = {};
     categories.forEach(cat => {
       if (cat.value !== 'all') { // 'all' is not a displayable category group
         initialExpansionState[cat.label] = true; // Default to all expanded
       }
     });
+    console.log('[PricePortalPage] Initializing expandedCategories to:', initialExpansionState);
     setExpandedCategories(initialExpansionState);
   }, [categories]); // Add categories to dependency array
 
@@ -102,10 +104,16 @@ const PricePortalPage = () => {
   }, {} as {[key: string]: PriceItem[]});
 
   const toggleCategoryExpansion = (categoryName: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryName]: !prev[categoryName]
-    }));
+    console.log('[PricePortalPage] Toggling category:', categoryName);
+    setExpandedCategories(prev => {
+      console.log('[PricePortalPage] Previous expandedCategories:', prev);
+      const newState = {
+        ...prev,
+        [categoryName]: !prev[categoryName]
+      };
+      console.log('[PricePortalPage] New expandedCategories state:', newState);
+      return newState;
+    });
   };
 
   const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
