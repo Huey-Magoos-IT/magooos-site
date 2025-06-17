@@ -9,6 +9,7 @@ import {
   useDeleteUserMutation,
   useListCognitoUsersQuery,
   useResendVerificationLinkMutation,
+  useDeleteCognitoUserMutation,
   type User as ApiUser, // Alias the User interface from API
   type CognitoUser,
 } from "@/state/api";
@@ -71,6 +72,7 @@ const Users = () => {
     filter: 'cognito:user_status = "UNCONFIRMED"'
   });
   const [resendVerificationLink, { isLoading: isResendingVerification }] = useResendVerificationLinkMutation();
+  const [deleteCognitoUser, { isLoading: isDeletingCognitoUser }] = useDeleteCognitoUserMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -309,16 +311,15 @@ const Users = () => {
     
     try {
       console.log(`Deleting unconfirmed Cognito user: ${username}`);
-      // Use the existing deleteUser mutation but we need to handle Cognito-only users
-      // For now, we'll create a simple approach - the backend should handle this case
-      toast.success(`User ${username} deletion initiated`);
+      await deleteCognitoUser({ username }).unwrap();
+      toast.success(`User ${username} deleted successfully`);
       refetchCognitoUsers(); // Refresh the list
     } catch (error: any) {
       console.error('Error deleting Cognito user:', error);
       const errorMessage = error.data?.message || error.message || "Failed to delete user";
       toast.error(errorMessage);
     }
-  }, [refetchCognitoUsers]);
+  }, [deleteCognitoUser, refetchCognitoUsers]);
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
     { field: "userId", headerName: "ID", width: 70 },
@@ -705,8 +706,12 @@ const Users = () => {
                         size="small"
                         color="error"
                         onClick={() => handleDeleteCognitoUser(cognitoUser.Username!)}
+                        disabled={isDeletingCognitoUser}
                         className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
                       >
+                        {isDeletingCognitoUser ? (
+                          <CircularProgress size={16} className="mr-1" />
+                        ) : null}
                         Delete
                       </Button>
                     </div>

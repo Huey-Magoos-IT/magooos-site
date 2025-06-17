@@ -450,6 +450,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["CognitoUsers"],
     }),
+    deleteCognitoUser: build.mutation<{ message: string }, { username: string }>({
+      query: ({ username }) => ({
+        url: `users/cognito/${username}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CognitoUsers"],
+    }),
   }),
 });
 
@@ -488,4 +495,5 @@ export const {
   // Cognito user management hooks
   useListCognitoUsersQuery,
   useResendVerificationLinkMutation,
+  useDeleteCognitoUserMutation,
 } = api;

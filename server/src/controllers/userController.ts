@@ -6,14 +6,16 @@ import {
   AdminEnableUserCommand,
   AdminDeleteUserCommand,
   ListUsersCommand,
-  AdminCreateUserCommand
+  AdminCreateUserCommand,
+  ResendConfirmationCodeCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
-// Ensure AWS_REGION and COGNITO_USER_POOL_ID are set in the server's environment
+// Ensure AWS_REGION, COGNITO_USER_POOL_ID, and COGNITO_CLIENT_ID are set in the server's environment
 // The SDK will automatically use credentials from the EC2 instance's IAM role.
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
 const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID;
 
 const prisma = new PrismaClient({
   datasources: {
@@ -1025,11 +1027,15 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
       return;
     }
 
-    // Use AdminCreateUserCommand with MessageAction: "RESEND" to resend verification
-    const command = new AdminCreateUserCommand({
-      UserPoolId: COGNITO_USER_POOL_ID,
-      Username: username,
-      MessageAction: "RESEND"
+    if (!COGNITO_CLIENT_ID) {
+      res.status(500).json({ message: "Server configuration error: Cognito Client ID not set" });
+      return;
+    }
+
+    // Use ResendConfirmationCodeCommand for unconfirmed users
+    const command = new ResendConfirmationCodeCommand({
+      ClientId: COGNITO_CLIENT_ID,
+      Username: username
     });
 
     await cognitoClient.send(command);
@@ -1049,6 +1055,88 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
     
     res.status(500).json({
       message: "Error resending verification link",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Delete an unconfirmed user from Cognito only (no local DB record)
+ */
+export const deleteCognitoUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username } = req.params;
+    
+    console.log(`[DELETE /users/cognito/${username}] Deleting unconfirmed Cognito user`);
+    
+    // Admin authorization check using existing pattern
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    if (!isAdmin) {
+      res.status(403).json({ message: "Access denied: Admin role required" });
+      return;
+    }
+
+    if (!COGNITO_USER_POOL_ID) {
+      res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set" });
+      return;
+    }
+
+    // Delete user from Cognito
+    const command = new AdminDeleteUserCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Username: username
+    });
+
+    await cognitoClient.send(command);
+    
+    console.log(`[DELETE /users/cognito/${username}] Successfully deleted unconfirmed user from Cognito`);
+    
+    res.json({
+      message: `Unconfirmed user ${username} deleted successfully from Cognito`
+    });
+  } catch (error: any) {
+    console.error(`[DELETE /users/cognito/${req.params.username}] Error:`, error);
+    
+    if (error.name === 'UserNotFoundException') {
+      res.status(404).json({ message: "User not found in Cognito" });
+      return;
+    }
+    
+    res.status(500).json({
+      message: "Error deleting Cognito user",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

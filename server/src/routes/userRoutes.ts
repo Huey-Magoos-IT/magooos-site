@@ -12,6 +12,7 @@ import {
   deleteUser,
   listCognitoUsers,
   resendVerificationLink,
+  deleteCognitoUser,
 } from "../controllers/userController";
 
 const router = Router();
@@ -31,6 +32,7 @@ router.delete("/:userId", deleteUser); // DELETE a user (permanent from DB and C
 // --- Cognito Management Routes ---
 router.get("/cognito/list", listCognitoUsers); // GET Cognito users with optional filtering
 router.post("/cognito/:username/resend-verification", resendVerificationLink); // POST to resend verification link
+router.delete("/cognito/:username", deleteCognitoUser); // DELETE a Cognito user
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {
