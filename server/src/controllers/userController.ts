@@ -14,8 +14,8 @@ import {
 // Ensure AWS_REGION, COGNITO_USER_POOL_ID, and COGNITO_CLIENT_ID are set in the server's environment
 // The SDK will automatically use credentials from the EC2 instance's IAM role.
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
-const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
-const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID;
+const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "us-east-2_5rTsYPjpA";
+const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID || process.env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID || "11rv3fvrcmla2kgi5fs1ois71f";
 
 const prisma = new PrismaClient({
   datasources: {

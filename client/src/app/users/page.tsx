@@ -313,7 +313,14 @@ const Users = () => {
       console.log(`Deleting unconfirmed Cognito user: ${username}`);
       await deleteCognitoUser({ username }).unwrap();
       toast.success(`User ${username} deleted successfully`);
-      refetchCognitoUsers(); // Refresh the list
+      
+      // Force immediate refresh of the Cognito users list
+      await refetchCognitoUsers();
+      
+      // Also refresh after a short delay to ensure consistency
+      setTimeout(() => {
+        refetchCognitoUsers();
+      }, 1000);
     } catch (error: any) {
       console.error('Error deleting Cognito user:', error);
       const errorMessage = error.data?.message || error.message || "Failed to delete user";
