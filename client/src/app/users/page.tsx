@@ -645,7 +645,7 @@ const Users = () => {
           <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-100">
             <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Unconfirmed Users</h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              These users have been created in Cognito but haven't verified their email addresses yet. You can resend verification links or delete them if needed.
+              These users have been created in Cognito but haven&apos;t verified their email addresses yet. You can resend verification links or delete them if needed.
             </p>
           </div>
           
