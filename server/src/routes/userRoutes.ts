@@ -9,20 +9,28 @@ import {
   createLocationUser,
   disableUser,
   enableUser,
-  deleteUser
+  deleteUser,
+  listCognitoUsers,
+  resendVerificationLink,
 } from "../controllers/userController";
 
 const router = Router();
 
-router.get("/", getUsers);
-router.post("/", postUser);
-router.get("/:cognitoId", getUser);
-router.patch("/:userId/team", updateUserTeam);
-router.patch("/:id/locations", updateUserLocations);
-router.post("/location-user", createLocationUser);
-router.patch("/:userId/disable", disableUser);
-router.patch("/:userId/enable", enableUser);
-router.delete("/:userId", deleteUser);
+// --- Standard User Routes ---
+
+router.get("/", getUsers); // GET all users from local DB
+router.post("/", postUser); // POST a new user (typically called by Cognito post-confirmation Lambda)
+router.get("/:cognitoId", getUser); // GET a specific user by cognitoId from local DB
+router.patch("/:userId/team", updateUserTeam); // PATCH to update a user's team
+router.patch("/:id/locations", updateUserLocations); // PATCH to update a user's assigned locations
+router.post("/location-user", createLocationUser); // POST to create a new location user
+router.patch("/:userId/disable", disableUser); // PATCH to disable a user (in DB and Cognito)
+router.patch("/:userId/enable", enableUser); // PATCH to enable a user (in DB and Cognito)
+router.delete("/:userId", deleteUser); // DELETE a user (permanent from DB and Cognito)
+
+// --- Cognito Management Routes ---
+router.get("/cognito/list", listCognitoUsers); // GET Cognito users with optional filtering
+router.post("/cognito/:username/resend-verification", resendVerificationLink); // POST to resend verification link
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {

@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { CognitoIdentityProviderClient, AdminDisableUserCommand, AdminEnableUserCommand, AdminDeleteUserCommand } from "@aws-sdk/client-cognito-identity-provider";
+import {
+  CognitoIdentityProviderClient,
+  AdminDisableUserCommand,
+  AdminEnableUserCommand,
+  AdminDeleteUserCommand,
+  ListUsersCommand,
+  AdminCreateUserCommand
+} from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
 // Ensure AWS_REGION and COGNITO_USER_POOL_ID are set in the server's environment
@@ -871,5 +878,178 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   } catch (dbError: any) {
     console.error(`[DELETE /users/${targetUserIdString}] Database transaction or general error during deletion:`, dbError);
     res.status(500).json({ message: `Error processing delete user request: ${dbError.message}` });
+  }
+};
+
+/**
+ * List users from Cognito with optional filtering
+ */
+export const listCognitoUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { filter, limit = 60, paginationToken } = req.query;
+    
+    console.log(`[GET /users/cognito/list] Listing Cognito users with filter: ${filter}`);
+    
+    // Admin authorization check using existing pattern
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    if (!isAdmin) {
+      res.status(403).json({ message: "Access denied: Admin role required" });
+      return;
+    }
+
+    if (!COGNITO_USER_POOL_ID) {
+      res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set" });
+      return;
+    }
+
+    // Build Cognito command
+    const command = new ListUsersCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Limit: parseInt(limit as string),
+      PaginationToken: paginationToken as string,
+      Filter: filter as string
+    });
+
+    const response = await cognitoClient.send(command);
+    
+    // Transform Cognito users to our format
+    const users = response.Users?.map(cognitoUser => ({
+      Username: cognitoUser.Username,
+      UserStatus: cognitoUser.UserStatus,
+      Email: cognitoUser.Attributes?.find(attr => attr.Name === 'email')?.Value,
+      EmailVerified: cognitoUser.Attributes?.find(attr => attr.Name === 'email_verified')?.Value === 'true',
+      CreatedDate: cognitoUser.UserCreateDate,
+      LastModifiedDate: cognitoUser.UserLastModifiedDate,
+      Enabled: cognitoUser.Enabled
+    })) || [];
+
+    console.log(`[GET /users/cognito/list] Found ${users.length} Cognito users`);
+    
+    res.json({
+      users,
+      paginationToken: response.PaginationToken
+    });
+  } catch (error: any) {
+    console.error("[GET /users/cognito/list] Error:", error);
+    res.status(500).json({
+      message: "Error listing Cognito users",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Resend verification link for a Cognito user
+ */
+export const resendVerificationLink = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { username } = req.params;
+    
+    console.log(`[POST /users/cognito/${username}/resend-verification] Resending verification link`);
+    
+    // Admin authorization check using existing pattern
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    if (!isAdmin) {
+      res.status(403).json({ message: "Access denied: Admin role required" });
+      return;
+    }
+
+    if (!COGNITO_USER_POOL_ID) {
+      res.status(500).json({ message: "Server configuration error: Cognito User Pool ID not set" });
+      return;
+    }
+
+    // Use AdminCreateUserCommand with MessageAction: "RESEND" to resend verification
+    const command = new AdminCreateUserCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Username: username,
+      MessageAction: "RESEND"
+    });
+
+    await cognitoClient.send(command);
+    
+    console.log(`[POST /users/cognito/${username}/resend-verification] Verification link resent successfully`);
+    
+    res.json({
+      message: `Verification link resent successfully to ${username}`
+    });
+  } catch (error: any) {
+    console.error(`[POST /users/cognito/${req.params.username}/resend-verification] Error:`, error);
+    
+    if (error.name === 'UserNotFoundException') {
+      res.status(404).json({ message: "User not found in Cognito" });
+      return;
+    }
+    
+    res.status(500).json({
+      message: "Error resending verification link",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

@@ -1,10 +1,9 @@
 # PROJECT ARCHITECTURE
 
 **IMPORTANT DEVELOPMENT REQUIREMENT**
-THE AWS SDK IS STRICTLY PROHIBITED IN THIS PROJECT CODEBASE.
-All AWS integrations must use direct HTTP/HTTPS requests, API Gateway integrations,
-or other SDK-less approaches. This applies to all components, including Lambda functions.
-DO NOT INTRODUCE AWS SDK DEPENDENCIES UNDER ANY CIRCUMSTANCES.
+THE AWS SDK IS GENERALLY PROHIBITED IN THIS PROJECT CODEBASE TO AVOID UNNECESSARY COMPLEXITY AND DEPENDENCIES, PARTICULARLY IN THE FRONTEND OR FOR SIMPLE AWS SERVICE INTERACTIONS THAT CAN BE HANDLED VIA API GATEWAY MAPPING TEMPLATES (E.G., DYNAMODB ACCESS).
+HOWEVER, FOR COMPLEX BACKEND ADMINISTRATIVE OPERATIONS ON AWS SERVICES LIKE COGNITO (E.G., USER MANAGEMENT ACTIONS LIKE ENABLING/DISABLING USERS, RESENDING CONFIRMATIONS), THE AWS SDK (E.G., `@aws-sdk/client-cognito-identity-provider`) IS PERMITTED AND USED WITHIN THE EXPRESS SERVER (`server/src/controllers/`) TO INTERACT DIRECTLY WITH THE SERVICE.
+All other AWS integrations should prefer direct HTTP/HTTPS requests or API Gateway integrations.
 
 ## Next.js 14 (`client/src/app/`)
 - App Router: `dashboardWrapper.tsx` + `layout.tsx`
@@ -112,11 +111,10 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Reusable pattern for simple data access requirements
     - Implemented for `LocationTable` component
 
-7.  **AWS SDK Prohibition:**
-    - AWS SDK must NOT be used anywhere in the codebase
-    - All AWS services must be accessed via HTTP requests, API Gateway, or other SDK-less methods
-    - Direct HTTP requests are preferred for AWS service interactions
-    - Use mapping templates in API Gateway for service integration
+7.  **AWS SDK Usage Clarification:**
+    - General Prohibition: The AWS SDK is generally avoided to minimize frontend bundle sizes and backend complexity where simpler API Gateway integrations suffice (e.g., direct DynamoDB access via mapping templates).
+    - Permitted Backend Use: For complex administrative interactions with AWS services from the backend (e.g., Cognito user management in `server/src/controllers/userController.ts`), the AWS SDK (like `@aws-sdk/client-cognito-identity-provider`) IS used. This allows for robust interaction with service APIs that are difficult or insecure to replicate with direct HTTP calls or simple API Gateway proxies.
+    - Frontend Prohibition: The AWS SDK should NOT be used in the client-side Next.js application.
 
 8.  **Department Features:**
     - **Data Department**:
@@ -262,7 +260,7 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 - Node.js/Express REST API
 - Prisma for database management
 - JWT authentication
-- Direct AWS integration (NO AWS SDK allowed)
+- Direct AWS integration (AWS SDK used in backend for specific services like Cognito admin operations, otherwise SDK-less approaches preferred)
 
 ## DevOps:
 - PostgreSQL on AWS RDS

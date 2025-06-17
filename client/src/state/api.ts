@@ -70,6 +70,21 @@ export interface User {
   isDisabled?: boolean;
 }
 
+export interface CognitoUser {
+  Username?: string;
+  UserStatus?: string;
+  Email?: string;
+  EmailVerified?: boolean;
+  CreatedDate?: string;
+  LastModifiedDate?: string;
+  Enabled?: boolean;
+}
+
+export interface ListCognitoUsersResponse {
+  users: CognitoUser[];
+  paginationToken?: string;
+}
+
 export interface Attachment {
   id: number;
   fileURL: string;
@@ -117,7 +132,7 @@ export const api = createApi({
     },
   }),
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Roles", "Groups"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Roles", "Groups", "CognitoUsers"],
   endpoints: (build) => ({
     getAuthUser: build.query({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
@@ -416,6 +431,25 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
+    // Cognito user management endpoints
+    listCognitoUsers: build.query<ListCognitoUsersResponse, { filter?: string; limit?: number; paginationToken?: string }>({
+      query: ({ filter, limit, paginationToken } = {}) => {
+        const params = new URLSearchParams();
+        if (filter) params.append('filter', filter);
+        if (limit) params.append('limit', limit.toString());
+        if (paginationToken) params.append('paginationToken', paginationToken);
+        
+        return `users/cognito/list?${params.toString()}`;
+      },
+      providesTags: ["CognitoUsers"],
+    }),
+    resendVerificationLink: build.mutation<{ message: string }, { username: string }>({
+      query: ({ username }) => ({
+        url: `users/cognito/${username}/resend-verification`,
+        method: "POST",
+      }),
+      invalidatesTags: ["CognitoUsers"],
+    }),
   }),
 });
 
@@ -451,4 +485,7 @@ export const {
   useDisableUserMutation,
   useEnableUserMutation,
   useDeleteUserMutation,
+  // Cognito user management hooks
+  useListCognitoUsersQuery,
+  useResendVerificationLinkMutation,
 } = api;
