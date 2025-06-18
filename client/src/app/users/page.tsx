@@ -81,6 +81,10 @@ const Users = () => {
   const [teamFilter, setTeamFilter] = useState<string | number>("");
   const [isModalOpen, setIsModalOpen] = useState(false); // Added modal state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteCognitoDialogOpen, setIsDeleteCognitoDialogOpen] = useState(false);
+  const [cognitoUserToDelete, setCognitoUserToDelete] = useState<string | null>(null);
+  const [isResendDialogOpen, setIsResendDialogOpen] = useState(false);
+  const [cognitoUserToResend, setCognitoUserToResend] = useState<string | null>(null);
   // The user object passed from UserCard will match its internal prop structure
   const [userToDelete, setUserToDelete] = useState<{
     userId: number;
@@ -289,33 +293,60 @@ const Users = () => {
     }
   }, [deleteUserMutation, refetchUsers, setUpdateStatus, userToDelete]);
 
+  // Handle opening resend confirmation dialog
+  const openResendConfirmationDialog = (username: string) => {
+    setCognitoUserToResend(username);
+    setIsResendDialogOpen(true);
+  };
+
+  const closeResendConfirmationDialog = () => {
+    setCognitoUserToResend(null);
+    setIsResendDialogOpen(false);
+  };
+
   // Handle resending verification link
-  const handleResendVerification = useCallback(async (username: string) => {
+  const handleResendVerification = useCallback(async () => {
+    if (!cognitoUserToResend) return;
+    
     try {
-      console.log(`Resending verification link for: ${username}`);
-      await resendVerificationLink({ username }).unwrap();
-      toast.success(`Verification link resent to ${username}`);
+      console.log(`Resending verification link for: ${cognitoUserToResend}`);
+      await resendVerificationLink({ username: cognitoUserToResend }).unwrap();
+      toast.success(`Verification link resent to ${cognitoUserToResend}`);
       refetchCognitoUsers(); // Refresh the list
+      closeResendConfirmationDialog();
     } catch (error: any) {
       console.error('Error resending verification link:', error);
       const errorMessage = error.data?.message || error.message || "Failed to resend verification link";
       toast.error(errorMessage);
+      closeResendConfirmationDialog();
     }
-  }, [resendVerificationLink, refetchCognitoUsers]);
+  }, [resendVerificationLink, refetchCognitoUsers, cognitoUserToResend]);
+
+  // Handle opening delete confirmation dialog for Cognito user
+  const openDeleteCognitoConfirmationDialog = (username: string) => {
+    setCognitoUserToDelete(username);
+    setIsDeleteCognitoDialogOpen(true);
+  };
+
+  const closeDeleteCognitoConfirmationDialog = () => {
+    setCognitoUserToDelete(null);
+    setIsDeleteCognitoDialogOpen(false);
+  };
 
   // Handle deleting unconfirmed Cognito user
-  const handleDeleteCognitoUser = useCallback(async (username: string) => {
-    if (!confirm(`Are you sure you want to permanently delete the unconfirmed user "${username}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteCognitoUser = useCallback(async () => {
+    if (!cognitoUserToDelete) return;
     
     try {
-      console.log(`Deleting unconfirmed Cognito user: ${username}`);
-      await deleteCognitoUser({ username }).unwrap();
-      toast.success(`User ${username} deleted successfully`);
+      console.log(`Deleting unconfirmed Cognito user: ${cognitoUserToDelete}`);
+      await deleteCognitoUser({ username: cognitoUserToDelete }).unwrap();
+      toast.success(`User ${cognitoUserToDelete} deleted successfully`);
       
       // Force immediate refresh of the Cognito users list
       await refetchCognitoUsers();
+      
+      // Close dialog
+      closeDeleteCognitoConfirmationDialog();
       
       // Also refresh after a short delay to ensure consistency
       setTimeout(() => {
@@ -325,8 +356,9 @@ const Users = () => {
       console.error('Error deleting Cognito user:', error);
       const errorMessage = error.data?.message || error.message || "Failed to delete user";
       toast.error(errorMessage);
+      closeDeleteCognitoConfirmationDialog();
     }
-  }, [deleteCognitoUser, refetchCognitoUsers]);
+  }, [deleteCognitoUser, refetchCognitoUsers, cognitoUserToDelete]);
   // Define columns with TeamSelector and RoleBadges for admin users
   const columns: GridColDef[] = useMemo(() => [
     { field: "userId", headerName: "ID", width: 70 },
@@ -698,7 +730,7 @@ const Users = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        onClick={() => handleResendVerification(cognitoUser.Username!)}
+                        onClick={() => openResendConfirmationDialog(cognitoUser.Username!)}
                         disabled={isResendingVerification}
                         className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
                       >
@@ -712,7 +744,7 @@ const Users = () => {
                         variant="outlined"
                         size="small"
                         color="error"
-                        onClick={() => handleDeleteCognitoUser(cognitoUser.Username!)}
+                        onClick={() => openDeleteCognitoConfirmationDialog(cognitoUser.Username!)}
                         disabled={isDeletingCognitoUser}
                         className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
                       >
@@ -767,6 +799,56 @@ const Users = () => {
           </Button>
           <Button onClick={handleDeleteUser} color="error" variant="contained" autoFocus disabled={isDeletingUser}>
             {isDeletingUser ? <CircularProgress size={24} color="inherit" /> : "Delete User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Cognito User Confirmation Dialog */}
+      <Dialog
+        open={isDeleteCognitoDialogOpen}
+        onClose={closeDeleteCognitoConfirmationDialog}
+        aria-labelledby="cognito-delete-dialog-title"
+        aria-describedby="cognito-delete-dialog-description"
+      >
+        <DialogTitle id="cognito-delete-dialog-title">
+          {`Delete unconfirmed user "${cognitoUserToDelete || ''}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="cognito-delete-dialog-description">
+            This will permanently delete the unconfirmed user from Cognito. This action cannot be undone. The user will need to be recreated if they want to access the system.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteCognitoConfirmationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteCognitoUser} color="error" variant="contained" autoFocus disabled={isDeletingCognitoUser}>
+            {isDeletingCognitoUser ? <CircularProgress size={24} color="inherit" /> : "Delete User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Resend Verification Confirmation Dialog */}
+      <Dialog
+        open={isResendDialogOpen}
+        onClose={closeResendConfirmationDialog}
+        aria-labelledby="resend-dialog-title"
+        aria-describedby="resend-dialog-description"
+      >
+        <DialogTitle id="resend-dialog-title">
+          {`Resend verification link to "${cognitoUserToResend || ''}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="resend-dialog-description">
+            This will send a new verification email to the user. They will receive a link to verify their email address and complete their account setup.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeResendConfirmationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleResendVerification} color="primary" variant="contained" autoFocus disabled={isResendingVerification}>
+            {isResendingVerification ? <CircularProgress size={24} color="inherit" /> : "Send Link"}
           </Button>
         </DialogActions>
       </Dialog>
