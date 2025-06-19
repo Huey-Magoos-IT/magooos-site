@@ -653,6 +653,11 @@ export const filterData = (
       const locationIdValue = getFieldValue(row, config.locationIdentifierField);
       const locationIdStr = locationIdValue !== undefined ? String(locationIdValue).trim() : '';
 
+      // Debug: Log the first few comparisons to see what's happening
+      if (data.indexOf(row) < 5) {
+        console.log(`FILTER DATA - Row ${data.indexOf(row)}: Store='${locationIdStr}', Selected locations: [${locationIds.join(', ')}]`);
+      }
+
       // Explicitly exclude TOTAL rows as per new requirements
       if (locationIdStr === 'TOTAL') {
         // console.log(`FILTER DATA - Excluding TOTAL row with Location ID: '${locationIdStr}'`); // Reduced bloat

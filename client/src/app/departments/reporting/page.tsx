@@ -241,7 +241,9 @@ const ReportingPage = () => {
       // The CSV "Store" column contains location names that should match our location.name exactly
       const selectedLocationNames = selectedLocations.map(loc => loc.name);
       
+      console.log("REPORTING PAGE - Selected locations objects:", selectedLocations);
       console.log("REPORTING PAGE - Selected location names for filtering:", selectedLocationNames);
+      console.log("REPORTING PAGE - Sample CSV data (first 3 rows):", combinedData.slice(0, 3));
       
       // Apply filtering with location names for exact matching against CSV "Store" column
       filteredData = filterData(
