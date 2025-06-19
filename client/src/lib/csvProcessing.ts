@@ -670,9 +670,10 @@ export const filterData = (
       // First try exact match - this works for both ID-based filtering and exact name matching
       if (locationIds.includes(locationIdStr)) {
         locationMatches = true;
-      } else {
-        // Try case-insensitive exact matching for location names
-        // This handles cases where CSV might have slight case differences
+      }
+      
+      // If no exact match, try case-insensitive exact matching for location names
+      if (!locationMatches) {
         const storeLower = locationIdStr.toLowerCase().trim();
         for (const selectedLocation of locationIds) {
           const selectedLower = selectedLocation.toLowerCase().trim();
@@ -681,20 +682,19 @@ export const filterData = (
             break;
           }
         }
-        
-        // If still no match, try partial matching as fallback
-        // This handles cases where there might be slight variations in naming
-        if (!locationMatches) {
-          for (const selectedLocation of locationIds) {
-            const selectedLower = selectedLocation.toLowerCase().trim();
-            const storeLower = locationIdStr.toLowerCase().trim();
-            
-            // Check if either contains the other (for cases like "Wildwood" vs "Beaumont/Wildwood, FL")
-            if (storeLower.includes(selectedLower) || selectedLower.includes(storeLower)) {
-              locationMatches = true;
-              console.log(`FILTER DATA - Partial match found: '${locationIdStr}' matches '${selectedLocation}'`);
-              break;
-            }
+      }
+      
+      // If still no match, try partial matching as fallback
+      if (!locationMatches) {
+        for (const selectedLocation of locationIds) {
+          const selectedLower = selectedLocation.toLowerCase().trim();
+          const storeLower = locationIdStr.toLowerCase().trim();
+          
+          // Check if either contains the other (for cases like "Wildwood" vs "Beaumont/Wildwood, FL")
+          if (storeLower.includes(selectedLower) || selectedLower.includes(storeLower)) {
+            locationMatches = true;
+            console.log(`FILTER DATA - Partial match found: '${locationIdStr}' matches '${selectedLocation}'`);
+            break;
           }
         }
       }
