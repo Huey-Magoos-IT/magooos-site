@@ -241,8 +241,8 @@ const ReportingPage = () => {
       setProcessingProgress("Filtering data (testing daily usage count)..."); // Updated progress message
       filteredData = filterData(
         combinedData,
-        effectiveLocationIds, // Re-enabled location filtering
-        discountIds, // Re-enabled discount ID filtering
+        [], // effectiveLocationIds - temporarily disabled again for testing
+        [], // discountIds - temporarily disabled again for testing
         selectedLocations,    // Pass selectedLocations as before
         dailyUsageCountFilter, // Use the dailyUsageCountFilter state
         reportingPageCsvConfig // Pass the config object
