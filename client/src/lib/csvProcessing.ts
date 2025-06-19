@@ -707,27 +707,49 @@ export const filterData = (
     }
     
     // Apply discount ID filtering if needed. Only apply if config has the field.
+    // Note: For red flag reports, discount filtering may not be applicable since they use different data structure
     if (discountIds.length > 0 && config?.discountIdentifierField) {
-      const usingDefaultDiscounts = discountIds.length === 7 &&
-        discountIds.includes(77406) &&
-        discountIds.includes(135733) &&
-        discountIds.includes(135736) &&
-        discountIds.includes(135737) &&
-        discountIds.includes(135738) &&
-        discountIds.includes(135739) &&
-        discountIds.includes(135910);
+      // Check if this looks like a red flag report by examining the data structure
+      const discountValueRaw = getFieldValue(row, config.discountIdentifierField);
+      const isRedFlagReport = discountValueRaw && (
+        String(discountValueRaw) === '1461' ||
+        String(discountValueRaw) === '1362' ||
+        String(discountValueRaw) === '1869' ||
+        (Number(discountValueRaw) > 1000 && Number(discountValueRaw) < 2000)
+      );
+      
+      if (isRedFlagReport) {
+        console.log(`FILTER DATA - Red flag report detected, skipping discount filtering (Order Type: ${discountValueRaw})`);
+        // Skip discount filtering for red flag reports as they use different Order Type values
+      } else {
+        // Apply normal discount filtering for other report types
+        const usingDefaultDiscounts = discountIds.length === 9 &&
+          discountIds.includes(77406) &&
+          discountIds.includes(135733) &&
+          discountIds.includes(135736) &&
+          discountIds.includes(135737) &&
+          discountIds.includes(135738) &&
+          discountIds.includes(135739) &&
+          discountIds.includes(135910) &&
+          discountIds.includes(147061) &&
+          discountIds.includes(147060);
 
-      if (!usingDefaultDiscounts) {
-        const discountValueRaw = getFieldValue(row, config.discountIdentifierField);
-        
-        if (discountValueRaw !== undefined && discountValueRaw !== null && String(discountValueRaw).trim() !== '') {
-          const discountValueFromRow = Number(discountValueRaw);
-          if (isNaN(discountValueFromRow) || !discountIds.includes(discountValueFromRow)) {
-            return false; // Not a number or not in the selected discount IDs
+        console.log(`FILTER DATA - Using default discounts: ${usingDefaultDiscounts}, discount count: ${discountIds.length}`);
+
+        if (!usingDefaultDiscounts) {
+          console.log(`FILTER DATA - Row discount value: '${discountValueRaw}', selected discounts: [${discountIds.join(', ')}]`);
+          
+          if (discountValueRaw !== undefined && discountValueRaw !== null && String(discountValueRaw).trim() !== '') {
+            const discountValueFromRow = Number(discountValueRaw);
+            if (isNaN(discountValueFromRow) || !discountIds.includes(discountValueFromRow)) {
+              console.log(`FILTER DATA - Row filtered out by discount: '${discountValueFromRow}' not in selected discounts`);
+              return false; // Not a number or not in the selected discount IDs
+            }
+          } else {
+            // If the discount identifier field is empty or not found, and filtering is active, exclude.
+            console.log(`FILTER DATA - Row filtered out by discount: empty/missing discount field`);
+            return false;
           }
-        } else {
-          // If the discount identifier field is empty or not found, and filtering is active, exclude.
-          return false;
         }
       }
     }
