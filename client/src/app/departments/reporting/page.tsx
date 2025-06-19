@@ -235,14 +235,19 @@ const ReportingPage = () => {
       };
 
       // Apply location, discount, and usage count filters
-      // TEMPORARILY DISABLE FILTERS (except date/report type for file fetching)
-      // Pass empty arrays/strings to filterData to effectively bypass these filters for now.
-      // The UI elements for these filters will remain, but their values won't be used here.
-      setProcessingProgress("Filtering data (testing daily usage count)..."); // Updated progress message
+      setProcessingProgress("Filtering data by location, discount, and usage count...");
+      
+      // For reporting data, we need to filter by location names from the CSV "Store" column
+      // The CSV "Store" column contains location names that should match our location.name exactly
+      const selectedLocationNames = selectedLocations.map(loc => loc.name);
+      
+      console.log("REPORTING PAGE - Selected location names for filtering:", selectedLocationNames);
+      
+      // Apply filtering with location names for exact matching against CSV "Store" column
       filteredData = filterData(
         combinedData,
-        [], // effectiveLocationIds - temporarily disabled again for testing
-        [], // discountIds - temporarily disabled again for testing
+        selectedLocationNames, // Use exact location names for matching CSV "Store" column
+        discountIds, // Re-enabled discount filtering
         selectedLocations,    // Pass selectedLocations as before
         dailyUsageCountFilter, // Use the dailyUsageCountFilter state
         reportingPageCsvConfig // Pass the config object

@@ -659,8 +659,43 @@ export const filterData = (
         return false;
       }
       // If specific locations are selected, filter out rows that don't match those locations.
-      if (!locationIds.includes(locationIdStr)) {
-        // console.log(`FILTER DATA - Row filtered out by location: ID '${locationIdStr}' not in selected IDs: [${locationIds.join(', ')}]`); // Reduced bloat
+      // Handle both ID-based matching (for data page) and name-based matching (for reporting page)
+      let locationMatches = false;
+      
+      // First try exact match - this works for both ID-based filtering and exact name matching
+      if (locationIds.includes(locationIdStr)) {
+        locationMatches = true;
+      } else {
+        // Try case-insensitive exact matching for location names
+        // This handles cases where CSV might have slight case differences
+        const storeLower = locationIdStr.toLowerCase().trim();
+        for (const selectedLocation of locationIds) {
+          const selectedLower = selectedLocation.toLowerCase().trim();
+          if (storeLower === selectedLower) {
+            locationMatches = true;
+            break;
+          }
+        }
+        
+        // If still no match, try partial matching as fallback
+        // This handles cases where there might be slight variations in naming
+        if (!locationMatches) {
+          for (const selectedLocation of locationIds) {
+            const selectedLower = selectedLocation.toLowerCase().trim();
+            const storeLower = locationIdStr.toLowerCase().trim();
+            
+            // Check if either contains the other (for cases like "Wildwood" vs "Beaumont/Wildwood, FL")
+            if (storeLower.includes(selectedLower) || selectedLower.includes(storeLower)) {
+              locationMatches = true;
+              console.log(`FILTER DATA - Partial match found: '${locationIdStr}' matches '${selectedLocation}'`);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (!locationMatches) {
+        console.log(`FILTER DATA - Row filtered out by location: Store '${locationIdStr}' not matching selected locations: [${locationIds.join(', ')}]`);
         return false;
       }
       // No need for a `return true;` here, as the flow continues to other filters.
