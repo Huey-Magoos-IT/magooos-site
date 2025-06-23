@@ -318,9 +318,29 @@ const GroupsPage = () => {
       console.log("Cognito signUp response for location user:", { isSignUpComplete, userId, nextStep });
       alert(`Location User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created.`);
       setOpenLocationUserDialog(false); // Close the modal on success
+      
+      // Refresh the unconfirmed users list to show the newly created user
+      if (refetchGroupCognitoUsers) {
+        refetchGroupCognitoUsers();
+      }
     } catch (error: any) {
       console.error("Error creating location user via Amplify signUp:", error);
-      throw new Error(error.message || "Failed to initiate location user creation");
+      
+      // Handle specific error cases with user-friendly messages
+      let errorMessage = "Failed to create location user";
+      
+      if (error.name === 'UsernameExistsException') {
+        errorMessage = `Username "${formData.username}" already exists. Please choose a different username or check if this user is already in the unconfirmed users list below.`;
+      } else if (error.name === 'InvalidParameterException') {
+        errorMessage = "Invalid user data provided. Please check the form fields and try again.";
+      } else if (error.name === 'InvalidPasswordException') {
+        errorMessage = "Password does not meet requirements. Please use a stronger password.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -841,6 +861,7 @@ const GroupsPage = () => {
         onClose={closeDeleteCognitoConfirmationDialog}
         aria-labelledby="cognito-delete-dialog-title"
         aria-describedby="cognito-delete-dialog-description"
+        disableRestoreFocus
       >
         <DialogTitle id="cognito-delete-dialog-title">
           {`Delete unconfirmed user "${cognitoUserToDelete || ''}"?`}
@@ -866,6 +887,7 @@ const GroupsPage = () => {
         onClose={closeResendConfirmationDialog}
         aria-labelledby="resend-dialog-title"
         aria-describedby="resend-dialog-description"
+        disableRestoreFocus
       >
         <DialogTitle id="resend-dialog-title">
           {`Resend verification link to "${cognitoUserToResend || ''}"?`}
