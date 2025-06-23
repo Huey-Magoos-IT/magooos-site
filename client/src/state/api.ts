@@ -78,6 +78,9 @@ export interface CognitoUser {
   CreatedDate?: string;
   LastModifiedDate?: string;
   Enabled?: boolean;
+  GroupId?: string;
+  TeamId?: string;
+  LocationIds?: string;
 }
 
 export interface ListCognitoUsersResponse {

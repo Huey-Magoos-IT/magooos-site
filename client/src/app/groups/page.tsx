@@ -564,6 +564,33 @@ const GroupsPage = () => {
                               Created: {cognitoUser.CreatedDate ? new Date(cognitoUser.CreatedDate).toLocaleDateString() : 'Unknown'}
                             </span>
                           </div>
+                          {/* Display additional user info from Cognito custom attributes */}
+                          <div className="mt-2 space-y-1">
+                            {cognitoUser.TeamId && (
+                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                                <span className="font-medium">Team ID:</span> {cognitoUser.TeamId}
+                              </div>
+                            )}
+                            {cognitoUser.LocationIds && (
+                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                                <span className="font-medium">Locations:</span> {
+                                  (() => {
+                                    try {
+                                      const locations = JSON.parse(cognitoUser.LocationIds);
+                                      return Array.isArray(locations) ? locations.join(', ') : cognitoUser.LocationIds;
+                                    } catch {
+                                      return cognitoUser.LocationIds;
+                                    }
+                                  })()
+                                }
+                              </div>
+                            )}
+                            {cognitoUser.GroupId && (
+                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                                <span className="font-medium">Group ID:</span> {cognitoUser.GroupId}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

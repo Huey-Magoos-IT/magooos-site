@@ -967,7 +967,9 @@ export const listCognitoUsers = async (req: Request, res: Response): Promise<voi
       CreatedDate: cognitoUser.UserCreateDate,
       LastModifiedDate: cognitoUser.UserLastModifiedDate,
       Enabled: cognitoUser.Enabled,
-      GroupId: cognitoUser.Attributes?.find(attr => attr.Name === 'custom:groupId')?.Value
+      GroupId: cognitoUser.Attributes?.find(attr => attr.Name === 'custom:groupId')?.Value,
+      TeamId: cognitoUser.Attributes?.find(attr => attr.Name === 'custom:teamId')?.Value,
+      LocationIds: cognitoUser.Attributes?.find(attr => attr.Name === 'custom:locationIds')?.Value
     })) || [];
 
     // Filter by groupId if specified (for location admins)
