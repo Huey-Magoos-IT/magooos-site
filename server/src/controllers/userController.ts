@@ -888,9 +888,9 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
  */
 export const listCognitoUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { filter, limit = 60, paginationToken } = req.query;
+    const { filter, limit = 60, paginationToken, groupId } = req.query;
     
-    console.log(`[GET /users/cognito/list] Listing Cognito users with filter: ${filter}`);
+    console.log(`[GET /users/cognito/list] Listing Cognito users with filter: ${filter}, groupId: ${groupId}`);
     
     // Admin authorization check using existing pattern
     let requestingUser = null;
@@ -927,9 +927,20 @@ export const listCognitoUsers = async (req: Request, res: Response): Promise<voi
     });
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    if (!isAdmin) {
-      res.status(403).json({ message: "Access denied: Admin role required" });
+    const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
+    
+    // Enhanced authorization: Allow location admins for their own group
+    if (!isAdmin && !isLocationAdmin) {
+      res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
       return;
+    }
+
+    // For location admins, ensure they can only see their group's users
+    if (isLocationAdmin && !isAdmin) {
+      if (!groupId || userWithRoles?.groupId !== parseInt(groupId as string)) {
+        res.status(403).json({ message: "Access denied: Can only view users from your assigned group" });
+        return;
+      }
     }
 
     if (!COGNITO_USER_POOL_ID) {
@@ -947,16 +958,22 @@ export const listCognitoUsers = async (req: Request, res: Response): Promise<voi
 
     const response = await cognitoClient.send(command);
     
-    // Transform Cognito users to our format
-    const users = response.Users?.map(cognitoUser => ({
+    // Transform and filter Cognito users
+    let users = response.Users?.map(cognitoUser => ({
       Username: cognitoUser.Username,
       UserStatus: cognitoUser.UserStatus,
       Email: cognitoUser.Attributes?.find(attr => attr.Name === 'email')?.Value,
       EmailVerified: cognitoUser.Attributes?.find(attr => attr.Name === 'email_verified')?.Value === 'true',
       CreatedDate: cognitoUser.UserCreateDate,
       LastModifiedDate: cognitoUser.UserLastModifiedDate,
-      Enabled: cognitoUser.Enabled
+      Enabled: cognitoUser.Enabled,
+      GroupId: cognitoUser.Attributes?.find(attr => attr.Name === 'custom:groupId')?.Value
     })) || [];
+
+    // Filter by groupId if specified (for location admins)
+    if (groupId) {
+      users = users.filter(user => user.GroupId === groupId);
+    }
 
     console.log(`[GET /users/cognito/list] Found ${users.length} Cognito users`);
     
@@ -1017,8 +1034,10 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
     });
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    if (!isAdmin) {
-      res.status(403).json({ message: "Access denied: Admin role required" });
+    const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
+    
+    if (!isAdmin && !isLocationAdmin) {
+      res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
       return;
     }
 
@@ -1104,8 +1123,10 @@ export const deleteCognitoUser = async (req: Request, res: Response): Promise<vo
     });
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    if (!isAdmin) {
-      res.status(403).json({ message: "Access denied: Admin role required" });
+    const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
+    
+    if (!isAdmin && !isLocationAdmin) {
+      res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
       return;
     }
 

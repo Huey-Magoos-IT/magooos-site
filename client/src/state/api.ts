@@ -432,12 +432,13 @@ export const api = createApi({
       invalidatesTags: ["Users"],
     }),
     // Cognito user management endpoints
-    listCognitoUsers: build.query<ListCognitoUsersResponse, { filter?: string; limit?: number; paginationToken?: string }>({
-      query: ({ filter, limit, paginationToken } = {}) => {
+    listCognitoUsers: build.query<ListCognitoUsersResponse, { filter?: string; limit?: number; paginationToken?: string; groupId?: number }>({
+      query: ({ filter, limit, paginationToken, groupId } = {}) => {
         const params = new URLSearchParams();
         if (filter) params.append('filter', filter);
         if (limit) params.append('limit', limit.toString());
         if (paginationToken) params.append('paginationToken', paginationToken);
+        if (groupId) params.append('groupId', groupId.toString());
         
         return `users/cognito/list?${params.toString()}`;
       },

@@ -10,6 +10,9 @@ import {
   useGetUsersQuery,
   useGetTeamsQuery,
   useAssignGroupToUserMutation,
+  useListCognitoUsersQuery,
+  useResendVerificationLinkMutation,
+  useDeleteCognitoUserMutation,
   Group,
   User,
   Team,
@@ -21,7 +24,7 @@ import GroupCard from "@/components/GroupCard";
 import LocationTable, { Location } from "@/components/LocationTable";
 import ModalCreateLocationUser from "@/components/ModalCreateLocationUser"; // Import new modal
 import Header from "@/components/Header";
-import { X } from "lucide-react";
+import { X, User as UserIcon } from "lucide-react";
 import { signUp } from 'aws-amplify/auth'; // Import signUp
 import {
   FormControl,
@@ -33,13 +36,15 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Chip,
   Box,
   Typography,
   Grid,
   OutlinedInput,
-  SelectChangeEvent
+  SelectChangeEvent,
+  CircularProgress
 } from "@mui/material";
 import { Plus } from "lucide-react";
 
@@ -67,6 +72,12 @@ const GroupsPage = () => {
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
 
+  // State for Cognito user management dialogs
+  const [isDeleteCognitoDialogOpen, setIsDeleteCognitoDialogOpen] = useState(false);
+  const [cognitoUserToDelete, setCognitoUserToDelete] = useState<string | null>(null);
+  const [isResendDialogOpen, setIsResendDialogOpen] = useState(false);
+  const [cognitoUserToResend, setCognitoUserToResend] = useState<string | null>(null);
+
   // Check if user is admin
   const userRoles = authData?.userDetails?.team?.teamRoles || [];
   const isAdmin = hasRole(userRoles, "ADMIN");
@@ -87,6 +98,18 @@ const GroupsPage = () => {
     }
     return [];
   }, [groups, isAdmin, isLocationAdmin, currentUserGroupId]);
+
+  // Cognito user management hooks for location admins (after role variables are defined)
+  const { data: groupCognitoUsers, isLoading: isLoadingGroupCognitoUsers, refetch: refetchGroupCognitoUsers } =
+    useListCognitoUsersQuery(
+      {
+        filter: 'cognito:user_status = "UNCONFIRMED"',
+        groupId: currentUserGroupId
+      },
+      { skip: !isLocationAdmin || !currentUserGroupId || isAdmin }
+    );
+  const [resendVerificationLink, { isLoading: isResendingVerification }] = useResendVerificationLinkMutation();
+  const [deleteCognitoUser, { isLoading: isDeletingCognitoUser }] = useDeleteCognitoUserMutation();
 
   // Get available locations from all groups
   const allLocations = Array.from(
@@ -341,6 +364,73 @@ const GroupsPage = () => {
     username: user.username
   })));
 
+  // Handle opening resend confirmation dialog
+  const openResendConfirmationDialog = (username: string) => {
+    setCognitoUserToResend(username);
+    setIsResendDialogOpen(true);
+  };
+
+  const closeResendConfirmationDialog = () => {
+    setCognitoUserToResend(null);
+    setIsResendDialogOpen(false);
+  };
+
+  // Handle resending verification link
+  const handleResendVerification = async () => {
+    if (!cognitoUserToResend) return;
+    
+    try {
+      console.log(`Resending verification link for: ${cognitoUserToResend}`);
+      await resendVerificationLink({ username: cognitoUserToResend }).unwrap();
+      alert(`Verification link resent to ${cognitoUserToResend}`);
+      refetchGroupCognitoUsers(); // Refresh the list
+      closeResendConfirmationDialog();
+    } catch (error: any) {
+      console.error('Error resending verification link:', error);
+      const errorMessage = error.data?.message || error.message || "Failed to resend verification link";
+      alert(errorMessage);
+      closeResendConfirmationDialog();
+    }
+  };
+
+  // Handle opening delete confirmation dialog for Cognito user
+  const openDeleteCognitoConfirmationDialog = (username: string) => {
+    setCognitoUserToDelete(username);
+    setIsDeleteCognitoDialogOpen(true);
+  };
+
+  const closeDeleteCognitoConfirmationDialog = () => {
+    setCognitoUserToDelete(null);
+    setIsDeleteCognitoDialogOpen(false);
+  };
+
+  // Handle deleting unconfirmed Cognito user
+  const handleDeleteCognitoUser = async () => {
+    if (!cognitoUserToDelete) return;
+    
+    try {
+      console.log(`Deleting unconfirmed Cognito user: ${cognitoUserToDelete}`);
+      await deleteCognitoUser({ username: cognitoUserToDelete }).unwrap();
+      alert(`User ${cognitoUserToDelete} deleted successfully`);
+      
+      // Force immediate refresh of the Cognito users list
+      await refetchGroupCognitoUsers();
+      
+      // Close dialog
+      closeDeleteCognitoConfirmationDialog();
+      
+      // Also refresh after a short delay to ensure consistency
+      setTimeout(() => {
+        refetchGroupCognitoUsers();
+      }, 1000);
+    } catch (error: any) {
+      console.error('Error deleting Cognito user:', error);
+      const errorMessage = error.data?.message || error.message || "Failed to delete user";
+      alert(errorMessage);
+      closeDeleteCognitoConfirmationDialog();
+    }
+  };
+
   if (isLoadingGroups || isLoadingUsers || !authData) {
     return <div className="p-6">Loading...</div>; // Standard loading state
   }
@@ -427,6 +517,97 @@ const GroupsPage = () => {
               onCreateLocationUser={(isLocationAdmin && currentUserGroupId === group.id) ? () => handleOpenLocationUserDialog(group) : undefined}
             />
           ))}
+        </div>
+      )}
+
+      {/* Unconfirmed Cognito Users Section - Only for Location Admins */}
+      {isLocationAdmin && !isAdmin && currentUserGroupId && (
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-3 dark:text-white">Unconfirmed Users in Your Group</h2>
+          <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-100">
+            <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Unconfirmed Users</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              These users have been created in your group but haven&apos;t verified their email addresses yet. You can resend verification links or delete them if needed.
+            </p>
+          </div>
+          
+          {isLoadingGroupCognitoUsers ? (
+            <div className="p-8 text-center">
+              <CircularProgress size={24} className="mr-2" />
+              Loading unconfirmed users...
+            </div>
+          ) : groupCognitoUsers?.users && groupCognitoUsers.users.length > 0 ? (
+            <div className="space-y-3">
+              {groupCognitoUsers.users.map((cognitoUser) => (
+                <div
+                  key={cognitoUser.Username}
+                  className="p-4 bg-white dark:bg-dark-secondary rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <UserIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {cognitoUser.Username}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {cognitoUser.Email || 'No email available'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                              {cognitoUser.UserStatus}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Created: {cognitoUser.CreatedDate ? new Date(cognitoUser.CreatedDate).toLocaleDateString() : 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => openResendConfirmationDialog(cognitoUser.Username!)}
+                        disabled={isResendingVerification}
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                      >
+                        {isResendingVerification ? (
+                          <CircularProgress size={16} className="mr-1" />
+                        ) : null}
+                        Resend Link
+                      </Button>
+                      
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="error"
+                        onClick={() => openDeleteCognitoConfirmationDialog(cognitoUser.Username!)}
+                        disabled={isDeletingCognitoUser}
+                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
+                      >
+                        {isDeletingCognitoUser ? (
+                          <CircularProgress size={16} className="mr-1" />
+                        ) : null}
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="text-gray-500 dark:text-gray-400 mb-2">No unconfirmed users found in your group.</div>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                All created users in your group have verified their email addresses.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -626,6 +807,56 @@ const GroupsPage = () => {
           allTeams={allTeams}
         />
       )}
+
+      {/* Delete Cognito User Confirmation Dialog */}
+      <Dialog
+        open={isDeleteCognitoDialogOpen}
+        onClose={closeDeleteCognitoConfirmationDialog}
+        aria-labelledby="cognito-delete-dialog-title"
+        aria-describedby="cognito-delete-dialog-description"
+      >
+        <DialogTitle id="cognito-delete-dialog-title">
+          {`Delete unconfirmed user "${cognitoUserToDelete || ''}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="cognito-delete-dialog-description">
+            This will permanently delete the unconfirmed user from Cognito. This action cannot be undone. The user will need to be recreated if they want to access the system.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteCognitoConfirmationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteCognitoUser} color="error" variant="contained" autoFocus disabled={isDeletingCognitoUser}>
+            {isDeletingCognitoUser ? <CircularProgress size={24} color="inherit" /> : "Delete User"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Resend Verification Confirmation Dialog */}
+      <Dialog
+        open={isResendDialogOpen}
+        onClose={closeResendConfirmationDialog}
+        aria-labelledby="resend-dialog-title"
+        aria-describedby="resend-dialog-description"
+      >
+        <DialogTitle id="resend-dialog-title">
+          {`Resend verification link to "${cognitoUserToResend || ''}"?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="resend-dialog-description">
+            This will send a new verification email to the user. They will receive a link to verify their email address and complete their account setup.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeResendConfirmationDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleResendVerification} color="primary" variant="contained" autoFocus disabled={isResendingVerification}>
+            {isResendingVerification ? <CircularProgress size={24} color="inherit" /> : "Send Link"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
