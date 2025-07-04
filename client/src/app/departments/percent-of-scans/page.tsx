@@ -46,15 +46,17 @@ import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils"; //
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const LOYALTY_DATA_FOLDER = "loyalty-scan-pool/"; // Updated based on user input
 
-// Data file types for this page, allowing selection between detail and summary
+// Data file types for this page, allowing selection between detail, summary, and rolled up summary
 const DATA_TYPES = [
   { value: 'loyalty_scan_detail', label: 'Loyalty Scan Detail' },
-  { value: 'loyalty_scan_summary', label: 'Loyalty Scan Summary' }
+  { value: 'loyalty_scan_summary', label: 'Loyalty Scan Summary' },
+  { value: 'loyalty_scan_rolled_up', label: 'Rolled Up Summary' }
 ];
 
 // NOTE: This page handles filenames that follow patterns:
 // loyalty_scan_detail_MM-DD-YYYY.csv
 // loyalty_scan_summary_MM-DD-YYYY.csv
+// Rolled Up Summary uses summary files but aggregates data across the date range
 
 const PercentOfScansPage = () => {
   // Removed router and pathname as page navigation dropdown is removed from this page
@@ -183,12 +185,15 @@ const PercentOfScansPage = () => {
     console.log("PERCENT OF SCANS PAGE - processCSVData dataType check. Actual state value:", dataType); // Diagnostic log
 
     try {
+      // For rolled up summary, use the summary files
+      const fileTypeForFiltering = dataType === 'loyalty_scan_rolled_up' ? 'loyalty_scan_summary' : dataType;
+      
       // Filter files by date range and data type
       const matchingFiles = filterFilesByDateAndType(
         allS3Files,
         startDate,
         endDate,
-        dataType // This will now be 'loyalty_scan_summary'
+        fileTypeForFiltering
       );
 
       if (matchingFiles.length === 0) {
@@ -228,10 +233,21 @@ const PercentOfScansPage = () => {
           transactionDateField: { sourceNames: ['Date'], dataType: 'string' }, // Keep as string for filtering then process, or make date to be strict
           dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' }, // For 'daily usage count' filter
         };
-      } else { // For 'loyalty_scan_summary'
+      } else if (dataType === 'loyalty_scan_summary') {
         percentOfScansCsvConfig = {
           // For loyalty_scan_summary report:
           locationIdentifierField: { sourceNames: ['Location ID', 'LocationId', 'Location_ID', 'Location'], dataType: 'string' }, // Prioritize ID fields
+          transactionDateField: { sourceNames: ['Date'], dataType: 'string' },
+          dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' },
+          additionalFields: {
+            'Loyalty Scans': { sourceNames: ['Loyalty Scans'], dataType: 'number' },
+            'Scan Rate': { sourceNames: ['Scan Rate'], dataType: 'string' }
+          },
+        };
+      } else { // For 'loyalty_scan_rolled_up'
+        percentOfScansCsvConfig = {
+          // For rolled up summary - use summary data but aggregate across dates
+          locationIdentifierField: { sourceNames: ['Location ID', 'LocationId', 'Location_ID', 'Location'], dataType: 'string' },
           transactionDateField: { sourceNames: ['Date'], dataType: 'string' },
           dailyUsageCountField: { sourceNames: ['Total Checks'], dataType: 'number' },
           additionalFields: {
@@ -254,24 +270,56 @@ const PercentOfScansPage = () => {
       // It does not affect the 'Employee' column.
       filteredData = enhanceCSVWithLocationNames(filteredData, selectedLocations, percentOfScansCsvConfig);
       
-      // Remove 'Location ID' and 'Location Name' columns for display on this specific page
-      // This is done after all filtering and enhancement to ensure data integrity for those operations
-      // Removed deletion of 'Location ID' and 'Location Name' to ensure they are displayed
-      // as per user's request.
-      // filteredData = filteredData.map(row => {
-      //   const newRow = { ...row };
-      //   delete newRow['Location ID'];
-      //   delete newRow['Location Name'];
-      //   return newRow;
-      // });
-
-      // Employee name enhancement and related data fetching are removed entirely.
-      // The 'Employee' column from the detail CSV will be part of 'filteredData' as is.
-
-      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${filteredData.length} rows after filtering and location name enhancement.`);
+      // Handle rolled up summary aggregation
+      let finalData = filteredData;
       
-      // Totals calculation logic removed. finalData is now directly the filteredData.
-      const finalData = filteredData;
+      if (dataType === 'loyalty_scan_rolled_up') {
+        setProcessingProgress("Aggregating data for rolled up summary...");
+        
+        // Group data by location and aggregate totals
+        const locationGroups: { [key: string]: any } = {};
+        
+        filteredData.forEach(row => {
+          const locationId = row['Location ID'] || row['Location'];
+          const locationName = row['Location Name'] || locationId;
+          const key = `${locationId}-${locationName}`;
+          
+          if (!locationGroups[key]) {
+            locationGroups[key] = {
+              'Location ID': locationId,
+              'Location Name': locationName,
+              'Total Checks': 0,
+              'Loyalty Scans': 0,
+              'Days': 0
+            };
+          }
+          
+          // Aggregate the values
+          locationGroups[key]['Total Checks'] += Number(row['Total Checks']) || 0;
+          locationGroups[key]['Loyalty Scans'] += Number(row['Loyalty Scans']) || 0;
+          locationGroups[key]['Days'] += 1;
+        });
+        
+        // Convert back to array and calculate averages
+        finalData = Object.values(locationGroups).map(group => {
+          const avgTotalChecks = group['Days'] > 0 ? group['Total Checks'] / group['Days'] : 0;
+          const avgLoyaltyScans = group['Days'] > 0 ? group['Loyalty Scans'] / group['Days'] : 0;
+          const scanRate = avgTotalChecks > 0 ? ((avgLoyaltyScans / avgTotalChecks) * 100).toFixed(2) + '%' : '0%';
+          
+          return {
+            'Location ID': group['Location ID'],
+            'Location Name': group['Location Name'],
+            'Avg Total Checks': Math.round(avgTotalChecks * 100) / 100, // Round to 2 decimal places
+            'Avg Loyalty Scans': Math.round(avgLoyaltyScans * 100) / 100,
+            'Avg Scan Rate': scanRate,
+            'Days in Period': group['Days']
+          };
+        });
+        
+        console.log(`PERCENT OF SCANS PAGE - Rolled up summary complete: ${finalData.length} locations aggregated.`);
+      }
+
+      console.log(`PERCENT OF SCANS PAGE - Processing complete: ${finalData.length} rows after filtering and processing.`);
 
       setCSVData(finalData);
       setProcessingProgress("");
@@ -373,7 +421,7 @@ const PercentOfScansPage = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText className="dark:text-gray-300">Select Detail or Summary scan files</FormHelperText>
+                  <FormHelperText className="dark:text-gray-300">Detail: Individual scans, Summary: Daily totals, Rolled Up: Averaged across date range</FormHelperText>
                 </FormControl>
 
                 {/* Date Preset Dropdown */}
