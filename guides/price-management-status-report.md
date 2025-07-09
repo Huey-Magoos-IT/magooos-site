@@ -35,7 +35,7 @@ The Price Users Management and Price Portal functionality has solid frontend fou
 - **Change Workflow** - Missing location-based price change processing
 
 #### Price Users Management Gaps
-- **Franchisee Data** - All data is mocked, no database integration
+- **Franchisee Data** - All data is mocked, no S3 integration
 - **Report Actions** - Send, archive, clear functions only log to console
 - **User Lock/Unlock** - Frontend interface only, no backend implementation
 - **Email Integration** - Send report modal exists but no actual email functionality
@@ -49,23 +49,34 @@ The Price Users Management and Price Portal functionality has solid frontend fou
 **AWS Components (External to Site):**
 ```
 ✅ Scheduled Lambda - Raw price data processing (COMPLETED)
-🔄 Organization Lambda - Format data into readable format (TO BE BUILT)
-🔄 S3 Storage - Daily current prices by date (TO BE BUILT)
-🔄 Step Functions - Orchestrate Lambda workflow (TO BE BUILT)
+🔄 Organization Lambda - Clean/format into CSV for site use (TO BE BUILT)
+🔄 S3 Storage - Daily CSV prices + approved change JSON files (TO BE BUILT)
+🔄 Step Functions - Orchestrate raw → clean → S3 workflow (TO BE BUILT)
 ```
 
 **S3 Bucket Structure:**
 ```
 price-data-bucket/
-├── current-prices.json              // Single file, replaced daily
+├── daily-prices/
+│   ├── 2025-07-07-prices.csv        // Base prices from Lambda processing
+│   ├── 2025-07-07-change-1.json     // Approved price changes (from temp)
+│   ├── 2025-07-07-change-2.json     // Additional approved changes
+│   ├── 2025-07-08-prices.csv        // Next day base prices
+│   └── ...
 ├── price-change-reports/
-│   ├── in-progress/
-│   │   ├── report-{uuid}-{date}.json
+│   ├── temporary/                    // Pending admin approval
+│   │   ├── report-{uuid}-{date}.csv
 │   │   └── ...
-│   └── archived/
+│   └── archived/                     // Completed reports
 │       ├── report-{uuid}-{date}.json
 │       └── ...
 ```
+
+**Workflow:**
+1. **Lambda processes raw data** → `2025-07-07-prices.csv` (daily base)
+2. **Location submits changes** → `temporary/report-{uuid}-{date}.csv`
+3. **Admin approves & emails** → Move to `2025-07-07-change-N.json`
+4. **Site loads prices** → Base CSV + all change JSON files for that day
 
 ### **2. Lambda API Gateway Integration**
 
@@ -73,39 +84,72 @@ price-data-bucket/
 ```typescript
 // Add to existing API Gateway: https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod
 
-GET    /price-data/current          // Fetch today's price file from S3
-POST   /price-changes               // Create S3 report + email
-GET    /price-reports/:reportId     // Full report from S3
+GET    /price-data/current          // Load base CSV + merge all change JSON files
+GET    /price-data/date/:date       // Load specific date + change files
+POST   /price-changes               // Create temporary report for admin approval
+POST   /price-changes/approve/:id   // Move from temporary to permanent change file
+GET    /price-reports/:reportId     // Full report from S3 (temporary or archived)
 GET    /price-reports/summary/:id   // Quick summary popup
+GET    /price-reports/temporary     // List pending approval reports
 ```
 
-**Lambda Functions Required:**
-- `getPriceDataFunction` - Read daily price files from S3
-- `createPriceChangeFunction` - Generate reports and store in S3
-- `getPriceReportFunction` - Retrieve reports from S3
-- `sendReportEmailFunction` - Email notification handling
+**API Gateway Endpoints (External Lambda Integration):**
+- Following existing pattern: `https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod`
+- External Lambda functions handle processing (not part of site codebase)
+- Site uses API Gateway endpoints with Cognito Bearer token authentication
 
 **Site Integration (lambdaApi.ts):**
 ```typescript
-// Add to existing lambdaApi.ts following current pattern
-export const getPriceData = async (): Promise<PriceItem[]> => {
-  const response = await fetch(`${LAMBDA_BASE_URL}/price-data/current`, {
-    headers: { Authorization: `Bearer ${await getIdToken()}` }
-  });
-  return response.json();
-};
-
-export const submitPriceChanges = async (changes: PriceChange[]): Promise<string> => {
-  const response = await fetch(`${LAMBDA_BASE_URL}/price-changes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${await getIdToken()}`
+// Add to existing lambdaApi.ts following current RTK Query pattern
+export const lambdaApi = createApi({
+  reducerPath: "lambdaApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: "https://sutpql04fb.execute-api.us-east-2.amazonaws.com/prod",
+    prepareHeaders: async (headers) => {
+      const session = await fetchAuthSession();
+      const { accessToken } = session.tokens ?? {};
+      if (accessToken) {
+        headers.set("Authorization", `Bearer ${accessToken.toString()}`);
+      }
+      return headers;
     },
-    body: JSON.stringify(changes)
-  });
-  return response.json().reportId;
-};
+  }),
+  endpoints: (builder) => ({
+    // Get current prices (base CSV + all change JSON files merged)
+    getCurrentPrices: builder.query<PriceItem[], void>({
+      query: () => ({ url: "price-data/current", method: "GET" }),
+    }),
+    
+    // Submit price changes (creates temporary report for admin approval)
+    submitPriceChanges: builder.mutation<{reportId: string}, PriceChange[]>({
+      query: (changes) => ({
+        url: "price-changes",
+        method: "POST",
+        body: changes,
+      }),
+    }),
+    
+    // Admin approve changes (moves from temporary to permanent)
+    approvePriceChanges: builder.mutation<void, string>({
+      query: (reportId) => ({
+        url: `price-changes/approve/${reportId}`,
+        method: "POST",
+      }),
+    }),
+    
+    // Get pending approval reports for admin
+    getTemporaryReports: builder.query<PriceReport[], void>({
+      query: () => ({ url: "price-reports/temporary", method: "GET" }),
+    }),
+  }),
+});
+
+export const {
+  useGetCurrentPricesQuery,
+  useSubmitPriceChangesMutation,
+  useApprovePriceChangesMutation,
+  useGetTemporaryReportsQuery
+} = lambdaApi;
 ```
 
 ### **3. Location Selection Page**
@@ -143,7 +187,7 @@ const LocationSelectionModal = () => {
 - **S3 Data Replacement** - Replace embedded CSV with S3 data
 - **Location API Enhancement** - Extend existing location APIs for price portal
 - **Report Workflow** - Integrate S3 report generation with admin interface
-- **Email Service** - Connect Lambda email functions to admin actions
+- **Email Service** - Connect external email service to admin actions
 
 ### **5. Real-time Features & Notifications**
 
@@ -181,10 +225,10 @@ interface EmailService {
 
 ## Development Effort Estimation
 
-### **Backend Development: ~40 hours**
-- **Database Schema & Migrations:** 8 hours
-- **API Endpoint Development:** 20 hours
-- **Business Logic Implementation:** 12 hours
+### **Site Integration Development: ~40 hours**
+- **Lambda API Integration:** 8 hours
+- **S3 Data Integration:** 20 hours
+- **Frontend Integration Logic:** 12 hours
 
 ### **Frontend Integration: ~24 hours**
 - **Location Selection Feature:** 8 hours
@@ -202,25 +246,25 @@ interface EmailService {
 
 ## Priority Implementation Roadmap
 
-### **Phase 1: AWS Infrastructure (Weeks 1-2)**
+### **Phase 1: AWS Infrastructure**
 1. **Organization Lambda Development** - Format raw data for daily use
 2. **S3 Bucket Setup** - Structure for daily prices and reports
 3. **Step Functions** - Orchestrate data processing workflow
 4. **Lambda API Endpoints** - Price data and report management
 
-### **Phase 2: Site Integration (Weeks 3-4)**
+### **Phase 2: Site Integration**
 5. **Lambda API Integration** - Add endpoints to `lambdaApi.ts`
 6. **Price Portal S3 Integration** - Replace CSV with S3 data
 7. **Location Selection Enhancement** - Dynamic user locations
 8. **Report Generation** - S3-based price change reports
 
-### **Phase 3: Admin Features (Weeks 5-6)**
+### **Phase 3: Admin Features**
 9. **Admin Report Interface** - View/details from S3
 10. **Email Integration** - Lambda-based notifications
 11. **User Access Control** - Lock/unlock functionality
 12. **Report Workflow** - Send/archive/clear actions
 
-### **Phase 4: Advanced Features (Weeks 7-8)**
+### **Phase 4: Advanced Features**
 13. **Scheduled Price Changes** - Advanced workflow features
 14. **Audit Logging** - S3-based change tracking
 15. **Performance Optimization** - Caching and error handling
@@ -230,16 +274,16 @@ interface EmailService {
 ## Technical Considerations
 
 ### **Performance Optimization**
-- **Database Indexing** - Optimize queries for location and price lookups
-- **Caching Strategy** - Redis caching for frequently accessed price data
+- **S3 Caching** - Optimize S3 data retrieval for location and price lookups
+- **Caching Strategy** - Browser caching for frequently accessed price data
 - **API Rate Limiting** - Prevent abuse of price change endpoints
-- **Pagination** - Handle large datasets in price catalogs and reports
+- **Data Chunking** - Handle large CSV datasets efficiently
 
 ### **Scalability Planning**
-- **Microservice Architecture** - Consider separating price management into dedicated service
-- **Event-Driven Updates** - Use message queues for price change propagation
+- **S3 Organization** - Organize price data by date/location for efficient access
+- **Event-Driven Updates** - Use S3 events for price change propagation
 - **CDN Integration** - Cache static price data for faster loading
-- **Database Partitioning** - Partition price data by location or date ranges
+- **Data Partitioning** - Partition S3 price data by location or date ranges
 
 ### **Integration Points**
 - **POS System Integration** - Sync price changes with point-of-sale systems
@@ -252,8 +296,8 @@ interface EmailService {
 ## Risk Assessment & Mitigation
 
 ### **High-Risk Areas**
-- **Data Migration** - Risk of price data corruption during CSV to database migration
-- **Price Synchronization** - Potential for price discrepancies across systems
+- **Data Migration** - Risk of price data corruption during CSV to S3 migration
+- **Price Synchronization** - Potential for price discrepancies across S3 files
 - **User Access Management** - Risk of unauthorized price modifications
 
 ### **Mitigation Strategies**

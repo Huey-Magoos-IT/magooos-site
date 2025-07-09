@@ -3,11 +3,12 @@ import { parseCSV, ParsedCSVData } from './csvProcessing'; // Assuming ParsedCSV
 export interface PriceItem {
   id: string;
   name: string;
-  category: string; // This will be the 'value' from the categories array
+  category: string;
   currentPrice: number;
   isOriginal: boolean;
   sauceUnitCount?: number;
   originalId?: string;
+  location_id: string;
 }
 
 // Mapping from CSV category display names to internal category values
@@ -72,15 +73,15 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
   type CsvRow = {
     "Category": string;
     "Item Name": string;
-    "Current Price": string; // PapaParse with dynamicTyping might make this number
-    [key: string]: any; // Allow other columns if present
+    "Current Price": string;
+    "location_id": string;
+    [key: string]: any;
   };
 
   const parsedCsv: ParsedCSVData<CsvRow> = await parseCSV<CsvRow>(csvString, true);
   
   if (parsedCsv.errors.length > 0) {
     console.error("CSV parsing errors:", parsedCsv.errors);
-    // Optionally throw an error or return empty array based on how critical these errors are
   }
 
   let idCounter = 0;
@@ -88,10 +89,10 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
     const categoryDisplayName = row["Category"];
     const itemName = row["Item Name"];
     const currentPriceStr = row["Current Price"];
+    const location_id = row["location_id"];
 
-    if (!categoryDisplayName || !itemName || currentPriceStr === undefined) {
-      // console.warn("Skipping row due to missing critical data:", row);
-      return null; // Skip rows with missing essential data
+    if (!categoryDisplayName || !itemName || currentPriceStr === undefined || !location_id) {
+      return null;
     }
 
     const currentPrice = parseFloat(String(currentPriceStr));
@@ -124,6 +125,7 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
       currentPrice,
       isOriginal,
       sauceUnitCount,
+      location_id,
     };
   }).filter((item): item is PriceItem => item !== null); // Filter out null items
 

@@ -14,6 +14,16 @@ export interface DataReportRequest {
   discount_ids: number[];
 }
 
+export interface PriceDataRequest {
+  s3_key: string;
+}
+
+export interface PriceDataResponse {
+  data: any[];
+  message: string;
+}
+
+
 // Data report response interface
 export interface DataReportResponse {
   message: string;
@@ -104,7 +114,7 @@ export const lambdaApi = createApi({
     getLocations: builder.query<LocationsResponse, void>({
       query: () => ({
         url: "locations",
-        method: "POST", 
+        method: "POST",
         body: {}, // Empty body since the mapping template will provide the TableName
       }),
       // Add better error transformation
@@ -120,8 +130,22 @@ export const lambdaApi = createApi({
       },
       keepUnusedDataFor: 86400, // 24 hours since locations update infrequently
     }),
+
+    getPriceData: builder.mutation<PriceDataResponse, PriceDataRequest>({
+      query: (data) => ({
+        url: "get-price-data",
+        method: "POST",
+        body: data,
+      }),
+      transformErrorResponse: (response, meta, arg) => {
+        console.error("Get Price Data API error:", response);
+        return response;
+      },
+    }),
+
+
   }),
 });
 
 // Export the hooks for use in components
-export const { useProcessDataMutation, useGetLocationsQuery } = lambdaApi;
+export const { useProcessDataMutation, useGetLocationsQuery, useGetPriceDataMutation } = lambdaApi;
