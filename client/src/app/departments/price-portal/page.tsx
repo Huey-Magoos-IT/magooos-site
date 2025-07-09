@@ -40,6 +40,7 @@ const PricePortalPage = () => {
                     
                     // Fetch files from the price-pool directory
                     const files = await fetchFiles(S3_DATA_LAKE, 'price-pool/');
+                    console.log('Found files in price-pool:', files);
                     
                     if (files.length === 0) {
                         setPriceDataError('No price data files found');
@@ -49,15 +50,30 @@ const PricePortalPage = () => {
                     // For now, use the first file found (you can modify this logic)
                     // In production, you might want to use the latest file or allow user selection
                     const latestFile = files[0];
+                    console.log('Using file:', latestFile);
                     
                     // Fetch and parse the CSV data
                     const csvData = await fetchCSV(`${S3_DATA_LAKE}/price-pool/${latestFile}`);
+                    console.log('CSV data length:', csvData.length);
+                    console.log('CSV data preview:', csvData.substring(0, 500));
+                    
                     const parsedData = await parsePriceDataFromCsv(csvData);
+                    console.log('Parsed data count:', parsedData.length);
+                    console.log('Parsed data sample:', parsedData.slice(0, 3));
+                    
+                    console.log('User location IDs:', user.locationIds);
                     
                     // Filter data based on user's assigned locations
-                    const accessibleItems = parsedData.filter((item: PriceItem) =>
-                        hasLocationAccess(user.locationIds, item.location_id)
-                    );
+                    const accessibleItems = parsedData.filter((item: PriceItem) => {
+                        const hasAccess = hasLocationAccess(user.locationIds, item.location_id);
+                        if (!hasAccess) {
+                            console.log(`Item ${item.name} (location_id: ${item.location_id}) filtered out - no access`);
+                        }
+                        return hasAccess;
+                    });
+                    
+                    console.log('Accessible items count:', accessibleItems.length);
+                    console.log('Accessible items sample:', accessibleItems.slice(0, 3));
                     
                     setPriceItems(accessibleItems);
                     
