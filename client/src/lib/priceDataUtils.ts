@@ -126,26 +126,73 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
     locationIds.forEach(locationId => {
       idCounter++;
       
-      // Determine category from item name (simplified logic)
+      // Determine category from price_group_name first, then fallback to item name analysis
       let categoryValue = "uncategorized";
       const lowerName = itemName.toLowerCase();
+      const lowerGroupName = (priceGroupName || '').toLowerCase();
       
-      if (lowerName.includes("sandwich") || lowerName.includes("wrap")) {
-        categoryValue = "sandwiches_wraps";
-      } else if (lowerName.includes("tender") && (lowerName.includes("meal") || lowerName.includes("combo"))) {
-        categoryValue = "tender_meals";
-      } else if (lowerName.includes("tender") && lowerName.includes("piece")) {
-        categoryValue = "by_the_piece";
-      } else if (lowerName.includes("salad")) {
-        categoryValue = "fresh_made_salads";
-      } else if (lowerName.includes("side") || lowerName.includes("fries") || lowerName.includes("slaw")) {
-        categoryValue = "sides";
-      } else if (lowerName.includes("drink") || lowerName.includes("tea") || lowerName.includes("lemonade")) {
-        categoryValue = "craft_drinks";
-      } else if (lowerName.includes("kid") || lowerName.includes("little")) {
-        categoryValue = "for_the_little_magoos";
-      } else if (lowerName.includes("catering") || lowerName.includes("cat-")) {
-        categoryValue = "instore_catering";
+      // First, try to use price_group_name if it contains recognizable category info
+      if (priceGroupName && priceGroupName.trim()) {
+        const groupNameValue = getCategoryValueFromDisplayName(priceGroupName.trim());
+        if (groupNameValue !== "uncategorized") {
+          categoryValue = groupNameValue;
+        }
+      }
+      
+      // If still uncategorized, use enhanced item name analysis
+      if (categoryValue === "uncategorized") {
+        // Check for 3PD suffix
+        if (lowerName.includes("-3pd") || lowerName.includes(" 3pd")) {
+          categoryValue = "3pd";
+        }
+        // Check for EZ Cater suffix
+        else if (lowerName.includes("-ezcatr") || lowerName.includes("ezcatr")) {
+          categoryValue = "ez_cater";
+        }
+        // Check for specific prefixes and patterns
+        else if (lowerName.startsWith("meals-kid-") || lowerName.includes("apple juice") ||
+                 lowerName.includes("kids-") || lowerName.includes("goldfish")) {
+          categoryValue = "for_the_little_magoos";
+        }
+        else if (lowerName.startsWith("btp-") || lowerName.includes("by the piece") ||
+                 lowerName.includes("by piece")) {
+          categoryValue = "by_the_piece";
+        }
+        else if (lowerName.startsWith("cat-") || lowerName.includes("catering") ||
+                 lowerName.includes("party pack") || lowerName.includes("lunch boxes")) {
+          categoryValue = "instore_catering";
+        }
+        else if (lowerName.startsWith("meals-sandw-") || lowerName.startsWith("meals-wrap-") ||
+                 lowerName.includes("sandwich") || lowerName.includes("wrap")) {
+          categoryValue = "sandwiches_wraps";
+        }
+        else if (lowerName.startsWith("meals-") && !lowerName.includes("sandw") && !lowerName.includes("wrap")) {
+          categoryValue = "tender_meals";
+        }
+        else if (lowerName.startsWith("sal-") || lowerName.includes("salad")) {
+          categoryValue = "fresh_made_salads";
+        }
+        else if (lowerName.startsWith("side-") || lowerName.includes("fries") ||
+                 lowerName.includes("slaw") || lowerName.includes("texas toast") ||
+                 lowerName.includes("cheese sauce") || lowerName.includes("dip")) {
+          categoryValue = "sides";
+        }
+        else if (lowerName.startsWith("drink-") || lowerName.includes("tea") ||
+                 lowerName.includes("lemonade") || lowerName.includes("bottled water") ||
+                 lowerName.includes("gallon")) {
+          categoryValue = "craft_drinks";
+        }
+        else if (lowerName.startsWith("meals-fam-") || lowerName.includes("family")) {
+          categoryValue = "tenders_for_the_fam";
+        }
+        // Catch-all for items that don't fit standard categories
+        else if (lowerName.includes("championship") || lowerName.includes("game day") ||
+                 lowerName.includes("overtime") || lowerName.includes("tailgate") ||
+                 lowerName.includes("addon") || lowerName.includes("freebie") ||
+                 lowerName.includes("promo") || lowerName.includes("bag of ice") ||
+                 lowerName.includes("breakfast") || lowerName.includes("concessions")) {
+          categoryValue = "odds_and_ends";
+        }
       }
 
       const idPrefix = categoryValue.length >= 2 ? categoryValue.substring(0, 2).toLowerCase() : 'un';

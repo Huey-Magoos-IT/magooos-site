@@ -65,11 +65,7 @@ const PricePortalPage = () => {
                     
                     // Filter data based on user's assigned locations
                     const accessibleItems = parsedData.filter((item: PriceItem) => {
-                        const hasAccess = hasLocationAccess(user.locationIds, item.location_id);
-                        if (!hasAccess) {
-                            console.log(`Item ${item.name} (location_id: ${item.location_id}) filtered out - no access`);
-                        }
-                        return hasAccess;
+                        return hasLocationAccess(user.locationIds, item.location_id);
                     });
                     
                     console.log('Accessible items count:', accessibleItems.length);
