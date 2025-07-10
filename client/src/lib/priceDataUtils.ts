@@ -71,10 +71,12 @@ const determineSauceUnitCount = (name: string, categoryValue: string): number | 
 export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceItem[]> => {
   // PapaParse result type for a row when header is true
   type CsvRow = {
-    "Category": string;
-    "Item Name": string;
-    "Current Price": string;
-    "location_id": string;
+    "price_group_id": string;
+    "price_group_name": string;
+    "location_ids": string;
+    "priceId": string;
+    "reportTitle": string;
+    "value": string;
     [key: string]: any;
   };
 
@@ -85,49 +87,81 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
   }
 
   let idCounter = 0;
-  const rawPriceItems: PriceItem[] = parsedCsv.data.map((row): PriceItem | null => {
-    const categoryDisplayName = row["Category"];
-    const itemName = row["Item Name"];
-    const currentPriceStr = row["Current Price"];
-    const location_id = row["location_id"];
+  const rawPriceItems: PriceItem[] = [];
 
-    if (!categoryDisplayName || !itemName || currentPriceStr === undefined || !location_id) {
-      return null;
+  // Process each row and expand it for each location
+  parsedCsv.data.forEach((row) => {
+    const priceGroupId = row["price_group_id"];
+    const priceGroupName = row["price_group_name"];
+    const locationIdsStr = row["location_ids"];
+    const priceId = row["priceId"];
+    const itemName = row["reportTitle"];
+    const currentPriceStr = row["value"];
+
+    if (!priceGroupId || !itemName || currentPriceStr === undefined || !locationIdsStr) {
+      return; // Skip invalid rows
     }
 
     const currentPrice = parseFloat(String(currentPriceStr));
     if (isNaN(currentPrice)) {
-      // console.warn("Skipping row due to invalid price:", row);
-      return null; // Skip rows with invalid price
-    }
-    
-    idCounter++;
-    const categoryValue = getCategoryValueFromDisplayName(categoryDisplayName);
-    const idPrefix = categoryValue.length >= 2 ? categoryValue.substring(0, 2).toLowerCase() : 'un';
-    const id = `${idPrefix}${idCounter.toString().padStart(3, '0')}`;
-
-    let isOriginal = true;
-    if (itemName.toLowerCase().includes("-sauced") || 
-        itemName.toLowerCase().includes(" sauced") ||
-        itemName.toLowerCase().includes(" mixed sauce")) {
-      isOriginal = false;
+      return; // Skip rows with invalid price
     }
 
-    let sauceUnitCount: number | undefined = undefined;
-    if (isOriginal) {
-      sauceUnitCount = determineSauceUnitCount(itemName, categoryValue);
-    }
+    // Split location_ids by pipe separator
+    const locationIds = locationIdsStr.split('|').map(id => id.trim()).filter(id => id);
 
-    return {
-      id,
-      name: itemName,
-      category: categoryValue,
-      currentPrice,
-      isOriginal,
-      sauceUnitCount,
-      location_id,
-    };
-  }).filter((item): item is PriceItem => item !== null); // Filter out null items
+    // Create a PriceItem for each location
+    locationIds.forEach(locationId => {
+      idCounter++;
+      
+      // Determine category from item name (simplified logic)
+      let categoryValue = "uncategorized";
+      const lowerName = itemName.toLowerCase();
+      
+      if (lowerName.includes("sandwich") || lowerName.includes("wrap")) {
+        categoryValue = "sandwiches_wraps";
+      } else if (lowerName.includes("tender") && (lowerName.includes("meal") || lowerName.includes("combo"))) {
+        categoryValue = "tender_meals";
+      } else if (lowerName.includes("tender") && lowerName.includes("piece")) {
+        categoryValue = "by_the_piece";
+      } else if (lowerName.includes("salad")) {
+        categoryValue = "fresh_made_salads";
+      } else if (lowerName.includes("side") || lowerName.includes("fries") || lowerName.includes("slaw")) {
+        categoryValue = "sides";
+      } else if (lowerName.includes("drink") || lowerName.includes("tea") || lowerName.includes("lemonade")) {
+        categoryValue = "craft_drinks";
+      } else if (lowerName.includes("kid") || lowerName.includes("little")) {
+        categoryValue = "for_the_little_magoos";
+      } else if (lowerName.includes("catering") || lowerName.includes("cat-")) {
+        categoryValue = "instore_catering";
+      }
+
+      const idPrefix = categoryValue.length >= 2 ? categoryValue.substring(0, 2).toLowerCase() : 'un';
+      const id = `${idPrefix}${idCounter.toString().padStart(3, '0')}`;
+
+      let isOriginal = true;
+      if (itemName.toLowerCase().includes("-sauced") ||
+          itemName.toLowerCase().includes(" sauced") ||
+          itemName.toLowerCase().includes(" mixed sauce")) {
+        isOriginal = false;
+      }
+
+      let sauceUnitCount: number | undefined = undefined;
+      if (isOriginal) {
+        sauceUnitCount = determineSauceUnitCount(itemName, categoryValue);
+      }
+
+      rawPriceItems.push({
+        id,
+        name: itemName,
+        category: categoryValue,
+        currentPrice,
+        isOriginal,
+        sauceUnitCount,
+        location_id: locationId,
+      });
+    });
+  });
 
   // Second pass to link originalId
   const finalPriceItems: PriceItem[] = rawPriceItems.map(item => {
