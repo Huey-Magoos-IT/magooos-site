@@ -90,7 +90,7 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
   const rawPriceItems: PriceItem[] = [];
 
   // Process each row and expand it for each location
-  parsedCsv.data.forEach((row) => {
+  parsedCsv.data.forEach((row, index) => {
     const priceGroupId = row["price_group_id"];
     const priceGroupName = row["price_group_name"];
     const locationIdsStr = row["location_ids"];
@@ -99,16 +99,28 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
     const currentPriceStr = row["value"];
 
     if (!priceGroupId || !itemName || currentPriceStr === undefined || !locationIdsStr) {
+      console.warn(`Skipping row ${index} due to missing required fields:`, {
+        priceGroupId: !!priceGroupId,
+        itemName: !!itemName,
+        currentPriceStr: currentPriceStr !== undefined,
+        locationIdsStr: !!locationIdsStr
+      });
       return; // Skip invalid rows
     }
 
     const currentPrice = parseFloat(String(currentPriceStr));
     if (isNaN(currentPrice)) {
+      console.warn(`Skipping row ${index} due to invalid price:`, currentPriceStr);
       return; // Skip rows with invalid price
     }
 
-    // Split location_ids by pipe separator
-    const locationIds = locationIdsStr.split('|').map(id => id.trim()).filter(id => id);
+    // Split location_ids by pipe separator - ensure it's a string first
+    const locationIds = String(locationIdsStr || '').split('|').map(id => id.trim()).filter(id => id);
+    
+    if (locationIds.length === 0) {
+      console.warn(`Skipping row ${index} - no valid location IDs found in:`, locationIdsStr);
+      return;
+    }
 
     // Create a PriceItem for each location
     locationIds.forEach(locationId => {
