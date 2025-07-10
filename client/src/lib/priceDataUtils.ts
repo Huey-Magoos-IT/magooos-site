@@ -88,6 +88,9 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
 
   let idCounter = 0;
   const rawPriceItems: PriceItem[] = [];
+  
+  // Use a Map to deduplicate items by unique key (itemName + locationId)
+  const itemMap = new Map<string, PriceItem>();
 
   // Process each row and expand it for each location
   parsedCsv.data.forEach((row, index) => {
@@ -124,6 +127,14 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
 
     // Create a PriceItem for each location
     locationIds.forEach(locationId => {
+      // Create unique key for deduplication
+      const uniqueKey = `${itemName.trim()}|${locationId.trim()}`;
+      
+      // Skip if we already have this item for this location
+      if (itemMap.has(uniqueKey)) {
+        return;
+      }
+      
       idCounter++;
       
       // Determine category from price_group_name first, then fallback to item name analysis
@@ -210,7 +221,7 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
         sauceUnitCount = determineSauceUnitCount(itemName, categoryValue);
       }
 
-      rawPriceItems.push({
+      const priceItem: PriceItem = {
         id,
         name: itemName,
         category: categoryValue,
@@ -218,7 +229,11 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
         isOriginal,
         sauceUnitCount,
         location_id: locationId,
-      });
+      };
+
+      // Store in map for deduplication and add to array
+      itemMap.set(uniqueKey, priceItem);
+      rawPriceItems.push(priceItem);
     });
   });
 
@@ -236,10 +251,11 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
       else if (item.name === "MEALS-KID-2 Piece-Sauced") potentialOriginalName = "MEALS-KID-2 Piece";
 
       const originalItem = rawPriceItems.find(
-        org => org.isOriginal && 
+        org => org.isOriginal &&
                org.category === item.category &&
+               org.location_id === item.location_id && // Match same location
                (org.name.trim().toLowerCase() === potentialOriginalName.toLowerCase() ||
-                (item.name.toLowerCase().startsWith(org.name.trim().toLowerCase() + "-") && 
+                (item.name.toLowerCase().startsWith(org.name.trim().toLowerCase() + "-") &&
                  (item.name.toLowerCase().includes("sauced") || item.name.toLowerCase().includes("mixed sauce"))
                 )
                )
