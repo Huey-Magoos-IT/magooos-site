@@ -87,7 +87,6 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
   }
 
   let idCounter = 0;
-  const rawPriceItems: PriceItem[] = [];
   
   // Use a Map to deduplicate items by unique key (itemName + locationId)
   const itemMap = new Map<string, PriceItem>();
@@ -231,11 +230,13 @@ export const parsePriceDataFromCsv = async (csvString: string): Promise<PriceIte
         location_id: locationId,
       };
 
-      // Store in map for deduplication and add to array
+      // Store in map for deduplication - this automatically prevents duplicates
       itemMap.set(uniqueKey, priceItem);
-      rawPriceItems.push(priceItem);
     });
   });
+
+  // Convert Map values to array to get deduplicated items
+  const rawPriceItems: PriceItem[] = Array.from(itemMap.values());
 
   // Second pass to link originalId
   const finalPriceItems: PriceItem[] = rawPriceItems.map(item => {
