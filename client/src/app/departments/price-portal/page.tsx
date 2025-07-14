@@ -5,7 +5,7 @@ import { useGetAuthUserQuery } from "@/state/api";
 import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
 import { hasAnyRole, hasLocationAccess } from "@/lib/accessControl";
 import Header from "@/components/Header";
-import { PriceItem, extractUniqueCategories, parsePriceDataFromCsv } from "@/lib/priceDataUtils";
+import { PriceItem, CrossLocationPriceItem, LocationInfo, extractUniqueCategories, extractUniqueCategoriesFromCrossLocation, parsePriceDataFromCsv, parseCrossLocationPriceData } from "@/lib/priceDataUtils";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
@@ -17,7 +17,8 @@ const PricePortalPage = () => {
     const teamRoles = authData?.userDetails?.team?.teamRoles;
     const user = authData?.userDetails;
     
-    const [priceItems, setPriceItems] = useState<PriceItem[]>([]);
+    const [crossLocationItems, setCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
+    const [availableLocations, setAvailableLocations] = useState<LocationInfo[]>([]);
     const [categoryList, setCategoryList] = useState<{ value: string, label: string }[]>([]);
     const [isPriceDataLoading, setIsPriceDataLoading] = useState(false);
     const [priceDataError, setPriceDataError] = useState<string | null>(null);
@@ -57,24 +58,28 @@ const PricePortalPage = () => {
                     console.log('CSV data length:', csvData.length);
                     console.log('CSV data preview:', csvData.substring(0, 500));
                     
-                    const parsedData = await parsePriceDataFromCsv(csvData);
-                    console.log('Parsed data count:', parsedData.length);
-                    console.log('Parsed data sample:', parsedData.slice(0, 3));
+                    const { items, locations } = await parseCrossLocationPriceData(csvData);
+                    console.log('Cross-location items count:', items.length);
+                    console.log('Available locations:', locations);
+                    console.log('Cross-location items sample:', items.slice(0, 3));
                     
-                    console.log('User location IDs:', user.locationIds);
-                    
-                    // Filter data based on user's assigned locations
-                    const accessibleItems = parsedData.filter((item: PriceItem) => {
-                        return hasLocationAccess(user.locationIds, item.location_id);
+                    // Filter items based on user's location access
+                    const accessibleItems = items.filter(item => {
+                        return Object.keys(item.locationPrices).some(locationId =>
+                            hasLocationAccess(user.locationIds, locationId)
+                        );
                     });
                     
-                    console.log('Accessible items count:', accessibleItems.length);
-                    console.log('Accessible items sample:', accessibleItems.slice(0, 3));
+                    // Filter locations to only show those the user has access to
+                    const accessibleLocations = locations.filter(location =>
+                        hasLocationAccess(user.locationIds, location.id)
+                    );
                     
-                    setPriceItems(accessibleItems);
+                    setCrossLocationItems(accessibleItems);
+                    setAvailableLocations(accessibleLocations);
                     
                     // Extract unique categories for filtering
-                    const uniqueCategories = extractUniqueCategories(accessibleItems);
+                    const uniqueCategories = extractUniqueCategoriesFromCrossLocation(crossLocationItems);
                     setCategoryList(uniqueCategories);
                     
                 } catch (error) {
@@ -108,24 +113,24 @@ const PricePortalPage = () => {
     const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
     const isPriceDisabled = false;
 
-    const filteredItems: PriceItem[] = selectedCategory === 'all'
-        ? priceItems
-        : priceItems.filter((item: PriceItem) => item.category === selectedCategory);
+    const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
+        ? crossLocationItems
+        : crossLocationItems.filter((item: CrossLocationPriceItem) => item.category === selectedCategory);
   
-    const sortedItems: PriceItem[] = [...filteredItems].sort((a: PriceItem, b: PriceItem) => {
+    const sortedItems: CrossLocationPriceItem[] = [...filteredItems].sort((a: CrossLocationPriceItem, b: CrossLocationPriceItem) => {
         return sortOrder === 'asc'
             ? a.name.localeCompare(b.name)
             : b.name.localeCompare(a.name);
     });
 
-    const groupedItems = sortedItems.reduce((acc: {[key: string]: PriceItem[]}, item: PriceItem) => {
+    const groupedItems = sortedItems.reduce((acc: {[key: string]: CrossLocationPriceItem[]}, item: CrossLocationPriceItem) => {
         const categoryLabel = categoryList.find((c: {value: string}) => c.value === item.category)?.label || 'Uncategorized';
         if (!acc[categoryLabel]) {
             acc[categoryLabel] = [];
         }
         acc[categoryLabel].push(item);
         return acc;
-    }, {} as {[key: string]: PriceItem[]});
+    }, {} as {[key: string]: CrossLocationPriceItem[]});
 
     const toggleCategoryExpansion = (categoryName: string) => {
         setExpandedCategories(prev => ({ ...prev, [categoryName]: !prev[categoryName] }));
@@ -134,16 +139,15 @@ const PricePortalPage = () => {
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
         setPriceChanges(prevChanges => {
             const updatedChanges = { ...prevChanges, [itemLocationKey]: newRegularPrice };
-            const [itemId] = itemLocationKey.split('-');
-            const changedItem = priceItems.find((pItem: PriceItem) => pItem.id === itemId);
+            const [itemName, locationId] = itemLocationKey.split('|');
+            const changedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.name === itemName);
 
             if (changedItem?.isOriginal) {
-                const saucedItem = priceItems.find((pItem: PriceItem) => pItem.originalId === itemId);
+                const saucedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.originalId === changedItem.id);
                 if (saucedItem) {
                     const unitCount = changedItem.sauceUnitCount || 1;
                     const calculatedSaucedItemPrice = newRegularPrice + (unitCount * newSaucedPrice);
-                    const locationId = itemLocationKey.substring(itemId.length + 1);
-                    const saucedItemKey = `${saucedItem.id}-${locationId}`;
+                    const saucedItemKey = `${saucedItem.name}|${locationId}`;
                     updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                 }
             }
@@ -151,8 +155,8 @@ const PricePortalPage = () => {
         });
     };
 
-    const handleSyncToggle = (itemId: string) => {
-        setSyncedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+    const handleSyncToggle = (itemName: string) => {
+        setSyncedItems(prev => ({ ...prev, [itemName]: !prev[itemName] }));
     };
 
     const handleSubmitChanges = () => {
@@ -278,19 +282,19 @@ const PricePortalPage = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item Name</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sync</th>
-                                    {userLocations.map(location => (<th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">{location.name.toUpperCase()}</th>))}
+                                    {availableLocations.map(location => (<th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">{location.displayName.toUpperCase()}</th>))}
                                 </tr>
                                 <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                                     <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"></th>
                                     <th className="px-6 py-2"></th>
-                                    {userLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-16 text-center">Current</span><span className="w-16 text-center">New</span></div></th>))}
+                                    {availableLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-16 text-center">Current</span><span className="w-16 text-center">New</span></div></th>))}
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800">
                                 {Object.entries(groupedItems).map(([categoryName, itemsInCategory]) => (
                                     <React.Fragment key={categoryName}>
                                         <tr className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
-                                            <td colSpan={2 + userLocations.length} className="px-6 py-3 text-left">
+                                            <td colSpan={2 + availableLocations.length} className="px-6 py-3 text-left">
                                                 <div className="flex items-center">
                                                     <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">{expandedCategories[categoryName] ? '▼' : '►'} {categoryName} ({itemsInCategory.length})</span>
                                                 </div>
@@ -300,18 +304,30 @@ const PricePortalPage = () => {
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <input type="checkbox" checked={syncedItems[item.id] || false} onChange={() => handleSyncToggle(item.id)} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                    <input type="checkbox" checked={syncedItems[item.name] || false} onChange={() => handleSyncToggle(item.name)} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                                                 </td>
-                                                {userLocations.map(location => {
-                                                    const locationItem = priceItems.find(p => p.id === item.id && p.location_id === location.id) || item;
+                                                {availableLocations.map(location => {
+                                                    const currentPrice = item.locationPrices[location.id];
+                                                    const priceChangeKey = `${item.name}|${location.id}`;
                                                     return (
                                                         <td key={location.id} className="px-6 py-4 text-center">
                                                             <div className="flex justify-center items-center space-x-4">
                                                                 <div className="w-16 text-center">
-                                                                    <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">${locationItem.currentPrice.toFixed(2)}</span>
+                                                                    <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">
+                                                                        {currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : 'N/A'}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="w-16">
-                                                                    <input type="number" step="0.01" min="0" placeholder={locationItem.currentPrice.toFixed(2)} value={priceChanges[`${item.id}-${location.id}`] || ''} onChange={(e) => handlePriceChange(`${item.id}-${location.id}`, parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled={syncedItems[item.id] && userLocations[0] && location.id !== userLocations[0].id} />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min="0"
+                                                                        placeholder={currentPrice !== undefined ? currentPrice.toFixed(2) : '0.00'}
+                                                                        value={priceChanges[priceChangeKey] || ''}
+                                                                        onChange={(e) => handlePriceChange(priceChangeKey, parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                        disabled={currentPrice === undefined || (syncedItems[item.name] && availableLocations[0] && location.id !== availableLocations[0].id)}
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         </td>
