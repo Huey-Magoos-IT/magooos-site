@@ -79,7 +79,7 @@ const PricePortalPage = () => {
                     setAvailableLocations(accessibleLocations);
                     
                     // Extract unique categories for filtering
-                    const uniqueCategories = extractUniqueCategoriesFromCrossLocation(crossLocationItems);
+                    const uniqueCategories = extractUniqueCategoriesFromCrossLocation(accessibleItems);
                     setCategoryList(uniqueCategories);
                     
                 } catch (error) {
