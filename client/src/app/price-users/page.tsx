@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGetAuthUserQuery } from "@/state/api";
+import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole } from "@/lib/accessControl";
 import Header from "@/components/Header";
+import {
+    PriceChangeReport as UtilPriceChangeReport,
+    PriceChange as UtilPriceChange
+} from "@/lib/priceChangeUtils";
 
 interface PriceChangeReport {
   id: string;
@@ -43,9 +48,10 @@ interface SendReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   report: PriceChangeReport | null;
+  onSendReport?: (report: PriceChangeReport, email: string, selectedLocations: string[], scheduleType: 'immediate' | 'scheduled', scheduledDate?: string) => void;
 }
 
-const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, report }) => {
+const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, report, onSendReport }) => {
   const [email, setEmail] = useState('');
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [scheduleType, setScheduleType] = useState<'immediate' | 'scheduled'>('immediate');
@@ -54,14 +60,9 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
   if (!isOpen || !report) return null;
 
   const handleSendReport = () => {
-    // TODO: Implement send report logic
-    console.log('Sending report:', {
-      reportId: report.id,
-      email,
-      locations: selectedLocations,
-      scheduleType,
-      scheduledDate
-    });
+    if (onSendReport) {
+      onSendReport(report, email, selectedLocations, scheduleType, scheduledDate);
+    }
     onClose();
   };
 
@@ -177,10 +178,13 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 
 const PriceUsersPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
+  const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   
   // State management
   const [showArchived, setShowArchived] = useState(false);
+  const [priceReports, setPriceReports] = useState<PriceChangeReport[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [sendReportModal, setSendReportModal] = useState<{isOpen: boolean, report: PriceChangeReport | null}>({
     isOpen: false,
     report: null
@@ -197,6 +201,38 @@ const PriceUsersPage = () => {
 
   // Check if user has ADMIN role (since this is admin functionality)
   const hasAdminAccess = hasRole(teamRoles, 'ADMIN');
+
+  // Load price change reports from S3
+  useEffect(() => {
+    const loadPriceReports = async () => {
+      if (!hasAdminAccess) return;
+      
+      setIsLoadingReports(true);
+      try {
+        // In a real implementation, this would fetch from S3 or a backend API
+        // For now, we'll use the mock data but structure it properly
+        const reports: PriceChangeReport[] = mockPriceReports.map(report => ({
+          ...report,
+          changes: report.changes.map(change => ({
+            itemName: change.itemName,
+            locationId: change.locationId,
+            locationName: getLocationNames([change.locationId]),
+            oldPrice: change.oldPrice,
+            newPrice: change.newPrice,
+            timestamp: new Date().toISOString()
+          } as UtilPriceChange))
+        }));
+        
+        setPriceReports(reports);
+      } catch (error) {
+        console.error('Error loading price reports:', error);
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+
+    loadPriceReports();
+  }, [hasAdminAccess]);
 
   // Mock price change reports data (will be replaced with real API)
   const mockPriceReports: PriceChangeReport[] = [
@@ -270,9 +306,9 @@ const PriceUsersPage = () => {
     }
   ];
 
-  const pendingReports = mockPriceReports.filter(report => report.status === 'pending');
-  const sentReports = mockPriceReports.filter(report => report.status === 'sent');
-  const archivedReports = mockPriceReports.filter(report => report.status === 'archived');
+  const pendingReports = priceReports.filter(report => report.status === 'pending');
+  const sentReports = priceReports.filter(report => report.status === 'sent');
+  const archivedReports = priceReports.filter(report => report.status === 'archived');
   const displayReports = showArchived ? archivedReports : [...pendingReports, ...sentReports];
 
   const handleToggleLock = (userId: string) => {
@@ -297,6 +333,68 @@ const PriceUsersPage = () => {
 
   const handleSendReport = (report: PriceChangeReport) => {
     setSendReportModal({ isOpen: true, report });
+  };
+
+  const handleActualSendReport = async (
+    report: PriceChangeReport,
+    email: string,
+    selectedLocations: string[],
+    scheduleType: 'immediate' | 'scheduled',
+    scheduledDate?: string
+  ) => {
+    try {
+      // Import the utility functions
+      const { convertPriceChangesToCSV, uploadPriceChangeReport } = await import('@/lib/priceChangeUtils');
+      
+      // Filter changes to only include selected locations if specified
+      const filteredChanges = selectedLocations.length > 0
+        ? report.changes.filter(change => selectedLocations.includes(change.locationId))
+        : report.changes;
+
+      // Transform to UtilPriceChange format with required fields
+      const transformedChanges: UtilPriceChange[] = filteredChanges.map(change => ({
+        itemName: change.itemName,
+        locationId: change.locationId,
+        locationName: getLocationNames([change.locationId]),
+        oldPrice: change.oldPrice,
+        newPrice: change.newPrice,
+        timestamp: new Date().toISOString()
+      }));
+
+      // Convert to CSV
+      const csvContent = convertPriceChangesToCSV(transformedChanges, {
+        groupName: report.groupName,
+        submittedDate: report.submittedDate,
+        reportId: report.id
+      });
+
+      // Upload to S3
+      const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName);
+
+      if (uploadResult.success) {
+        // Update report status to 'sent'
+        setPriceReports(prev => prev.map(r =>
+          r.id === report.id ? { ...r, status: 'sent' as const } : r
+        ));
+
+        alert(`Report sent successfully!\nEmail: ${email}\nLocations: ${selectedLocations.length || 'All'}\nSchedule: ${scheduleType}`);
+        
+        // Log the action
+        console.log('Report sent:', {
+          reportId: report.id,
+          email,
+          selectedLocations,
+          scheduleType,
+          scheduledDate,
+          uploadUrl: uploadResult.url
+        });
+      } else {
+        alert(`Failed to send report: ${uploadResult.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending report:', error);
+      alert('An error occurred while sending the report. Please try again.');
+    }
   };
 
   const handleViewReport = (report: PriceChangeReport) => {
@@ -610,6 +708,7 @@ const PriceUsersPage = () => {
         isOpen={sendReportModal.isOpen}
         onClose={() => setSendReportModal({ isOpen: false, report: null })}
         report={sendReportModal.report}
+        onSendReport={handleActualSendReport}
       />
 
       {/* Report Changes Modal */}

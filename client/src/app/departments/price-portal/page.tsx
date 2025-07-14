@@ -7,6 +7,15 @@ import { hasAnyRole, hasLocationAccess } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import { PriceItem, CrossLocationPriceItem, LocationInfo, extractUniqueCategories, extractUniqueCategoriesFromCrossLocation, parsePriceDataFromCsv, parseCrossLocationPriceData } from "@/lib/priceDataUtils";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
+import {
+    extractPriceChanges,
+    createPriceChangeReport,
+    convertPriceChangesToCSV,
+    uploadPriceChangeReport,
+    validatePriceChanges,
+    PriceChange,
+    PriceChangeReport
+} from "@/lib/priceChangeUtils";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 
@@ -18,6 +27,7 @@ const PricePortalPage = () => {
     const user = authData?.userDetails;
     
     const [crossLocationItems, setCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
+    const [originalCrossLocationItems, setOriginalCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
     const [availableLocations, setAvailableLocations] = useState<LocationInfo[]>([]);
     const [categoryList, setCategoryList] = useState<{ value: string, label: string }[]>([]);
     const [isPriceDataLoading, setIsPriceDataLoading] = useState(false);
@@ -76,6 +86,7 @@ const PricePortalPage = () => {
                     );
                     
                     setCrossLocationItems(accessibleItems);
+                    setOriginalCrossLocationItems(accessibleItems); // Store original data for change tracking
                     setAvailableLocations(accessibleLocations);
                     
                     // Extract unique categories for filtering
@@ -159,8 +170,57 @@ const PricePortalPage = () => {
         setSyncedItems(prev => ({ ...prev, [itemName]: !prev[itemName] }));
     };
 
-    const handleSubmitChanges = () => {
-        console.log('Submitting price changes:', priceChanges);
+    const handleSubmitChanges = async () => {
+        try {
+            // Extract price changes from current state
+            const changes = extractPriceChanges(originalCrossLocationItems, priceChanges, availableLocations);
+            
+            // Validate changes
+            const validation = validatePriceChanges(changes);
+            if (!validation.isValid) {
+                alert(`Validation errors:\n${validation.errors.join('\n')}`);
+                return;
+            }
+            
+            // Create price change report
+            const userInfo = {
+                id: String(user?.userId || 'unknown'),
+                username: user?.username || 'Unknown User',
+                groupName: userLocations.length > 0 ? userLocations[0].name : 'Unknown Group'
+            };
+            
+            const report = createPriceChangeReport(changes, userInfo, user?.locationIds || []);
+            
+            // Convert to CSV
+            const csvContent = convertPriceChangesToCSV(changes, {
+                groupName: report.groupName,
+                submittedDate: report.submittedDate,
+                reportId: report.id
+            });
+            
+            // Upload to S3
+            const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName);
+            
+            if (uploadResult.success) {
+                alert(`Price changes submitted successfully!\nReport ID: ${report.id}\nTotal changes: ${changes.length}`);
+                
+                // Reset price changes after successful submission
+                setPriceChanges({});
+                
+                // Log the submission
+                console.log('Price change report submitted:', {
+                    reportId: report.id,
+                    totalChanges: changes.length,
+                    uploadUrl: uploadResult.url
+                });
+            } else {
+                alert(`Failed to submit price changes: ${uploadResult.error}`);
+            }
+            
+        } catch (error) {
+            console.error('Error submitting price changes:', error);
+            alert('An error occurred while submitting price changes. Please try again.');
+        }
     };
 
     if (userIsLoading || locationsIsLoading || isPriceDataLoading) {
@@ -342,9 +402,39 @@ const PricePortalPage = () => {
                     </div>
                 </div>
 
+                {/* Price Changes Summary */}
+                {Object.keys(priceChanges).length > 0 && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                    Pending Price Changes
+                                </h4>
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                    {Object.keys(priceChanges).length} item{Object.keys(priceChanges).length !== 1 ? 's' : ''} modified
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setPriceChanges({})}
+                                className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200 underline"
+                            >
+                                Clear All Changes
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex justify-center">
-                    <button onClick={handleSubmitChanges} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                        Submit Price Changes
+                    <button
+                        onClick={handleSubmitChanges}
+                        disabled={Object.keys(priceChanges).length === 0}
+                        className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                            Object.keys(priceChanges).length > 0
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                        }`}
+                    >
+                        Submit Price Changes {Object.keys(priceChanges).length > 0 && `(${Object.keys(priceChanges).length})`}
                     </button>
                 </div>
             </div>
