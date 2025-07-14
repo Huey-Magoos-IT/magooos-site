@@ -314,72 +314,79 @@ export const extractUniqueCategories = (priceItems: PriceItem[]): { value: strin
   ];
 };
 
-// New function for cross-location price comparison
+// Simplified approach: scan CSV and organize data for cross-location price comparison
 export const parseCrossLocationPriceData = async (csvString: string): Promise<{
   items: CrossLocationPriceItem[];
   locations: LocationInfo[];
 }> => {
-  // Parse the new CSV format directly (with location_ids field containing pipe-separated values)
-  type NewCsvRow = {
+  // Handle both old and new CSV formats
+  type CsvRow = {
     "price_group_id": string;
     "price_group_name": string;
-    "location_ids": string; // Pipe-separated location IDs
+    "location_id"?: string;      // Old format: single location per row
+    "location_ids"?: string;     // New format: pipe-separated locations
     "priceId": string;
     "reportTitle": string;
     "value": string;
     [key: string]: any;
   };
 
-  const parsedCsv: ParsedCSVData<NewCsvRow> = await parseCSV<NewCsvRow>(csvString, true);
+  const parsedCsv: ParsedCSVData<CsvRow> = await parseCSV<CsvRow>(csvString, true);
   
   if (parsedCsv.errors.length > 0) {
     console.error("CSV parsing errors:", parsedCsv.errors);
   }
 
-  const itemMap = new Map<string, CrossLocationPriceItem>();
+  // Simple data structure: item_name -> { price_group_id, location_id -> price }
+  const itemData = new Map<string, {
+    priceGroupId: string;
+    priceGroupName: string;
+    priceId: string;
+    locationPrices: Map<string, number>;
+    category?: string;
+    isOriginal?: boolean;
+    sauceUnitCount?: number;
+  }>();
+  
   const locationMap = new Map<string, LocationInfo>();
 
-  // Process each row - each row represents one item with prices for multiple locations
+  // Scan all CSV rows and collect data
   parsedCsv.data.forEach((row, index) => {
     const priceGroupId = row["price_group_id"];
     const priceGroupName = row["price_group_name"];
-    const locationIdsStr = row["location_ids"];
     const priceId = row["priceId"];
     const itemName = row["reportTitle"];
     const currentPriceStr = row["value"];
 
-    if (!priceGroupId || !itemName || currentPriceStr === undefined || !locationIdsStr || !priceId) {
-      console.warn(`Skipping row ${index} due to missing required fields:`, {
-        priceGroupId: !!priceGroupId,
-        itemName: !!itemName,
-        currentPriceStr: currentPriceStr !== undefined,
-        locationIdsStr: !!locationIdsStr,
-        priceId: !!priceId
-      });
-      return; // Skip invalid rows
+    if (!priceGroupId || !itemName || currentPriceStr === undefined || !priceId) {
+      return; // Skip invalid rows silently
     }
 
     const currentPrice = parseFloat(String(currentPriceStr));
     if (isNaN(currentPrice)) {
-      console.warn(`Skipping row ${index} due to invalid price:`, currentPriceStr);
       return; // Skip rows with invalid price
     }
 
-    // Parse location IDs (pipe-separated)
-    const locationIds = String(locationIdsStr).split('|').map(id => id.trim()).filter(id => id);
+    // Determine which format we're dealing with
+    let locationIds: string[] = [];
     
+    if (row["location_ids"]) {
+      // New format: pipe-separated location IDs
+      locationIds = String(row["location_ids"]).split('|').map(id => id.trim()).filter(id => id);
+    } else if (row["location_id"]) {
+      // Old format: single location ID
+      locationIds = [String(row["location_id"]).trim()];
+    }
+
     if (locationIds.length === 0) {
-      console.warn(`Skipping row ${index} due to no valid location IDs:`, locationIdsStr);
-      return;
+      return; // Skip if no valid location IDs
     }
 
     // Add locations to location map
     locationIds.forEach(locationId => {
       if (!locationMap.has(locationId)) {
-        // Extract location name from price_group_name if possible, otherwise use locationId
         let displayName = locationId;
         if (priceGroupName && priceGroupName.includes(' - ')) {
-          // Try to extract location name from price group name like "HM - Englewood, OH"
           const parts = priceGroupName.split(' - ');
           if (parts.length > 1) {
             displayName = parts[1].trim();
@@ -394,75 +401,83 @@ export const parseCrossLocationPriceData = async (csvString: string): Promise<{
       }
     });
 
-    // Determine category from price_group_name first, then fallback to item name analysis
+    // Get or create item data
+    if (!itemData.has(itemName)) {
+      itemData.set(itemName, {
+        priceGroupId: priceGroupId,
+        priceGroupName: priceGroupName,
+        priceId: priceId,
+        locationPrices: new Map<string, number>()
+      });
+    }
+
+    const item = itemData.get(itemName)!;
+    
+    // Add price for each location
+    locationIds.forEach(locationId => {
+      item.locationPrices.set(locationId, currentPrice);
+    });
+  });
+
+  // Convert to CrossLocationPriceItem format
+  const items: CrossLocationPriceItem[] = [];
+  
+  for (const [itemName, data] of itemData.entries()) {
+    // Determine category
     let categoryValue = "uncategorized";
     const lowerName = itemName.toLowerCase();
     
-    // First, try to use price_group_name if it contains recognizable category info
-    if (priceGroupName && priceGroupName.trim()) {
-      const groupNameValue = getCategoryValueFromDisplayName(priceGroupName.trim());
-      if (groupNameValue !== "uncategorized") {
-        categoryValue = groupNameValue;
-      }
+    // Use enhanced item name analysis for categorization
+    if (lowerName.includes("-3pd") || lowerName.includes(" 3pd")) {
+      categoryValue = "3pd";
     }
-    
-    // If still uncategorized, use enhanced item name analysis
-    if (categoryValue === "uncategorized") {
-      // Check for 3PD suffix
-      if (lowerName.includes("-3pd") || lowerName.includes(" 3pd")) {
-        categoryValue = "3pd";
-      }
-      // Check for EZ Cater suffix
-      else if (lowerName.includes("-ezcatr") || lowerName.includes("ezcatr")) {
-        categoryValue = "ez_cater";
-      }
-      // Check for specific prefixes and patterns
-      else if (lowerName.startsWith("meals-kid-") || lowerName.includes("apple juice") ||
-               lowerName.includes("kids-") || lowerName.includes("goldfish")) {
-        categoryValue = "for_the_little_magoos";
-      }
-      else if (lowerName.startsWith("btp-") || lowerName.includes("by the piece") ||
-               lowerName.includes("by piece")) {
-        categoryValue = "by_the_piece";
-      }
-      else if (lowerName.startsWith("cat-") || lowerName.includes("catering") ||
-               lowerName.includes("party pack") || lowerName.includes("lunch boxes")) {
-        categoryValue = "instore_catering";
-      }
-      else if (lowerName.startsWith("meals-sandw-") || lowerName.startsWith("meals-wrap-") ||
-               lowerName.includes("sandwich") || lowerName.includes("wrap")) {
-        categoryValue = "sandwiches_wraps";
-      }
-      else if (lowerName.startsWith("meals-") && !lowerName.includes("sandw") && !lowerName.includes("wrap")) {
-        categoryValue = "tender_meals";
-      }
-      else if (lowerName.startsWith("sal-") || lowerName.includes("salad")) {
-        categoryValue = "fresh_made_salads";
-      }
-      else if (lowerName.startsWith("side-") || lowerName.includes("fries") ||
-               lowerName.includes("slaw") || lowerName.includes("texas toast") ||
-               lowerName.includes("cheese sauce") || lowerName.includes("dip")) {
-        categoryValue = "sides";
-      }
-      else if (lowerName.startsWith("drink-") || lowerName.includes("tea") ||
-               lowerName.includes("lemonade") || lowerName.includes("bottled water") ||
-               lowerName.includes("gallon")) {
-        categoryValue = "craft_drinks";
-      }
-      else if (lowerName.startsWith("meals-fam-") || lowerName.includes("family")) {
-        categoryValue = "tenders_for_the_fam";
-      }
-      // Catch-all for items that don't fit standard categories
-      else if (lowerName.includes("championship") || lowerName.includes("game day") ||
-               lowerName.includes("overtime") || lowerName.includes("tailgate") ||
-               lowerName.includes("addon") || lowerName.includes("freebie") ||
-               lowerName.includes("promo") || lowerName.includes("bag of ice") ||
-               lowerName.includes("breakfast") || lowerName.includes("concessions")) {
-        categoryValue = "odds_and_ends";
-      }
+    else if (lowerName.includes("-ezcatr") || lowerName.includes("ezcatr")) {
+      categoryValue = "ez_cater";
+    }
+    else if (lowerName.startsWith("meals-kid-") || lowerName.includes("apple juice") ||
+             lowerName.includes("kids-") || lowerName.includes("goldfish")) {
+      categoryValue = "for_the_little_magoos";
+    }
+    else if (lowerName.startsWith("btp-") || lowerName.includes("by the piece") ||
+             lowerName.includes("by piece")) {
+      categoryValue = "by_the_piece";
+    }
+    else if (lowerName.startsWith("cat-") || lowerName.includes("catering") ||
+             lowerName.includes("party pack") || lowerName.includes("lunch boxes")) {
+      categoryValue = "instore_catering";
+    }
+    else if (lowerName.startsWith("meals-sandw-") || lowerName.startsWith("meals-wrap-") ||
+             lowerName.includes("sandwich") || lowerName.includes("wrap")) {
+      categoryValue = "sandwiches_wraps";
+    }
+    else if (lowerName.startsWith("meals-") && !lowerName.includes("sandw") && !lowerName.includes("wrap")) {
+      categoryValue = "tender_meals";
+    }
+    else if (lowerName.startsWith("sal-") || lowerName.includes("salad")) {
+      categoryValue = "fresh_made_salads";
+    }
+    else if (lowerName.startsWith("side-") || lowerName.includes("fries") ||
+             lowerName.includes("slaw") || lowerName.includes("texas toast") ||
+             lowerName.includes("cheese sauce") || lowerName.includes("dip")) {
+      categoryValue = "sides";
+    }
+    else if (lowerName.startsWith("drink-") || lowerName.includes("tea") ||
+             lowerName.includes("lemonade") || lowerName.includes("bottled water") ||
+             lowerName.includes("gallon")) {
+      categoryValue = "craft_drinks";
+    }
+    else if (lowerName.startsWith("meals-fam-") || lowerName.includes("family")) {
+      categoryValue = "tenders_for_the_fam";
+    }
+    else if (lowerName.includes("championship") || lowerName.includes("game day") ||
+             lowerName.includes("overtime") || lowerName.includes("tailgate") ||
+             lowerName.includes("addon") || lowerName.includes("freebie") ||
+             lowerName.includes("promo") || lowerName.includes("bag of ice") ||
+             lowerName.includes("breakfast") || lowerName.includes("concessions")) {
+      categoryValue = "odds_and_ends";
     }
 
-    // Determine if this is an original item
+    // Determine if original item
     let isOriginal = true;
     if (itemName.toLowerCase().includes("-sauced") ||
         itemName.toLowerCase().includes(" sauced") ||
@@ -475,35 +490,27 @@ export const parseCrossLocationPriceData = async (csvString: string): Promise<{
       sauceUnitCount = determineSauceUnitCount(itemName, categoryValue);
     }
 
-    // Create cross-location item (one item with prices for all locations)
-    const itemKey = itemName; // Group by item name
-    
-    if (!itemMap.has(itemKey)) {
-      // Create new cross-location item
-      const crossLocationItem: CrossLocationPriceItem = {
-        id: priceId,
-        name: itemName,
-        category: categoryValue,
-        isOriginal: isOriginal,
-        sauceUnitCount: sauceUnitCount,
-        originalId: undefined, // Will be set in second pass
-        locationPrices: {},
-        priceGroupId: priceGroupId
-      };
-
-      // Set the same price for all locations (since they're synchronized in the same price group)
-      locationIds.forEach(locationId => {
-        crossLocationItem.locationPrices[locationId] = currentPrice;
-      });
-
-      itemMap.set(itemKey, crossLocationItem);
-    } else {
-      console.warn(`Duplicate item found: ${itemName}, skipping`);
+    // Convert Map to object for locationPrices
+    const locationPrices: { [locationId: string]: number } = {};
+    for (const [locationId, price] of data.locationPrices.entries()) {
+      locationPrices[locationId] = price;
     }
-  });
+
+    const crossLocationItem: CrossLocationPriceItem = {
+      id: data.priceId,
+      name: itemName,
+      category: categoryValue,
+      isOriginal: isOriginal,
+      sauceUnitCount: sauceUnitCount,
+      originalId: undefined, // Will be set in second pass
+      locationPrices: locationPrices,
+      priceGroupId: data.priceGroupId
+    };
+
+    items.push(crossLocationItem);
+  }
 
   // Second pass to link originalId for sauced items
-  const items = Array.from(itemMap.values());
   const finalItems = items.map(item => {
     if (!item.isOriginal) {
       let potentialOriginalName = item.name
@@ -512,18 +519,10 @@ export const parseCrossLocationPriceData = async (csvString: string): Promise<{
         .replace(/ Mixed Sauce/gi, '')
         .trim();
       
-      // Specific fixes based on observed patterns
-      if (item.name === "MEALS-KID-2 Piece-sauced-3PD") potentialOriginalName = "MEALS-KID-2 Piece-3PD";
-      else if (item.name === "MEALS-KID-2 Piece-Sauced") potentialOriginalName = "MEALS-KID-2 Piece";
-
       const originalItem = items.find(
         org => org.isOriginal &&
                org.category === item.category &&
-               (org.name.trim().toLowerCase() === potentialOriginalName.toLowerCase() ||
-                (item.name.toLowerCase().startsWith(org.name.trim().toLowerCase() + "-") &&
-                 (item.name.toLowerCase().includes("sauced") || item.name.toLowerCase().includes("mixed sauce"))
-                )
-               )
+               org.name.trim().toLowerCase() === potentialOriginalName.toLowerCase()
       );
       if (originalItem) {
         return { ...item, originalId: originalItem.id };
@@ -531,6 +530,8 @@ export const parseCrossLocationPriceData = async (csvString: string): Promise<{
     }
     return item;
   });
+
+  console.log(`Processed ${finalItems.length} unique items across ${locationMap.size} locations`);
 
   return {
     items: finalItems,
