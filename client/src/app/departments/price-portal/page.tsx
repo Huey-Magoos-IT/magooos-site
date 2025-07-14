@@ -41,6 +41,13 @@ const PricePortalPage = () => {
     const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
     const [syncAll, setSyncAll] = useState<boolean>(false);
     const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+    const [submissionModal, setSubmissionModal] = useState<{
+        isOpen: boolean;
+        success: boolean;
+        reportId?: string;
+        totalChanges?: number;
+        error?: string;
+    }>({ isOpen: false, success: false });
 
     useEffect(() => {
         const loadAndProcessData = async () => {
@@ -202,7 +209,13 @@ const PricePortalPage = () => {
             const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName);
             
             if (uploadResult.success) {
-                alert(`Price changes submitted successfully!\nReport ID: ${report.id}\nTotal changes: ${changes.length}`);
+                // Show success modal instead of alert
+                setSubmissionModal({
+                    isOpen: true,
+                    success: true,
+                    reportId: report.id,
+                    totalChanges: changes.length
+                });
                 
                 // Reset price changes after successful submission
                 setPriceChanges({});
@@ -214,12 +227,21 @@ const PricePortalPage = () => {
                     uploadUrl: uploadResult.url
                 });
             } else {
-                alert(`Failed to submit price changes: ${uploadResult.error}`);
+                // Show error modal instead of alert
+                setSubmissionModal({
+                    isOpen: true,
+                    success: false,
+                    error: uploadResult.error
+                });
             }
             
         } catch (error) {
             console.error('Error submitting price changes:', error);
-            alert('An error occurred while submitting price changes. Please try again.');
+            setSubmissionModal({
+                isOpen: true,
+                success: false,
+                error: 'An error occurred while submitting price changes. Please try again.'
+            });
         }
     };
 
@@ -438,6 +460,65 @@ const PricePortalPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Submission Result Modal */}
+            {submissionModal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                        <div className="flex items-center justify-center mb-4">
+                            {submissionModal.success ? (
+                                <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            ) : (
+                                <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="text-center">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                {submissionModal.success ? 'Price Changes Submitted!' : 'Submission Failed'}
+                            </h3>
+                            
+                            {submissionModal.success ? (
+                                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                                    <p>Your price changes have been successfully submitted and exported to the data lake.</p>
+                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mt-3">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Report Details:</div>
+                                        <div className="font-mono text-xs">
+                                            <div>ID: {submissionModal.reportId}</div>
+                                            <div>Changes: {submissionModal.totalChanges} item{submissionModal.totalChanges !== 1 ? 's' : ''}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {submissionModal.error}
+                                </p>
+                            )}
+                        </div>
+                        
+                        <div className="mt-6 flex justify-center">
+                            <button
+                                onClick={() => setSubmissionModal({ isOpen: false, success: false })}
+                                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                                    submissionModal.success
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : 'bg-red-600 text-white hover:bg-red-700'
+                                }`}
+                            >
+                                {submissionModal.success ? 'Continue' : 'Try Again'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
