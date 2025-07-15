@@ -275,7 +275,13 @@ const PricePortalPage = () => {
             });
             
             // Upload to S3
-            const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName);
+            const uploadResult = await uploadPriceChangeReport(
+                csvContent,
+                report.id,
+                report.groupName,
+                userInfo.id,
+                userInfo.username
+            );
             
             if (uploadResult.success) {
                 // Show success modal instead of alert

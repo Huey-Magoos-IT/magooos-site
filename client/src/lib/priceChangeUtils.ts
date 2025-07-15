@@ -130,17 +130,22 @@ export const convertPriceChangesToCSV = (
  * @param csvContent CSV content to upload
  * @param reportId Report ID for filename
  * @param groupName Group name for filename
+ * @param userId User ID for filename and tracking
+ * @param username Username for filename
  * @returns Promise resolving to upload success
  */
 export const uploadPriceChangeReport = async (
   csvContent: string,
   reportId: string,
-  groupName: string
+  groupName: string,
+  userId: string,
+  username: string
 ): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9-_]/g, '_');
-    const filename = `${timestamp}_${sanitizedGroupName}_${reportId}.csv`;
+    const sanitizedUsername = username.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const filename = `${timestamp}_${sanitizedGroupName}_${sanitizedUsername}_${userId}_${reportId}.csv`;
     
     const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
     

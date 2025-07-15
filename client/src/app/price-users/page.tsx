@@ -28,6 +28,9 @@ interface PriceChangeReport {
     newPrice: number;
   }[];
   totalChanges: number;
+  // New fields for user tracking
+  userId?: string;
+  username?: string;
 }
 
 interface ReportChangeDetail {
@@ -63,13 +66,32 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
     const headers = lines[0].split(',').map(h => h.trim());
     const changes: ReportChangeDetail[] = [];
     
-    // Extract metadata from filename (format: PRICE-{timestamp}-{id}-{groupName}.csv)
-    const fileNameParts = fileName.replace('.csv', '').split('-');
-    const reportId = fileNameParts.length >= 3 ? `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}` : fileName.replace('.csv', '');
+    // Extract metadata from filename
+    // New format: {timestamp}_{sanitizedGroupName}_{sanitizedUsername}_{userId}_{reportId}.csv
+    // Old format: PRICE-{timestamp}-{id}-{groupName}.csv (fallback)
+    const fileNameWithoutExt = fileName.replace('.csv', '');
+    let reportId = fileNameWithoutExt;
+    let extractedUsername = 'Unknown User';
+    let extractedUserId = 'unknown';
+    
+    if (fileNameWithoutExt.includes('_')) {
+      // New format with underscores
+      const parts = fileNameWithoutExt.split('_');
+      if (parts.length >= 5) {
+        // [timestamp, groupName, username, userId, reportId]
+        extractedUsername = parts[2].replace(/[_-]/g, ' '); // Convert back from sanitized format
+        extractedUserId = parts[3];
+        reportId = parts[4];
+      }
+    } else if (fileNameWithoutExt.includes('-')) {
+      // Old format with dashes (fallback)
+      const fileNameParts = fileNameWithoutExt.split('-');
+      reportId = fileNameParts.length >= 3 ? `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}` : fileNameWithoutExt;
+    }
     
     let groupName = 'Unknown Group';
     let submittedDate = new Date().toISOString();
-    let franchiseeName = 'Unknown Franchisee';
+    let franchiseeName = extractedUsername; // Use extracted username as franchisee name
     let locationIds: string[] = [];
     
     // Parse CSV rows
@@ -114,14 +136,17 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
     
     return {
       id: reportId,
-      franchiseeId: 'unknown', // We don't have this in CSV
+      franchiseeId: extractedUserId,
       franchiseeName,
       groupName,
       locationIds,
       submittedDate,
       status: 'pending', // Default status for newly loaded reports
       changes,
-      totalChanges: changes.length
+      totalChanges: changes.length,
+      // Include extracted user information
+      userId: extractedUserId,
+      username: extractedUsername
     };
   } catch (error) {
     console.error('Error parsing price change CSV:', error);
@@ -391,6 +416,13 @@ const PriceUsersPage = () => {
       // Import the utility functions
       const { convertPriceChangesToCSV, uploadPriceChangeReport } = await import('@/lib/priceChangeUtils');
       
+      // Get user information from auth data
+      const currentUser = userData?.userDetails;
+      const userInfo = {
+        id: String(currentUser?.userId || 'admin'),
+        username: currentUser?.username || 'Admin User'
+      };
+      
       // Filter changes to only include selected locations if specified
       const filteredChanges = selectedLocations.length > 0
         ? report.changes.filter(change => selectedLocations.includes(change.locationId))
@@ -414,7 +446,13 @@ const PriceUsersPage = () => {
       });
 
       // Upload to S3
-      const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName);
+      const uploadResult = await uploadPriceChangeReport(
+        csvContent,
+        report.id,
+        report.groupName,
+        userInfo.id,
+        userInfo.username
+      );
 
       if (uploadResult.success) {
         // Update report status to 'sent'
@@ -573,6 +611,9 @@ const PriceUsersPage = () => {
                       Group
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Uploaded By
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Locations
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -605,6 +646,16 @@ const PriceUsersPage = () => {
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {report.groupName}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {report.username || 'Unknown User'}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          ID: {report.userId || 'unknown'}
                         </div>
                       </div>
                     </td>
