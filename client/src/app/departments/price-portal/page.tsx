@@ -28,6 +28,19 @@ const PricePortalPage = () => {
     const teamRoles = authData?.userDetails?.team?.teamRoles;
     const user = authData?.userDetails;
     const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
+
+    // Clear location selection on page refresh (session-only persistence)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            // Clear sessionStorage when page is refreshed or closed
+            sessionStorage.removeItem('selectedLocationIds');
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
     
     const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
     const [crossLocationItems, setCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
@@ -57,15 +70,20 @@ const PricePortalPage = () => {
     useEffect(() => {
         if (user?.locationIds && locationsData?.locations && hasAccess) {
             const storedLocationIds = sessionStorage.getItem('selectedLocationIds');
+            console.log('Checking stored location IDs:', storedLocationIds);
+            
             if (!storedLocationIds) {
-                // No locations selected, redirect to location selection
+                console.log('No stored location IDs found, redirecting to location selection');
                 router.push('/departments/price-portal/location-selection');
                 return;
             }
             
             try {
                 const parsedLocationIds = JSON.parse(storedLocationIds);
+                console.log('Parsed location IDs:', parsedLocationIds);
+                
                 if (!Array.isArray(parsedLocationIds) || parsedLocationIds.length === 0) {
+                    console.log('Invalid or empty location IDs, redirecting to location selection');
                     router.push('/departments/price-portal/location-selection');
                     return;
                 }
@@ -75,13 +93,17 @@ const PricePortalPage = () => {
                     hasLocationAccess(user.locationIds, locationId)
                 );
                 
+                console.log('Valid location IDs after access check:', validLocationIds);
+                
                 if (validLocationIds.length === 0) {
                     // User no longer has access to selected locations
+                    console.log('User has no access to selected locations, clearing and redirecting');
                     sessionStorage.removeItem('selectedLocationIds');
                     router.push('/departments/price-portal/location-selection');
                     return;
                 }
                 
+                console.log('Setting selected location IDs:', validLocationIds);
                 setSelectedLocationIds(validLocationIds);
             } catch (error) {
                 console.error('Error parsing selected location IDs:', error);
@@ -151,7 +173,7 @@ const PricePortalPage = () => {
             }
         };
         loadAndProcessData();
-    }, [user, locationsData]);
+    }, [user, locationsData, selectedLocationIds]);
 
     useEffect(() => {
         if (categoryList.length > 0) {

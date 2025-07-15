@@ -37,13 +37,13 @@ const LocationSelectionPage = () => {
         const parsedIds = JSON.parse(storedLocationIds);
         if (Array.isArray(parsedIds)) {
           // Validate that stored locations are still accessible to user
-          const validIds = parsedIds.filter(id => 
+          const validIds = parsedIds.filter(id =>
             hasLocationAccess(user?.locationIds || [], id)
           );
           setSelectedLocationIds(validIds);
           
           // Set selected locations objects
-          const selectedLocs = locationsData.locations.filter(loc => 
+          const selectedLocs = locationsData.locations.filter(loc =>
             validIds.includes(loc.id)
           );
           setSelectedLocations(selectedLocs);
@@ -51,12 +51,8 @@ const LocationSelectionPage = () => {
       } catch (error) {
         console.error('Error parsing stored location IDs:', error);
       }
-    } else if (userLocations.length > 0) {
-      // Default to all user locations if no previous selection
-      const allLocationIds = userLocations.map(loc => loc.id);
-      setSelectedLocationIds(allLocationIds);
-      setSelectedLocations(userLocations);
     }
+    // Don't auto-select all locations - user must manually choose
   }, [userLocations, locationsData, user?.locationIds]);
 
   const handleLocationSelect = (location: LocationTableLocation) => {
