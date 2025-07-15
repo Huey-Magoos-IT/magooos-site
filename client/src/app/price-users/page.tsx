@@ -11,6 +11,8 @@ import {
     PriceChange as UtilPriceChange
 } from "@/lib/priceChangeUtils";
 
+const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
+
 interface PriceChangeReport {
   id: string;
   franchiseeId: string;
@@ -51,6 +53,81 @@ interface SendReportModalProps {
   report: PriceChangeReport | null;
   onSendReport?: (report: PriceChangeReport, email: string, selectedLocations: string[], scheduleType: 'immediate' | 'scheduled', scheduledDate?: string) => void;
 }
+
+// Function to parse price change CSV files from S3
+const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<PriceChangeReport | null> => {
+  try {
+    const lines = csvData.trim().split('\n');
+    if (lines.length < 2) return null;
+    
+    const headers = lines[0].split(',').map(h => h.trim());
+    const changes: ReportChangeDetail[] = [];
+    
+    // Extract metadata from filename (format: PRICE-{timestamp}-{id}-{groupName}.csv)
+    const fileNameParts = fileName.replace('.csv', '').split('-');
+    const reportId = fileNameParts.length >= 3 ? `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}` : fileName.replace('.csv', '');
+    
+    let groupName = 'Unknown Group';
+    let submittedDate = new Date().toISOString();
+    let franchiseeName = 'Unknown Franchisee';
+    let locationIds: string[] = [];
+    
+    // Parse CSV rows
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',').map(cell => cell.trim());
+      if (row.length < headers.length) continue;
+      
+      const rowData: {[key: string]: string} = {};
+      headers.forEach((header, index) => {
+        rowData[header] = row[index] || '';
+      });
+      
+      // Extract metadata from first row
+      if (i === 1) {
+        groupName = rowData['Group Name'] || groupName;
+        submittedDate = rowData['Submitted Date'] || submittedDate;
+        franchiseeName = rowData['Group Name'] || franchiseeName; // Use group name as franchisee name
+      }
+      
+      // Parse price change data
+      const itemName = rowData['Item Name'];
+      const locationId = rowData['Location ID'];
+      const oldPrice = parseFloat(rowData['Old Price'] || '0');
+      const newPrice = parseFloat(rowData['New Price'] || '0');
+      
+      if (itemName && locationId && !isNaN(oldPrice) && !isNaN(newPrice)) {
+        changes.push({
+          itemName,
+          locationId,
+          oldPrice,
+          newPrice
+        });
+        
+        // Collect unique location IDs
+        if (!locationIds.includes(locationId)) {
+          locationIds.push(locationId);
+        }
+      }
+    }
+    
+    if (changes.length === 0) return null;
+    
+    return {
+      id: reportId,
+      franchiseeId: 'unknown', // We don't have this in CSV
+      franchiseeName,
+      groupName,
+      locationIds,
+      submittedDate,
+      status: 'pending', // Default status for newly loaded reports
+      changes,
+      totalChanges: changes.length
+    };
+  } catch (error) {
+    console.error('Error parsing price change CSV:', error);
+    return null;
+  }
+};
 
 const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, report, onSendReport }) => {
   const [email, setEmail] = useState('');
@@ -210,23 +287,40 @@ const PriceUsersPage = () => {
       
       setIsLoadingReports(true);
       try {
-        // In a real implementation, this would fetch from S3 or a backend API
-        // For now, we'll use the mock data but structure it properly
-        const reports: PriceChangeReport[] = mockPriceReports.map(report => ({
-          ...report,
-          changes: report.changes.map(change => ({
-            itemName: change.itemName,
-            locationId: change.locationId,
-            locationName: getLocationNames([change.locationId]),
-            oldPrice: change.oldPrice,
-            newPrice: change.newPrice,
-            timestamp: new Date().toISOString()
-          } as UtilPriceChange))
-        }));
+        // Fetch files from the temporary-price-changes directory
+        const files = await fetchFiles(S3_DATA_LAKE, 'temporary-price-changes/');
+        console.log('Found price change files:', files);
+        
+        if (files.length === 0) {
+          console.log('No price change reports found in S3');
+          setPriceReports([]);
+          return;
+        }
+        
+        const reports: PriceChangeReport[] = [];
+        
+        // Process each CSV file
+        for (const fileName of files) {
+          try {
+            const csvData = await fetchCSV(`${S3_DATA_LAKE}/temporary-price-changes/${fileName}`);
+            const report = await parsePriceChangeCSV(csvData, fileName);
+            if (report) {
+              reports.push(report);
+            }
+          } catch (error) {
+            console.error(`Error processing file ${fileName}:`, error);
+          }
+        }
+        
+        // Sort reports by submitted date (newest first)
+        reports.sort((a, b) => new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime());
         
         setPriceReports(reports);
+        console.log(`Loaded ${reports.length} price change reports from S3`);
       } catch (error) {
-        console.error('Error loading price reports:', error);
+        console.error('Error loading price reports from S3:', error);
+        // Fallback to empty array on error
+        setPriceReports([]);
       } finally {
         setIsLoadingReports(false);
       }
@@ -234,56 +328,6 @@ const PriceUsersPage = () => {
 
     loadPriceReports();
   }, [hasAdminAccess]);
-
-  // Mock price change reports data (will be replaced with real API)
-  const mockPriceReports: PriceChangeReport[] = [
-    {
-      id: 'report_1',
-      franchiseeId: '1',
-      franchiseeName: 'franchise_owner_1',
-      groupName: 'Florida East Coast',
-      locationIds: ['4146', '4149'],
-      submittedDate: '2024-01-15T10:30:00Z',
-      status: 'pending',
-      totalChanges: 5,
-      changes: [
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '4146', oldPrice: 12.99, newPrice: 13.49 },
-        { itemName: '3 Tender Meal', locationId: '4146', oldPrice: 10.99, newPrice: 11.49 },
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '4149', oldPrice: 12.99, newPrice: 13.49 },
-        { itemName: '3 Tender Meal', locationId: '4149', oldPrice: 10.99, newPrice: 11.49 },
-        { itemName: 'Sweet Tea', locationId: '4146', oldPrice: 2.99, newPrice: 3.29 }
-      ]
-    },
-    {
-      id: 'report_2',
-      franchiseeId: '2',
-      franchiseeName: 'franchise_owner_2',
-      groupName: 'North Carolina Region',
-      locationIds: ['4244', '4350'],
-      submittedDate: '2024-01-14T14:15:00Z',
-      status: 'sent',
-      totalChanges: 3,
-      changes: [
-        { itemName: 'Kids 2 Tender Meal', locationId: '4244', oldPrice: 7.99, newPrice: 8.49 },
-        { itemName: 'Kids 2 Tender Meal', locationId: '4350', oldPrice: 7.99, newPrice: 8.49 },
-        { itemName: 'Sweet Tea', locationId: '4244', oldPrice: 2.99, newPrice: 3.29 }
-      ]
-    },
-    {
-      id: 'report_3',
-      franchiseeId: '3',
-      franchiseeName: 'franchise_owner_3',
-      groupName: 'Missouri Operations',
-      locationIds: ['10497'],
-      submittedDate: '2024-01-10T09:00:00Z',
-      status: 'archived',
-      totalChanges: 2,
-      changes: [
-        { itemName: 'Buffalo Chicken Sandwich', locationId: '10497', oldPrice: 12.99, newPrice: 14.99 },
-        { itemName: '3 Tender Meal', locationId: '10497', oldPrice: 10.99, newPrice: 12.99 }
-      ]
-    }
-  ];
 
   // Mock franchisee users for lock/unlock functionality
   const mockFranchiseeUsers: FranchiseeUser[] = [
@@ -491,43 +535,68 @@ const PriceUsersPage = () => {
         {/* Reports Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              {showArchived ? 'Archived Reports' : 'Active Reports'} ({displayReports.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {showArchived ? 'Archived Reports' : 'Active Reports'} ({displayReports.length})
+              </h3>
+              {isLoadingReports && (
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading reports from S3...
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Group
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Locations
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Submitted
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Changes
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    View Report
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Send Report
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Archive
-                  </th>
-                </tr>
-              </thead>
-              <tbody className={`bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 ${showArchived ? 'opacity-70' : ''}`}>
-                {displayReports.map(report => (
+          {isLoadingReports ? (
+            <div className="px-6 py-12 text-center">
+              <div className="text-gray-500 dark:text-gray-400">Loading price change reports...</div>
+            </div>
+          ) : displayReports.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <div className="text-gray-500 dark:text-gray-400">
+                {showArchived ? 'No archived reports found.' : 'No active price change reports found.'}
+              </div>
+              <div className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                Reports will appear here when franchisees submit price changes.
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Group
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Locations
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Submitted
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Changes
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      View Report
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Send Report
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Archive
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 ${showArchived ? 'opacity-70' : ''}`}>
+                  {displayReports.map(report => (
                   <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
                       <div>
@@ -612,10 +681,11 @@ const PriceUsersPage = () => {
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Franchisee Lock/Unlock Management */}
