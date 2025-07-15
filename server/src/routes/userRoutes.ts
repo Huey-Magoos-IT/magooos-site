@@ -13,6 +13,7 @@ import {
   listCognitoUsers,
   resendVerificationLink,
   deleteCognitoUser,
+  getPriceUsers,
 } from "../controllers/userController";
 
 const router = Router();
@@ -33,6 +34,9 @@ router.delete("/:userId", deleteUser); // DELETE a user (permanent from DB and C
 router.get("/cognito/list", listCognitoUsers); // GET Cognito users with optional filtering
 router.post("/cognito/:username/resend-verification", resendVerificationLink); // POST to resend verification link
 router.delete("/cognito/:username", deleteCognitoUser); // DELETE a Cognito user
+
+// --- Price User Management Routes ---
+router.get("/price-users", getPriceUsers); // GET users with PRICE_USER role
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {

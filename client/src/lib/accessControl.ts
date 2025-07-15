@@ -49,3 +49,15 @@ export const isLocationUser = (teamRoles: TeamRole[] | undefined): boolean => {
   if (!teamRoles || teamRoles.length === 0) return false;
   return teamRoles.some(tr => tr.role.name === 'LOCATION_USER');
 };
+
+// Check if user is a PriceUser
+export const isPriceUser = (teamRoles: TeamRole[] | undefined): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  return teamRoles.some(tr => tr.role.name === 'PRICE_USER');
+};
+
+// Check if user is a PriceAdmin
+export const isPriceAdmin = (teamRoles: TeamRole[] | undefined): boolean => {
+  if (!teamRoles || teamRoles.length === 0) return false;
+  return teamRoles.some(tr => tr.role.name === 'PRICE_ADMIN' || tr.role.name === 'ADMIN');
+};

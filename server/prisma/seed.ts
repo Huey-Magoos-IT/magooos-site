@@ -42,7 +42,8 @@ async function setupRoles() {
     { name: "SCANS", description: "Access to scans department" },
     { name: "LOCATION_ADMIN", description: "Can manage users within assigned group" },
     { name: "LOCATION_USER", description: "Has access to data for assigned locations" },
-    { name: "PRICE_ADMIN", description: "Access to price portal and price users management" }
+    { name: "PRICE_ADMIN", description: "Access to price portal and price users management" },
+    { name: "PRICE_USER", description: "Can change prices in the price portal" }
   ];
 
   // Create roles if they don't exist

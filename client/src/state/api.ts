@@ -461,6 +461,11 @@ export const api = createApi({
       }),
       invalidatesTags: ["CognitoUsers"],
     }),
+    // Get users with PRICE_USER role
+    getPriceUsers: build.query<User[], void>({
+      query: () => "users/price-users",
+      providesTags: ["Users"],
+    }),
   }),
 });
 
@@ -500,4 +505,6 @@ export const {
   useListCognitoUsersQuery,
   useResendVerificationLinkMutation,
   useDeleteCognitoUserMutation,
+  // Price user management hooks
+  useGetPriceUsersQuery,
 } = api;

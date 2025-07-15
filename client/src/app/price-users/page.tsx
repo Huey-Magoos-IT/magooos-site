@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useGetAuthUserQuery } from "@/state/api";
+import { useGetAuthUserQuery, useGetPriceUsersQuery } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
-import { hasRole } from "@/lib/accessControl";
+import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
 import {
@@ -40,7 +40,7 @@ interface ReportChangeDetail {
   newPrice: number;
 }
 
-interface FranchiseeUser {
+interface PriceUser {
   id: string;
   username: string;
   email: string;
@@ -338,6 +338,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 const PriceUsersPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
   const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
+  const { data: priceUsers, isLoading: priceUsersLoading } = useGetPriceUsersQuery();
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   
   // State management
@@ -358,8 +359,8 @@ const PriceUsersPage = () => {
     reportGroupName: ''
   });
 
-  // Check if user has ADMIN role (since this is admin functionality)
-  const hasAdminAccess = hasRole(teamRoles, 'ADMIN');
+  // Check if user has PRICE_ADMIN or ADMIN role
+  const hasAdminAccess = isPriceAdmin(teamRoles) || hasRole(teamRoles, 'ADMIN');
 
   // Load price change reports from S3
   useEffect(() => {
@@ -410,27 +411,16 @@ const PriceUsersPage = () => {
     loadPriceReports();
   }, [hasAdminAccess]);
 
-  // Mock franchisee users for lock/unlock functionality
-  const mockFranchiseeUsers: FranchiseeUser[] = [
-    {
-      id: '1',
-      username: 'franchise_owner_1',
-      email: 'owner1@franchise.com',
-      groupName: 'Florida East Coast',
-      locationIds: ['4146', '4149'],
-      priceDisabled: false,
-      status: 'unlocked'
-    },
-    {
-      id: '2',
-      username: 'franchise_owner_2',
-      email: 'owner2@franchise.com',
-      groupName: 'North Carolina Region',
-      locationIds: ['4244', '4350', '4885'],
-      priceDisabled: true,
-      status: 'locked'
-    }
-  ];
+  // Transform real price users to the expected format
+  const priceUsersList: PriceUser[] = (priceUsers || []).map(user => ({
+    id: String(user.userId),
+    username: user.username,
+    email: user.email || `${user.username}@example.com`, // Fallback email if not provided
+    groupName: user.group?.name || 'No Group Assigned',
+    locationIds: user.locationIds || [],
+    priceDisabled: user.isDisabled || false,
+    status: user.isDisabled ? 'locked' : 'unlocked'
+  }));
 
   const pendingReports = priceReports.filter(report => report.status === 'pending');
   const sentReports = priceReports.filter(report => report.status === 'sent');
@@ -579,7 +569,7 @@ const PriceUsersPage = () => {
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-xl font-semibold text-red-600">Access Denied</div>
         <div className="text-gray-600">
-          You need ADMIN role access to manage Price Users.
+          You need PRICE_ADMIN or ADMIN role access to manage Price Users.
         </div>
       </div>
     );
@@ -795,11 +785,11 @@ const PriceUsersPage = () => {
           )}
         </div>
 
-        {/* Franchisee Lock/Unlock Management */}
+        {/* Price User Lock/Unlock Management */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Franchisee Access Control
+              Price User Access Control
             </h3>
           </div>
           
@@ -822,7 +812,7 @@ const PriceUsersPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {mockFranchiseeUsers.map(user => (
+                {priceUsersList.map((user: PriceUser) => (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
                       <div>

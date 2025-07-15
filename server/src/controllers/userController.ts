@@ -1082,6 +1082,55 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
 };
 
 /**
+ * Get users with PRICE_USER role
+ */
+export const getPriceUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log('[GET /users/price-users] Fetching users with PRICE_USER role');
+    
+    // Get users with teams that have PRICE_USER role
+    const priceUsers = await prisma.user.findMany({
+      where: {
+        isDisabled: false,
+        team: {
+          teamRoles: {
+            some: {
+              role: {
+                name: 'PRICE_USER'
+              }
+            }
+          }
+        }
+      },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        },
+        group: true
+      },
+      orderBy: {
+        username: 'asc'
+      }
+    });
+    
+    console.log(`[GET /users/price-users] Found ${priceUsers.length} price users`);
+    res.json(priceUsers);
+  } catch (error: any) {
+    console.error('[GET /users/price-users] Error:', error);
+    res.status(500).json({
+      message: "Error fetching price users",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
  * Delete an unconfirmed user from Cognito only (no local DB record)
  */
 export const deleteCognitoUser = async (req: Request, res: Response): Promise<void> => {
