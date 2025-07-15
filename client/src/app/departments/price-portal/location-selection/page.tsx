@@ -131,7 +131,7 @@ const LocationSelectionPage = () => {
                 Select Locations for Price Management
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Choose which locations you want to load price data for. Selecting fewer locations will improve loading performance.
+                Choose which locations you want to load price data for.
               </p>
             </div>
             <div className="text-right">
@@ -197,7 +197,9 @@ const LocationSelectionPage = () => {
                   {selectedLocations.map((location) => (
                     <div
                       key={location.id}
-                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+                      onClick={() => handleLocationRemove(location.id)}
+                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                      title="Click to remove location"
                     >
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
@@ -207,15 +209,11 @@ const LocationSelectionPage = () => {
                           ID: {location.id}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleLocationRemove(location.id)}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                        title="Remove location"
-                      >
+                      <div className="text-red-600 dark:text-red-400">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
-                      </button>
+                      </div>
                     </div>
                   ))}
                 </div>
