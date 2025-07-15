@@ -86,29 +86,44 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
     } else if (fileNameWithoutExt.includes('-')) {
       // Old format with dashes (fallback)
       const fileNameParts = fileNameWithoutExt.split('-');
-      reportId = fileNameParts.length >= 3 ? `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}` : fileNameWithoutExt;
+      if (fileNameParts.length >= 3) {
+        reportId = `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}`;
+      } else {
+        reportId = fileNameWithoutExt;
+      }
     }
+    
+    console.log('Parsing filename:', fileName);
+    console.log('Extracted data:', { reportId, extractedUsername, extractedUserId });
     
     let groupName = 'Unknown Group';
     let submittedDate = new Date().toISOString();
     let franchiseeName = extractedUsername; // Use extracted username as franchisee name
     let locationIds: string[] = [];
     
+    console.log('CSV headers:', headers);
+    console.log('CSV lines count:', lines.length);
+    
     // Parse CSV rows
     for (let i = 1; i < lines.length; i++) {
       const row = lines[i].split(',').map(cell => cell.trim());
-      if (row.length < headers.length) continue;
+      if (row.length < headers.length) {
+        console.log(`Skipping row ${i}: insufficient columns (${row.length} < ${headers.length})`);
+        continue;
+      }
       
       const rowData: {[key: string]: string} = {};
       headers.forEach((header, index) => {
         rowData[header] = row[index] || '';
       });
       
+      console.log(`Row ${i} data:`, rowData);
+      
       // Extract metadata from first row
       if (i === 1) {
         groupName = rowData['Group Name'] || groupName;
         submittedDate = rowData['Submitted Date'] || submittedDate;
-        franchiseeName = rowData['Group Name'] || franchiseeName; // Use group name as franchisee name
+        franchiseeName = extractedUsername; // Use extracted username instead of group name
       }
       
       // Parse price change data
@@ -129,8 +144,12 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
         if (!locationIds.includes(locationId)) {
           locationIds.push(locationId);
         }
+      } else {
+        console.log(`Skipping row ${i}: invalid data`, { itemName, locationId, oldPrice, newPrice });
       }
     }
+    
+    console.log('Total changes parsed:', changes.length);
     
     if (changes.length === 0) return null;
     

@@ -65,6 +65,11 @@ const PricePortalPage = () => {
         totalChanges?: number;
         error?: string;
     }>({ isOpen: false, success: false });
+    
+    const [validationModal, setValidationModal] = useState<{
+        isOpen: boolean;
+        errors: string[];
+    }>({ isOpen: false, errors: [] });
 
     // Check for selected locations and redirect if none found
     useEffect(() => {
@@ -224,8 +229,11 @@ const PricePortalPage = () => {
     };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
+        // Automatically limit to 2 decimal places
+        const limitedPrice = parseFloat(newRegularPrice.toFixed(2));
+        
         setPriceChanges(prevChanges => {
-            const updatedChanges = { ...prevChanges, [itemLocationKey]: newRegularPrice };
+            const updatedChanges = { ...prevChanges, [itemLocationKey]: limitedPrice };
             const [itemName, locationId] = itemLocationKey.split('|');
             const changedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.name === itemName);
 
@@ -233,7 +241,7 @@ const PricePortalPage = () => {
                 const saucedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.originalId === changedItem.id);
                 if (saucedItem) {
                     const unitCount = changedItem.sauceUnitCount || 1;
-                    const calculatedSaucedItemPrice = newRegularPrice + (unitCount * newSaucedPrice);
+                    const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
                     const saucedItemKey = `${saucedItem.name}|${locationId}`;
                     updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                 }
@@ -254,7 +262,10 @@ const PricePortalPage = () => {
             // Validate changes
             const validation = validatePriceChanges(changes);
             if (!validation.isValid) {
-                alert(`Validation errors:\n${validation.errors.join('\n')}`);
+                setValidationModal({
+                    isOpen: true,
+                    errors: validation.errors
+                });
                 return;
             }
             
@@ -546,6 +557,49 @@ const PricePortalPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Validation Error Modal */}
+            {validationModal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <div className="text-center">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                Validation Errors
+                            </h3>
+                            
+                            <div className="text-left space-y-2 text-sm text-gray-600 dark:text-gray-300 max-h-60 overflow-y-auto">
+                                {validationModal.errors.map((error, index) => (
+                                    <div key={index} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                                        <div className="flex items-start">
+                                            <svg className="w-4 h-4 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                            </svg>
+                                            <span className="text-red-700 dark:text-red-300">{error}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 flex justify-center">
+                            <button
+                                onClick={() => setValidationModal({ isOpen: false, errors: [] })}
+                                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                            >
+                                Fix Issues
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Submission Result Modal */}
             {submissionModal.isOpen && (
