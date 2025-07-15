@@ -75,13 +75,30 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
     let extractedUserId = 'unknown';
     
     if (fileNameWithoutExt.includes('_')) {
-      // New format with underscores
-      const parts = fileNameWithoutExt.split('_');
-      if (parts.length >= 5) {
-        // [timestamp, groupName, username, userId, reportId]
-        extractedUsername = parts[2].replace(/[_-]/g, ' '); // Convert back from sanitized format
-        extractedUserId = parts[3];
-        reportId = parts[4];
+      // New format: timestamp_groupName_username_userId_PRICE-reportId
+      // Find where PRICE- starts to properly split the filename
+      const priceIndex = fileNameWithoutExt.indexOf('PRICE-');
+      if (priceIndex !== -1) {
+        // Extract the report ID (everything from PRICE- onwards)
+        reportId = fileNameWithoutExt.substring(priceIndex);
+        
+        // Extract the parts before PRICE-
+        const beforePrice = fileNameWithoutExt.substring(0, priceIndex - 1); // -1 to remove the underscore
+        const parts = beforePrice.split('_');
+        
+        if (parts.length >= 4) {
+          // Last two parts before PRICE- should be username and userId
+          extractedUserId = parts[parts.length - 1];
+          extractedUsername = parts[parts.length - 2];
+        }
+      } else {
+        // Fallback: try to split by underscores
+        const parts = fileNameWithoutExt.split('_');
+        if (parts.length >= 5) {
+          extractedUsername = parts[parts.length - 3];
+          extractedUserId = parts[parts.length - 2];
+          reportId = parts[parts.length - 1];
+        }
       }
     } else if (fileNameWithoutExt.includes('-')) {
       // Old format with dashes (fallback)
@@ -104,9 +121,29 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
     console.log('CSV headers:', headers);
     console.log('CSV lines count:', lines.length);
     
-    // Parse CSV rows
+    // Parse CSV rows with better handling for quoted fields
     for (let i = 1; i < lines.length; i++) {
-      const row = lines[i].split(',').map(cell => cell.trim());
+      const line = lines[i];
+      if (!line.trim()) continue;
+      
+      // Better CSV parsing that handles quoted fields
+      const row: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          row.push(current.trim().replace(/^"|"$/g, '')); // Remove surrounding quotes
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      row.push(current.trim().replace(/^"|"$/g, '')); // Add the last field
+      
       if (row.length < headers.length) {
         console.log(`Skipping row ${i}: insufficient columns (${row.length} < ${headers.length})`);
         continue;
@@ -114,7 +151,7 @@ const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<P
       
       const rowData: {[key: string]: string} = {};
       headers.forEach((header, index) => {
-        rowData[header] = row[index] || '';
+        rowData[header] = (row[index] || '').replace(/^\t+/, ''); // Remove leading tabs
       });
       
       console.log(`Row ${i} data:`, rowData);
