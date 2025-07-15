@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useGetAuthUserQuery } from "@/state/api";
 import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
 import { hasAnyRole, hasLocationAccess } from "@/lib/accessControl";
@@ -20,12 +21,15 @@ import {
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 
 const PricePortalPage = () => {
+    const router = useRouter();
     const { data: authData, isLoading: userIsLoading } = useGetAuthUserQuery({});
     const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
 
     const teamRoles = authData?.userDetails?.team?.teamRoles;
     const user = authData?.userDetails;
+    const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
     
+    const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
     const [crossLocationItems, setCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
     const [originalCrossLocationItems, setOriginalCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
     const [availableLocations, setAvailableLocations] = useState<LocationInfo[]>([]);
@@ -49,9 +53,47 @@ const PricePortalPage = () => {
         error?: string;
     }>({ isOpen: false, success: false });
 
+    // Check for selected locations and redirect if none found
+    useEffect(() => {
+        if (user?.locationIds && locationsData?.locations && hasAccess) {
+            const storedLocationIds = sessionStorage.getItem('selectedLocationIds');
+            if (!storedLocationIds) {
+                // No locations selected, redirect to location selection
+                router.push('/departments/price-portal/location-selection');
+                return;
+            }
+            
+            try {
+                const parsedLocationIds = JSON.parse(storedLocationIds);
+                if (!Array.isArray(parsedLocationIds) || parsedLocationIds.length === 0) {
+                    router.push('/departments/price-portal/location-selection');
+                    return;
+                }
+                
+                // Validate that selected locations are still accessible to user
+                const validLocationIds = parsedLocationIds.filter(locationId =>
+                    hasLocationAccess(user.locationIds, locationId)
+                );
+                
+                if (validLocationIds.length === 0) {
+                    // User no longer has access to selected locations
+                    sessionStorage.removeItem('selectedLocationIds');
+                    router.push('/departments/price-portal/location-selection');
+                    return;
+                }
+                
+                setSelectedLocationIds(validLocationIds);
+            } catch (error) {
+                console.error('Error parsing selected location IDs:', error);
+                sessionStorage.removeItem('selectedLocationIds');
+                router.push('/departments/price-portal/location-selection');
+            }
+        }
+    }, [user, locationsData, hasAccess, router]);
+
     useEffect(() => {
         const loadAndProcessData = async () => {
-            if (user?.locationIds && locationsData?.locations) {
+            if (user?.locationIds && locationsData?.locations && selectedLocationIds.length > 0) {
                 try {
                     setIsPriceDataLoading(true);
                     setPriceDataError(null);
@@ -80,16 +122,16 @@ const PricePortalPage = () => {
                     console.log('Available locations:', locations);
                     console.log('Cross-location items sample:', items.slice(0, 3));
                     
-                    // Filter items based on user's location access
+                    // Filter items based on SELECTED locations (not all user locations)
                     const accessibleItems = items.filter(item => {
                         return Object.keys(item.locationPrices).some(locationId =>
-                            hasLocationAccess(user.locationIds, locationId)
+                            selectedLocationIds.includes(locationId)
                         );
                     });
                     
-                    // Filter locations to only show those the user has access to
+                    // Filter locations to only show SELECTED locations
                     const accessibleLocations = locations.filter(location =>
-                        hasLocationAccess(user.locationIds, location.id)
+                        selectedLocationIds.includes(location.id)
                     );
                     
                     setCrossLocationItems(accessibleItems);
@@ -127,8 +169,6 @@ const PricePortalPage = () => {
         if (!user?.locationIds || !locationsData?.locations) return [];
         return locationsData.locations.filter((location: Location) => user.locationIds!.includes(location.id));
     }, [user?.locationIds, locationsData?.locations]);
-
-    const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
     const isPriceDisabled = false;
 
     const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
@@ -291,14 +331,25 @@ const PricePortalPage = () => {
             
             <div className="mt-6 space-y-6">
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Locations</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Selected Locations</h2>
+                        <button
+                            onClick={() => router.push('/departments/price-portal/location-selection')}
+                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        >
+                            Change Locations
+                        </button>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                        {userLocations.map((location: Location) => (
+                        {availableLocations.map((location: LocationInfo) => (
                             <span key={location.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-                                {location.name}
+                                {location.displayName}
                             </span>
                         ))}
                     </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        Showing price data for {availableLocations.length} selected location{availableLocations.length !== 1 ? 's' : ''}
+                    </p>
                 </div>
 
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-lg mx-auto">
