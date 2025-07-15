@@ -151,10 +151,17 @@ const PricePortalPage = () => {
                         );
                     });
                     
-                    // Filter locations to only show SELECTED locations
-                    const accessibleLocations = locations.filter(location =>
+                    // Use real GraphQL location data instead of CSV-derived location data for display
+                    const realSelectedLocations = locationsData.locations.filter((location: Location) =>
                         selectedLocationIds.includes(location.id)
                     );
+                    
+                    // Convert to LocationInfo format for consistency
+                    const accessibleLocations: LocationInfo[] = realSelectedLocations.map((location: Location) => ({
+                        id: location.id,
+                        name: location.name,
+                        displayName: location.name
+                    }));
                     
                     setCrossLocationItems(accessibleItems);
                     setOriginalCrossLocationItems(accessibleItems); // Store original data for change tracking
