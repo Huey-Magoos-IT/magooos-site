@@ -1120,11 +1120,156 @@ export const getPriceUsers = async (req: Request, res: Response): Promise<void> 
     });
     
     console.log(`[GET /users/price-users] Found ${priceUsers.length} price users`);
+    
+    // Debug: Log each user found
+    priceUsers.forEach(user => {
+      console.log(`[GET /users/price-users] User: ${user.username} (ID: ${user.userId}) - Team: ${user.team?.teamName} (ID: ${user.teamId}) - Roles: ${user.team?.teamRoles?.map(tr => tr.role.name).join(', ')}`);
+    });
+    
+    // Debug: Also check if corporateuser exists at all
+    const corporateUser = await prisma.user.findFirst({
+      where: { username: 'corporateuser' },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: {
+                role: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    if (corporateUser) {
+      console.log(`[GET /users/price-users] DEBUG - corporateuser found: ID ${corporateUser.userId}, Team: ${corporateUser.team?.teamName} (ID: ${corporateUser.teamId}), isDisabled: ${corporateUser.isDisabled}, Roles: ${corporateUser.team?.teamRoles?.map(tr => tr.role.name).join(', ')}`);
+    } else {
+      console.log('[GET /users/price-users] DEBUG - corporateuser NOT found in database');
+    }
+    
     res.json(priceUsers);
   } catch (error: any) {
     console.error('[GET /users/price-users] Error:', error);
     res.status(500).json({
       message: "Error fetching price users",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Toggle user status (enable/disable) for price users
+ */
+export const toggleUserStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const targetUserId = parseInt(userId);
+    
+    console.log(`[PATCH /users/${userId}/toggle-status] Toggling user status`);
+    
+    if (isNaN(targetUserId)) {
+      res.status(400).json({ message: "Invalid user ID format" });
+      return;
+    }
+    
+    // Authentication check using existing pattern
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    // Check if requesting user has PRICE_ADMIN or ADMIN role
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    const isPriceAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'PRICE_ADMIN');
+    
+    if (!isAdmin && !isPriceAdmin) {
+      res.status(403).json({ message: "Access denied: ADMIN or PRICE_ADMIN role required" });
+      return;
+    }
+    
+    // Find the target user
+    const targetUser = await prisma.user.findUnique({
+      where: { userId: targetUserId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!targetUser) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    
+    // Verify target user has PRICE_USER role
+    const hasPriceUserRole = targetUser.team?.teamRoles?.some((tr: any) => tr.role.name === 'PRICE_USER');
+    if (!hasPriceUserRole) {
+      res.status(400).json({ message: "User does not have PRICE_USER role" });
+      return;
+    }
+    
+    // Toggle the user's disabled status
+    const newDisabledStatus = !targetUser.isDisabled;
+    
+    const updatedUser = await prisma.user.update({
+      where: { userId: targetUserId },
+      data: { isDisabled: newDisabledStatus },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        },
+        group: true
+      }
+    });
+    
+    console.log(`[PATCH /users/${userId}/toggle-status] User ${updatedUser.username} status changed to ${newDisabledStatus ? 'disabled' : 'enabled'}`);
+    
+    res.json({
+      message: `User ${newDisabledStatus ? 'locked' : 'unlocked'} successfully`,
+      user: updatedUser
+    });
+  } catch (error: any) {
+    console.error(`[PATCH /users/${req.params.userId}/toggle-status] Error:`, error);
+    res.status(500).json({
+      message: "Error toggling user status",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useGetAuthUserQuery, useGetPriceUsersQuery } from "@/state/api";
+import { useGetAuthUserQuery, useGetPriceUsersQuery, useToggleUserStatusMutation } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
@@ -338,7 +338,8 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 const PriceUsersPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
   const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
-  const { data: priceUsers, isLoading: priceUsersLoading } = useGetPriceUsersQuery();
+  const { data: priceUsers, isLoading: priceUsersLoading, refetch: refetchPriceUsers } = useGetPriceUsersQuery();
+  const [toggleUserStatus] = useToggleUserStatusMutation();
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   
   // State management
@@ -427,9 +428,26 @@ const PriceUsersPage = () => {
   const archivedReports = priceReports.filter(report => report.status === 'archived');
   const displayReports = showArchived ? archivedReports : [...pendingReports, ...sentReports];
 
-  const handleToggleLock = (userId: string) => {
-    // TODO: Implement lock/unlock logic for franchisee users
-    console.log('Toggle lock for user:', userId);
+  const handleToggleLock = async (userId: string) => {
+    try {
+      console.log('Toggling lock status for user:', userId);
+      
+      const result = await toggleUserStatus({ userId: parseInt(userId) }).unwrap();
+      
+      console.log('Toggle result:', result);
+      
+      // Show success message
+      alert(result.message);
+      
+      // Refetch the price users to update the UI
+      refetchPriceUsers();
+    } catch (error: any) {
+      console.error('Error toggling user status:', error);
+      
+      // Show error message
+      const errorMessage = error?.data?.message || error?.message || 'Failed to toggle user status';
+      alert(`Error: ${errorMessage}`);
+    }
   };
 
   const handleArchiveReport = (reportId: string) => {

@@ -14,6 +14,7 @@ import {
   resendVerificationLink,
   deleteCognitoUser,
   getPriceUsers,
+  toggleUserStatus,
 } from "../controllers/userController";
 
 const router = Router();
@@ -37,6 +38,7 @@ router.delete("/cognito/:username", deleteCognitoUser); // DELETE a Cognito user
 
 // --- Price User Management Routes ---
 router.get("/price-users", getPriceUsers); // GET users with PRICE_USER role
+router.patch("/:userId/toggle-status", toggleUserStatus); // PATCH to toggle user status (lock/unlock)
 
 // Alternative POST endpoint using existing API Gateway patterns - fixed URL approach
 router.post("/team-assignment", (req, res) => {

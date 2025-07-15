@@ -466,6 +466,14 @@ export const api = createApi({
       query: () => "users/price-users",
       providesTags: ["Users"],
     }),
+    // Toggle user status (lock/unlock) for price users
+    toggleUserStatus: build.mutation<{ message: string; user: User }, { userId: number }>({
+      query: ({ userId }) => ({
+        url: `users/${userId}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
@@ -507,4 +515,5 @@ export const {
   useDeleteCognitoUserMutation,
   // Price user management hooks
   useGetPriceUsersQuery,
+  useToggleUserStatusMutation,
 } = api;
