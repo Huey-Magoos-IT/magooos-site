@@ -142,24 +142,43 @@ export const uploadPriceChangeReport = async (
     const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9-_]/g, '_');
     const filename = `${timestamp}_${sanitizedGroupName}_${reportId}.csv`;
     
-    // For now, we'll use a simple approach to upload to S3
-    // In a real implementation, this would use AWS SDK or a backend API
     const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
     
-    // Create a blob and simulate upload (in real implementation, this would be a proper S3 upload)
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    // Create the full URL for the new active-price-reports folder
+    const uploadUrl = `${S3_DATA_LAKE}/active-price-reports/${filename}`;
     
-    // For demonstration, we'll return success with a mock URL
-    // In production, implement actual S3 upload via backend API
-    const mockUrl = `${S3_DATA_LAKE}/temporary-price-changes/${filename}`;
-    
-    console.log('Price change report would be uploaded to:', mockUrl);
+    console.log('Uploading price change report to:', uploadUrl);
     console.log('CSV content preview:', csvContent.substring(0, 200) + '...');
     
-    return {
-      success: true,
-      url: mockUrl
-    };
+    // Create a blob with the CSV content
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    
+    // Attempt to upload using PUT request (S3 REST API)
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Length': blob.size.toString()
+      }
+    });
+    
+    if (response.ok) {
+      console.log('Price change report uploaded successfully');
+      return {
+        success: true,
+        url: uploadUrl
+      };
+    } else {
+      console.error('Upload failed:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      
+      return {
+        success: false,
+        error: `Upload failed: ${response.status} ${response.statusText}`
+      };
+    }
   } catch (error) {
     console.error('Error uploading price change report:', error);
     return {

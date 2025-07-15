@@ -287,8 +287,8 @@ const PriceUsersPage = () => {
       
       setIsLoadingReports(true);
       try {
-        // Fetch files from the temporary-price-changes directory
-        const files = await fetchFiles(S3_DATA_LAKE, 'temporary-price-changes/');
+        // Fetch files from the active-price-reports directory
+        const files = await fetchFiles(S3_DATA_LAKE, 'active-price-reports/');
         console.log('Found price change files:', files);
         
         if (files.length === 0) {
@@ -302,7 +302,7 @@ const PriceUsersPage = () => {
         // Process each CSV file
         for (const fileName of files) {
           try {
-            const csvData = await fetchCSV(`${S3_DATA_LAKE}/temporary-price-changes/${fileName}`);
+            const csvData = await fetchCSV(`${S3_DATA_LAKE}/active-price-reports/${fileName}`);
             const report = await parsePriceChangeCSV(csvData, fileName);
             if (report) {
               reports.push(report);
