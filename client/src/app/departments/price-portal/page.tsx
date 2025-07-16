@@ -420,7 +420,7 @@ const PricePortalPage = () => {
                             </div>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-                                <input id="newSaucedPriceInput" type="number" step="0.01" min="0" value={newSaucedPrice} onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)} className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
+                                <input id="newSaucedPriceInput" type="number" step="0.01" min="0" value={newSaucedPrice} onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)} onBlur={(e) => { const value = parseFloat(e.target.value); if (!isNaN(value)) { setNewSaucedPrice(parseFloat(value.toFixed(2))); } }} className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
                             </div>
                         </div>
                     </div>
@@ -504,6 +504,12 @@ const PricePortalPage = () => {
                                                                         placeholder={currentPrice !== undefined ? currentPrice.toFixed(2) : '0.00'}
                                                                         value={priceChanges[priceChangeKey] || ''}
                                                                         onChange={(e) => handlePriceChange(priceChangeKey, parseFloat(e.target.value) || 0)}
+                                                                        onBlur={(e) => {
+                                                                            const value = parseFloat(e.target.value);
+                                                                            if (!isNaN(value)) {
+                                                                                handlePriceChange(priceChangeKey, parseFloat(value.toFixed(2)));
+                                                                            }
+                                                                        }}
                                                                         className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                                         disabled={currentPrice === undefined || (syncedItems[item.name] && availableLocations[0] && location.id !== availableLocations[0].id)}
                                                                     />

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useGetAuthUserQuery, useGetUsersQuery, useToggleUserStatusMutation } from "@/state/api";
+import React, { useState, useEffect, useMemo } from "react";
+import { useGetAuthUserQuery, useGetUsersQuery, useToggleUserStatusMutation, useGetTeamsQuery } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
@@ -340,6 +340,7 @@ const PriceUsersPage = () => {
   const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
   const { data: allUsers, isLoading: usersLoading, refetch: refetchUsers } = useGetUsersQuery();
   const [toggleUserStatus] = useToggleUserStatusMutation();
+  const { data: teamsData, isLoading: teamsLoading } = useGetTeamsQuery();
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   
   // State management
@@ -413,9 +414,22 @@ const PriceUsersPage = () => {
   }, [hasAdminAccess]);
 
   // Filter users with PRICE_USER role and transform to expected format
-  const priceUsers = (allUsers || []).filter(user =>
-    user.team?.teamRoles?.some(tr => tr.role.name === 'PRICE_USER')
-  );
+  const priceUsers = useMemo(() => {
+    if (!allUsers || !teamsData?.teams) return [];
+    
+    const teams = teamsData.teams;
+
+    return allUsers.filter(user => {
+      // Find the team the user belongs to
+      const userTeam = teams.find(team => team.id === user.teamId);
+      if (!userTeam || !userTeam.teamRoles) {
+        return false;
+      }
+      
+      // Check if any of the team's roles is 'PRICE_USER'
+      return userTeam.teamRoles.some(tr => tr.role.name === 'PRICE_USER');
+    });
+  }, [allUsers, teamsData]);
   
   const priceUsersList: PriceUser[] = priceUsers.map(user => ({
     id: String(user.userId),
@@ -578,7 +592,7 @@ const PriceUsersPage = () => {
     return locationIds.map(id => locationMap[id] || `Location ${id}`).join(', ');
   };
 
-  if (isLoading) {
+  if (isLoading || usersLoading || teamsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Loading...</div>
