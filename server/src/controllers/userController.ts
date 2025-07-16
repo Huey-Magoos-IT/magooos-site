@@ -276,6 +276,19 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
       orderBy: {
         username: 'asc',
       },
+      select: {
+        userId: true,
+        cognitoId: true,
+        username: true,
+        profilePictureUrl: true,
+        teamId: true,
+        groupId: true,
+        locationIds: true,
+        isDisabled: true,
+        isLocked: true, // Ensure isLocked is included in the response
+        team: true,
+        group: true
+      }
     });
     res.json(users);
   } catch (error: any) {
@@ -1242,12 +1255,12 @@ export const toggleUserStatus = async (req: Request, res: Response): Promise<voi
       return;
     }
     
-    // Toggle the user's disabled status
-    const newDisabledStatus = !targetUser.isDisabled;
+    // Toggle the user's locked status
+    const newLockedStatus = !targetUser.isLocked;
     
     const updatedUser = await prisma.user.update({
       where: { userId: targetUserId },
-      data: { isDisabled: newDisabledStatus },
+      data: { isLocked: newLockedStatus },
       include: {
         team: {
           include: {
@@ -1260,10 +1273,10 @@ export const toggleUserStatus = async (req: Request, res: Response): Promise<voi
       }
     });
     
-    console.log(`[PATCH /users/${userId}/toggle-status] User ${updatedUser.username} status changed to ${newDisabledStatus ? 'disabled' : 'enabled'}`);
+    console.log(`[PATCH /users/${userId}/toggle-status] User ${updatedUser.username} lock status changed to ${newLockedStatus ? 'locked' : 'unlocked'}`);
     
     res.json({
-      message: `User ${newDisabledStatus ? 'locked' : 'unlocked'} successfully`,
+      message: `User ${newLockedStatus ? 'locked' : 'unlocked'} successfully`,
       user: updatedUser
     });
   } catch (error: any) {
