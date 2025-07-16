@@ -46,7 +46,7 @@ interface PriceUser {
   email: string;
   groupName: string;
   locationIds: string[];
-  priceDisabled: boolean;
+  isLocked: boolean; // Replaces priceDisabled
   status: 'unlocked' | 'locked';
 }
 
@@ -360,6 +360,11 @@ const PriceUsersPage = () => {
     changes: null,
     reportGroupName: ''
   });
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({ isOpen: false, title: '', message: '' });
 
   // Check if user has PRICE_ADMIN or ADMIN role
   const hasAdminAccess = isPriceAdmin(teamRoles) || hasRole(teamRoles, 'ADMIN');
@@ -437,8 +442,8 @@ const PriceUsersPage = () => {
     email: user.email || `${user.username}@example.com`, // Fallback email if not provided
     groupName: user.group?.name || 'No Group Assigned',
     locationIds: user.locationIds || [],
-    priceDisabled: user.isDisabled || false,
-    status: user.isDisabled ? 'locked' : 'unlocked'
+      isLocked: user.isLocked || false,
+    status: user.isLocked ? 'locked' : 'unlocked'
   }));
 
   const pendingReports = priceReports.filter(report => report.status === 'pending');
@@ -454,17 +459,23 @@ const PriceUsersPage = () => {
       
       console.log('Toggle result:', result);
       
-      // Show success message
-      alert(result.message);
+      setStatusModal({
+        isOpen: true,
+        title: 'Status Updated',
+        message: result.message,
+      });
       
       // Refetch the price users to update the UI
       refetchUsers();
     } catch (error: any) {
       console.error('Error toggling user status:', error);
       
-      // Show error message
       const errorMessage = error?.data?.message || error?.message || 'Failed to toggle user status';
-      alert(`Error: ${errorMessage}`);
+      setStatusModal({
+        isOpen: true,
+        title: 'Error',
+        message: errorMessage,
+      });
     }
   };
 
@@ -872,9 +883,9 @@ const PriceUsersPage = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.status === 'unlocked' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        user.isLocked
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       }`}>
                         {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                       </span>
@@ -923,6 +934,28 @@ const PriceUsersPage = () => {
         reportGroupName={changesModalData.reportGroupName}
         locationMap={locationMap}
       />
+
+      {/* Status Modal for Lock/Unlock actions */}
+      {statusModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {statusModal.title}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {statusModal.message}
+            </p>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setStatusModal({ isOpen: false, title: '', message: '' })}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

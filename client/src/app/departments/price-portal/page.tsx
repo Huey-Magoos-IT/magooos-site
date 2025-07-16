@@ -203,7 +203,7 @@ const PricePortalPage = () => {
         if (!user?.locationIds || !locationsData?.locations) return [];
         return locationsData.locations.filter((location: Location) => user.locationIds!.includes(location.id));
     }, [user?.locationIds, locationsData?.locations]);
-    const isPriceDisabled = false;
+    const isUserLocked = user?.isLocked || false;
 
     const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
         ? crossLocationItems
@@ -350,7 +350,7 @@ const PricePortalPage = () => {
         );
     }
     
-    if (isPriceDisabled) {
+    if (isUserLocked) {
         return (
           <div className="p-6">
             <Header name="Price Portal" />

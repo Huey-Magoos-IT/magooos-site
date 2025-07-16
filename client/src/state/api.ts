@@ -68,6 +68,7 @@ export interface User {
   team?: Team;
   group?: Group;
   isDisabled?: boolean;
+  isLocked?: boolean;
 }
 
 export interface CognitoUser {
