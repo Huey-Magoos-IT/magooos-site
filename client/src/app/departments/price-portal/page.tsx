@@ -28,20 +28,9 @@ const PricePortalPage = () => {
     const teamRoles = authData?.userDetails?.team?.teamRoles;
     const user = authData?.userDetails;
     const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
+    const isUserLocked = user?.isLocked || false;
 
-    // Clear location selection on page refresh (session-only persistence)
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-            // Clear sessionStorage when page is refreshed or closed
-            sessionStorage.removeItem('selectedLocationIds');
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, []);
-    
+    // State management
     const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
     const [crossLocationItems, setCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
     const [originalCrossLocationItems, setOriginalCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
@@ -70,45 +59,86 @@ const PricePortalPage = () => {
         isOpen: boolean;
         errors: string[];
     }>({ isOpen: false, errors: [] });
+    
+    // Perform initial loading and access checks
+    if (userIsLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-lg">Loading page data...</div>
+            </div>
+        );
+    }
+    
+    if (isUserLocked) {
+        return (
+          <div className="p-6">
+            <Header name="Price Portal" />
+            <div className="mt-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
+                  Price Management Disabled
+                </div>
+                <div className="text-red-700 dark:text-red-300 mb-4">
+                  Your price management access has been temporarily disabled.
+                </div>
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  Contact your administrator for assistance: ITSUPPORT@hueymagoos.com
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
 
+    if (!hasAccess) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="text-xl font-semibold text-red-600">Access Denied</div>
+                <div className="text-gray-600">
+                    You need LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role access to view this content.
+                </div>
+            </div>
+        );
+    }
+
+    // Clear location selection on page refresh (session-only persistence)
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            sessionStorage.removeItem('selectedLocationIds');
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
+    
     // Check for selected locations and redirect if none found
     useEffect(() => {
         if (user?.locationIds && locationsData?.locations && hasAccess) {
             const storedLocationIds = sessionStorage.getItem('selectedLocationIds');
-            console.log('Checking stored location IDs:', storedLocationIds);
-            
             if (!storedLocationIds) {
-                console.log('No stored location IDs found, redirecting to location selection');
                 router.push('/departments/price-portal/location-selection');
                 return;
             }
             
             try {
                 const parsedLocationIds = JSON.parse(storedLocationIds);
-                console.log('Parsed location IDs:', parsedLocationIds);
-                
                 if (!Array.isArray(parsedLocationIds) || parsedLocationIds.length === 0) {
-                    console.log('Invalid or empty location IDs, redirecting to location selection');
                     router.push('/departments/price-portal/location-selection');
                     return;
                 }
                 
-                // Validate that selected locations are still accessible to user
                 const validLocationIds = parsedLocationIds.filter(locationId =>
                     hasLocationAccess(user.locationIds, locationId)
                 );
                 
-                console.log('Valid location IDs after access check:', validLocationIds);
-                
                 if (validLocationIds.length === 0) {
-                    // User no longer has access to selected locations
-                    console.log('User has no access to selected locations, clearing and redirecting');
                     sessionStorage.removeItem('selectedLocationIds');
                     router.push('/departments/price-portal/location-selection');
                     return;
                 }
                 
-                console.log('Setting selected location IDs:', validLocationIds);
                 setSelectedLocationIds(validLocationIds);
             } catch (error) {
                 console.error('Error parsing selected location IDs:', error);
@@ -203,8 +233,6 @@ const PricePortalPage = () => {
         if (!user?.locationIds || !locationsData?.locations) return [];
         return locationsData.locations.filter((location: Location) => user.locationIds!.includes(location.id));
     }, [user?.locationIds, locationsData?.locations]);
-    const isUserLocked = user?.isLocked || false;
-
     const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
         ? crossLocationItems
         : crossLocationItems.filter((item: CrossLocationPriceItem) => item.category === selectedCategory);
@@ -331,45 +359,13 @@ const PricePortalPage = () => {
         }
     };
 
-    if (userIsLoading || locationsIsLoading || isPriceDataLoading) {
+    if (locationsIsLoading || isPriceDataLoading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-lg">Loading page data...</div>
+                <div className="text-lg">Loading price data...</div>
             </div>
         );
     }
-
-    if (!hasAccess) {
-        return (
-            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                <div className="text-xl font-semibold text-red-600">Access Denied</div>
-                <div className="text-gray-600">
-                    You need LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role access to view this content.
-                </div>
-            </div>
-        );
-    }
-    
-    if (isUserLocked) {
-        return (
-          <div className="p-6">
-            <Header name="Price Portal" />
-            <div className="mt-6">
-              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-                <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
-                  Price Management Disabled
-                </div>
-                <div className="text-red-700 dark:text-red-300 mb-4">
-                  Your price management access has been temporarily disabled.
-                </div>
-                <div className="text-sm text-red-600 dark:text-red-400">
-                  Contact your administrator for assistance: admin@hueymagoos.com
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
 
     return (
         <div className="p-6">
