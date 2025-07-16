@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useGetAuthUserQuery } from "@/state/api";
+import { useGetAuthUserQuery, useToggleUserStatusMutation } from "@/state/api";
 import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
 import { hasAnyRole, hasLocationAccess } from "@/lib/accessControl";
 import Header from "@/components/Header";
@@ -37,6 +37,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     isPriceDataLoading: initialIsPriceDataLoading
 }) => {
     const router = useRouter();
+    const [toggleUserStatus] = useToggleUserStatusMutation();
 
     // State management
     const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
@@ -66,6 +67,9 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         isOpen: boolean;
         errors: string[];
     }>({ isOpen: false, errors: [] });
+
+    // State to track submitted report for "report in progress" screen
+    const [submittedReport, setSubmittedReport] = useState<PriceChangeReport | null>(null);
 
     // Clear location selection on page refresh (session-only persistence)
     useEffect(() => {
@@ -267,6 +271,18 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             );
             
             if (uploadResult.success) {
+                // Lock the user immediately after successful submission
+                try {
+                    await toggleUserStatus({ userId: user?.userId! });
+                    console.log('User locked successfully after price submission');
+                } catch (lockError) {
+                    console.error('Failed to lock user after submission:', lockError);
+                    // Continue with success flow even if lock fails - this is a safety measure
+                }
+
+                // Store the submitted report for the "report in progress" screen
+                setSubmittedReport(report);
+                
                 setSubmissionModal({
                     isOpen: true,
                     success: true,
@@ -581,7 +597,14 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         
                         <div className="mt-6 flex justify-center">
                             <button
-                                onClick={() => setSubmissionModal({ isOpen: false, success: false })}
+                                onClick={() => {
+                                    setSubmissionModal({ isOpen: false, success: false });
+                                    if (submissionModal.success) {
+                                        // Redirect to report in progress screen by forcing a page refresh
+                                        // The user will now be locked and see the locked screen
+                                        window.location.reload();
+                                    }
+                                }}
                                 className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                                     submissionModal.success
                                         ? 'bg-green-600 text-white hover:bg-green-700'
@@ -620,15 +643,38 @@ const PricePortalPage = () => {
           <div className="p-6">
             <Header name="Price Portal" />
             <div className="mt-6">
-              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-                <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
-                  Price Management Disabled
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                <div className="text-center mb-6">
+                  <div className="text-blue-600 dark:text-blue-400 text-xl font-bold mb-2">
+                    Price Report In Progress
+                  </div>
+                  <div className="text-blue-700 dark:text-blue-300 mb-4">
+                    Your price changes have been submitted and are being processed.
+                  </div>
+                  <div className="text-sm text-blue-600 dark:text-blue-400">
+                    You will be notified when the report is complete. Contact support for assistance: ITSUPPORT@hueymagoos.com
+                  </div>
                 </div>
-                <div className="text-red-700 dark:text-red-300 mb-4">
-                  Your price management access has been temporarily disabled.
-                </div>
-                <div className="text-sm text-red-600 dark:text-red-400">
-                  Contact your administrator for assistance: ITSUPPORT@hueymagoos.com
+                
+                {/* Show submitted report details if available */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Submitted Changes</h3>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Your price changes are currently being reviewed and processed. Once approved, they will be applied to the system.
+                  </div>
+                  
+                  {/* Placeholder for submitted changes - in a real implementation, this would fetch from the active-price-reports */}
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Report Status: <span className="text-yellow-600 dark:text-yellow-400">Pending Review</span>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Submitted: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      Your changes have been saved to the active reports queue and will be processed by the pricing team.
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
