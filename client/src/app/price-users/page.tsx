@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useGetAuthUserQuery, useGetPriceUsersQuery, useToggleUserStatusMutation } from "@/state/api";
+import { useGetAuthUserQuery, useGetUsersQuery, useToggleUserStatusMutation } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
@@ -338,7 +338,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 const PriceUsersPage = () => {
   const { data: userData, isLoading } = useGetAuthUserQuery({});
   const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
-  const { data: priceUsers, isLoading: priceUsersLoading, refetch: refetchPriceUsers } = useGetPriceUsersQuery();
+  const { data: allUsers, isLoading: usersLoading, refetch: refetchUsers } = useGetUsersQuery();
   const [toggleUserStatus] = useToggleUserStatusMutation();
   const teamRoles = userData?.userDetails?.team?.teamRoles;
   
@@ -412,8 +412,12 @@ const PriceUsersPage = () => {
     loadPriceReports();
   }, [hasAdminAccess]);
 
-  // Transform real price users to the expected format
-  const priceUsersList: PriceUser[] = (priceUsers || []).map(user => ({
+  // Filter users with PRICE_USER role and transform to expected format
+  const priceUsers = (allUsers || []).filter(user =>
+    user.team?.teamRoles?.some(tr => tr.role.name === 'PRICE_USER')
+  );
+  
+  const priceUsersList: PriceUser[] = priceUsers.map(user => ({
     id: String(user.userId),
     username: user.username,
     email: user.email || `${user.username}@example.com`, // Fallback email if not provided
@@ -440,7 +444,7 @@ const PriceUsersPage = () => {
       alert(result.message);
       
       // Refetch the price users to update the UI
-      refetchPriceUsers();
+      refetchUsers();
     } catch (error: any) {
       console.error('Error toggling user status:', error);
       
