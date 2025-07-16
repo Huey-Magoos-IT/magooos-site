@@ -20,6 +20,93 @@ import {
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 
+// Interface for active report data
+interface ActiveReport {
+    filename: string;
+    reportId: string;
+    submittedDate: string;
+    groupName: string;
+    username: string;
+    userId: string;
+    changes: PriceChange[];
+}
+
+// Function to check for active reports for a user
+const checkForActiveReport = async (userId: string, username: string): Promise<ActiveReport | null> => {
+    try {
+        const response = await fetch(`${S3_DATA_LAKE}/active-price-reports/`);
+        if (!response.ok) return null;
+        
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        const keys = xmlDoc.getElementsByTagName('Key');
+        
+        // Look for files that match this user
+        for (let i = 0; i < keys.length; i++) {
+            const filename = keys[i].textContent;
+            if (filename && filename.includes(`_${userId}_`)) {
+                // Found a report for this user, fetch and parse it
+                try {
+                    const reportResponse = await fetch(`${S3_DATA_LAKE}/active-price-reports/${filename}`);
+                    if (reportResponse.ok) {
+                        const csvContent = await reportResponse.text();
+                        const changes = parseCSVToChanges(csvContent);
+                        
+                        // Extract metadata from filename
+                        const parts = filename.split('_');
+                        const timestamp = parts[0];
+                        const reportIdMatch = filename.match(/PRICE-\d+-\d+/);
+                        const reportId = reportIdMatch ? reportIdMatch[0] : 'Unknown';
+                        
+                        return {
+                            filename,
+                            reportId,
+                            submittedDate: timestamp,
+                            groupName: parts.slice(1, -3).join('_').replace(/_/g, ' '),
+                            username,
+                            userId,
+                            changes
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error fetching report:', error);
+                }
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Error checking for active reports:', error);
+        return null;
+    }
+};
+
+// Function to parse CSV content back to PriceChange objects
+const parseCSVToChanges = (csvContent: string): PriceChange[] => {
+    const lines = csvContent.split('\n');
+    const changes: PriceChange[] = [];
+    
+    // Skip header row
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+            const columns = line.split(',');
+            if (columns.length >= 10) {
+                changes.push({
+                    itemName: columns[3].replace(/"/g, ''),
+                    locationId: columns[4].replace(/"/g, ''),
+                    locationName: columns[5].replace(/"/g, ''),
+                    oldPrice: parseFloat(columns[6].replace(/"/g, '')),
+                    newPrice: parseFloat(columns[7].replace(/"/g, '')),
+                    timestamp: columns[9].replace(/"/g, '')
+                });
+            }
+        }
+    }
+    
+    return changes;
+};
+
 // Define the props interface for PricePortalContent
 interface PricePortalContentProps {
     user: any; // User type from auth query
@@ -624,13 +711,37 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 const PricePortalPage = () => {
     const { data: authData, isLoading: userIsLoading } = useGetAuthUserQuery({});
     const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
+    const [activeReport, setActiveReport] = useState<ActiveReport | null>(null);
+    const [checkingReport, setCheckingReport] = useState(false);
 
     const user = authData?.userDetails;
     const teamRoles = authData?.userDetails?.team?.teamRoles;
     const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
     const isUserLocked = user?.isLocked || false;
 
-    if (userIsLoading || locationsIsLoading) {
+    // Check for active reports when user is loaded and locked
+    useEffect(() => {
+        const checkActiveReport = async () => {
+            if (user && isUserLocked && !checkingReport) {
+                setCheckingReport(true);
+                try {
+                    const report = await checkForActiveReport(
+                        String(user.userId),
+                        user.username
+                    );
+                    setActiveReport(report);
+                } catch (error) {
+                    console.error('Error checking for active report:', error);
+                } finally {
+                    setCheckingReport(false);
+                }
+            }
+        };
+
+        checkActiveReport();
+    }, [user, isUserLocked, checkingReport]);
+
+    if (userIsLoading || locationsIsLoading || (isUserLocked && checkingReport)) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-lg">Loading...</div>
@@ -639,47 +750,104 @@ const PricePortalPage = () => {
     }
     
     if (isUserLocked) {
-        return (
-          <div className="p-6">
-            <Header name="Price Portal" />
-            <div className="mt-6">
-              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                <div className="text-center mb-6">
-                  <div className="text-blue-600 dark:text-blue-400 text-xl font-bold mb-2">
-                    Price Report In Progress
-                  </div>
-                  <div className="text-blue-700 dark:text-blue-300 mb-4">
-                    Your price changes have been submitted and are being processed.
-                  </div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">
-                    You will be notified when the report is complete. Contact support for assistance: ITSUPPORT@hueymagoos.com
-                  </div>
-                </div>
-                
-                {/* Show submitted report details if available */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mt-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Submitted Changes</h3>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Your price changes are currently being reviewed and processed. Once approved, they will be applied to the system.
-                  </div>
-                  
-                  {/* Placeholder for submitted changes - in a real implementation, this would fetch from the active-price-reports */}
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Report Status: <span className="text-yellow-600 dark:text-yellow-400">Pending Review</span>
+        // If user is locked and has an active report, show report in progress
+        if (activeReport) {
+            return (
+              <div className="p-6">
+                <Header name="Price Portal" />
+                <div className="mt-6">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                    <div className="text-center mb-6">
+                      <div className="text-blue-600 dark:text-blue-400 text-xl font-bold mb-2">
+                        Price Report In Progress
+                      </div>
+                      <div className="text-blue-700 dark:text-blue-300 mb-4">
+                        Your price changes have been submitted and are being processed.
+                      </div>
+                      <div className="text-sm text-blue-600 dark:text-blue-400">
+                        You will be notified when the report is complete. Contact support for assistance: ITSUPPORT@hueymagoos.com
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Submitted: {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      Your changes have been saved to the active reports queue and will be processed by the pricing team.
+                    
+                    {/* Show actual submitted report details */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mt-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Submitted Changes</h3>
+                      
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Report ID: <span className="font-mono text-blue-600 dark:text-blue-400">{activeReport.reportId}</span>
+                        </div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Status: <span className="text-yellow-600 dark:text-yellow-400">Pending Review</span>
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Submitted: {new Date(activeReport.submittedDate).toLocaleDateString()} at {new Date(activeReport.submittedDate).toLocaleTimeString()}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Group: {activeReport.groupName}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Total Changes: {activeReport.changes.length}
+                        </div>
+                      </div>
+
+                      {/* Show the actual price changes */}
+                      <div className="max-h-96 overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-100 dark:bg-gray-600">
+                            <tr>
+                              <th className="px-3 py-2 text-left">Item</th>
+                              <th className="px-3 py-2 text-left">Location</th>
+                              <th className="px-3 py-2 text-right">Old Price</th>
+                              <th className="px-3 py-2 text-right">New Price</th>
+                              <th className="px-3 py-2 text-right">Change</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {activeReport.changes.map((change, index) => (
+                              <tr key={index} className="border-b border-gray-200 dark:border-gray-600">
+                                <td className="px-3 py-2 text-gray-900 dark:text-white">{change.itemName}</td>
+                                <td className="px-3 py-2 text-gray-600 dark:text-gray-300">{change.locationName}</td>
+                                <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-300">${change.oldPrice.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-right text-gray-900 dark:text-white font-medium">${change.newPrice.toFixed(2)}</td>
+                                <td className={`px-3 py-2 text-right font-medium ${
+                                  change.newPrice > change.oldPrice
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-green-600 dark:text-green-400'
+                                }`}>
+                                  {change.newPrice > change.oldPrice ? '+' : ''}${(change.newPrice - change.oldPrice).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        );
+            );
+        } else {
+            // User is locked but no active report - show generic locked screen
+            return (
+              <div className="p-6">
+                <Header name="Price Portal" />
+                <div className="mt-6">
+                  <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                    <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
+                      Price Management Disabled
+                    </div>
+                    <div className="text-red-700 dark:text-red-300 mb-4">
+                      Your price management access has been temporarily disabled.
+                    </div>
+                    <div className="text-sm text-red-600 dark:text-red-400">
+                      Contact your administrator for assistance: ITSUPPORT@hueymagoos.com
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+        }
     }
 
     if (!hasAccess) {
