@@ -23,7 +23,6 @@ model User {
   groupId           Int?    // For LocationAdmin users
   locationIds       String[] // Array of location IDs the user has access to
   isDisabled        Boolean          @default(false)
-  isPriceLocked     Boolean          @default(false) // Specifically for locking price portal access
 
   authoredTasks   Task[]           @relation("TaskAuthor")
   assignedTasks   Task[]           @relation("TaskAssignee")
