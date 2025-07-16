@@ -22,6 +22,7 @@ model User {
   teamId            Int?
   groupId           Int?    // For LocationAdmin users
   locationIds       String[] // Array of location IDs the user has access to
+  isLocked          Boolean          @default(false)
   isDisabled        Boolean          @default(false)
 
   authoredTasks   Task[]           @relation("TaskAuthor")
