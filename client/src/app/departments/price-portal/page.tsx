@@ -20,15 +20,23 @@ import {
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 
-const PricePortalPage = () => {
-    const router = useRouter();
-    const { data: authData, isLoading: userIsLoading } = useGetAuthUserQuery({});
-    const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
+// Define the props interface for PricePortalContent
+interface PricePortalContentProps {
+    user: any; // User type from auth query
+    locationsData: any; // Locations data from query
+    hasAccess: boolean;
+    locationsIsLoading: boolean;
+    isPriceDataLoading: boolean;
+}
 
-    const teamRoles = authData?.userDetails?.team?.teamRoles;
-    const user = authData?.userDetails;
-    const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
-    const isUserLocked = user?.isLocked || false;
+const PricePortalContent: React.FC<PricePortalContentProps> = ({
+    user,
+    locationsData,
+    hasAccess,
+    locationsIsLoading,
+    isPriceDataLoading: initialIsPriceDataLoading
+}) => {
+    const router = useRouter();
 
     // State management
     const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
@@ -36,9 +44,8 @@ const PricePortalPage = () => {
     const [originalCrossLocationItems, setOriginalCrossLocationItems] = useState<CrossLocationPriceItem[]>([]);
     const [availableLocations, setAvailableLocations] = useState<LocationInfo[]>([]);
     const [categoryList, setCategoryList] = useState<{ value: string, label: string }[]>([]);
-    const [isPriceDataLoading, setIsPriceDataLoading] = useState(false);
+    const [isPriceDataLoading, setIsPriceDataLoading] = useState(initialIsPriceDataLoading);
     const [priceDataError, setPriceDataError] = useState<string | null>(null);
-    
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const CURRENT_SAUCE_PRICE = 0.50; 
@@ -59,47 +66,6 @@ const PricePortalPage = () => {
         isOpen: boolean;
         errors: string[];
     }>({ isOpen: false, errors: [] });
-    
-    // Perform initial loading and access checks
-    if (userIsLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-lg">Loading page data...</div>
-            </div>
-        );
-    }
-    
-    if (isUserLocked) {
-        return (
-          <div className="p-6">
-            <Header name="Price Portal" />
-            <div className="mt-6">
-              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-                <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
-                  Price Management Disabled
-                </div>
-                <div className="text-red-700 dark:text-red-300 mb-4">
-                  Your price management access has been temporarily disabled.
-                </div>
-                <div className="text-sm text-red-600 dark:text-red-400">
-                  Contact your administrator for assistance: ITSUPPORT@hueymagoos.com
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-    if (!hasAccess) {
-        return (
-            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                <div className="text-xl font-semibold text-red-600">Access Denied</div>
-                <div className="text-gray-600">
-                    You need LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role access to view this content.
-                </div>
-            </div>
-        );
-    }
 
     // Clear location selection on page refresh (session-only persistence)
     useEffect(() => {
@@ -155,43 +121,27 @@ const PricePortalPage = () => {
                     setIsPriceDataLoading(true);
                     setPriceDataError(null);
                     
-                    // Fetch files from the price-pool directory
                     const files = await fetchFiles(S3_DATA_LAKE, 'price-pool/');
-                    console.log('Found files in price-pool:', files);
-                    
                     if (files.length === 0) {
                         setPriceDataError('No price data files found');
                         return;
                     }
                     
-                    // For now, use the first file found (you can modify this logic)
-                    // In production, you might want to use the latest file or allow user selection
                     const latestFile = files[0];
-                    console.log('Using file:', latestFile);
-                    
-                    // Fetch and parse the CSV data
                     const csvData = await fetchCSV(`${S3_DATA_LAKE}/price-pool/${latestFile}`);
-                    console.log('CSV data length:', csvData.length);
-                    console.log('CSV data preview:', csvData.substring(0, 500));
                     
                     const { items, locations } = await parseCrossLocationPriceData(csvData);
-                    console.log('Cross-location items count:', items.length);
-                    console.log('Available locations:', locations);
-                    console.log('Cross-location items sample:', items.slice(0, 3));
                     
-                    // Filter items based on SELECTED locations (not all user locations)
                     const accessibleItems = items.filter(item => {
                         return Object.keys(item.locationPrices).some(locationId =>
                             selectedLocationIds.includes(locationId)
                         );
                     });
                     
-                    // Use real GraphQL location data instead of CSV-derived location data for display
                     const realSelectedLocations = locationsData.locations.filter((location: Location) =>
                         selectedLocationIds.includes(location.id)
                     );
                     
-                    // Convert to LocationInfo format for consistency
                     const accessibleLocations: LocationInfo[] = realSelectedLocations.map((location: Location) => ({
                         id: location.id,
                         name: location.name,
@@ -199,10 +149,9 @@ const PricePortalPage = () => {
                     }));
                     
                     setCrossLocationItems(accessibleItems);
-                    setOriginalCrossLocationItems(accessibleItems); // Store original data for change tracking
+                    setOriginalCrossLocationItems(accessibleItems);
                     setAvailableLocations(accessibleLocations);
                     
-                    // Extract unique categories for filtering
                     const uniqueCategories = extractUniqueCategoriesFromCrossLocation(accessibleItems);
                     setCategoryList(uniqueCategories);
                     
@@ -233,6 +182,7 @@ const PricePortalPage = () => {
         if (!user?.locationIds || !locationsData?.locations) return [];
         return locationsData.locations.filter((location: Location) => user.locationIds!.includes(location.id));
     }, [user?.locationIds, locationsData?.locations]);
+
     const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
         ? crossLocationItems
         : crossLocationItems.filter((item: CrossLocationPriceItem) => item.category === selectedCategory);
@@ -257,7 +207,6 @@ const PricePortalPage = () => {
     };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
-        // Automatically limit to 2 decimal places
         const limitedPrice = parseFloat(newRegularPrice.toFixed(2));
         
         setPriceChanges(prevChanges => {
@@ -284,10 +233,8 @@ const PricePortalPage = () => {
 
     const handleSubmitChanges = async () => {
         try {
-            // Extract price changes from current state
             const changes = extractPriceChanges(originalCrossLocationItems, priceChanges, availableLocations);
             
-            // Validate changes
             const validation = validatePriceChanges(changes);
             if (!validation.isValid) {
                 setValidationModal({
@@ -297,7 +244,6 @@ const PricePortalPage = () => {
                 return;
             }
             
-            // Create price change report
             const userInfo = {
                 id: String(user?.userId || 'unknown'),
                 username: user?.username || 'Unknown User',
@@ -306,14 +252,12 @@ const PricePortalPage = () => {
             
             const report = createPriceChangeReport(changes, userInfo, user?.locationIds || []);
             
-            // Convert to CSV
             const csvContent = convertPriceChangesToCSV(changes, {
                 groupName: report.groupName,
                 submittedDate: report.submittedDate,
                 reportId: report.id
             });
             
-            // Upload to S3
             const uploadResult = await uploadPriceChangeReport(
                 csvContent,
                 report.id,
@@ -323,25 +267,14 @@ const PricePortalPage = () => {
             );
             
             if (uploadResult.success) {
-                // Show success modal instead of alert
                 setSubmissionModal({
                     isOpen: true,
                     success: true,
                     reportId: report.id,
                     totalChanges: changes.length
                 });
-                
-                // Reset price changes after successful submission
                 setPriceChanges({});
-                
-                // Log the submission
-                console.log('Price change report submitted:', {
-                    reportId: report.id,
-                    totalChanges: changes.length,
-                    uploadUrl: uploadResult.url
-                });
             } else {
-                // Show error modal instead of alert
                 setSubmissionModal({
                     isOpen: true,
                     success: false,
@@ -366,7 +299,7 @@ const PricePortalPage = () => {
             </div>
         );
     }
-
+    
     return (
         <div className="p-6">
             <Header name={`Price Portal - ${user?.username || 'User'}`} />
@@ -664,4 +597,57 @@ const PricePortalPage = () => {
         </div>
     );
 };
+
+const PricePortalPage = () => {
+    const { data: authData, isLoading: userIsLoading } = useGetAuthUserQuery({});
+    const { data: locationsData, isLoading: locationsIsLoading } = useGetLocationsQuery();
+
+    const user = authData?.userDetails;
+    const teamRoles = authData?.userDetails?.team?.teamRoles;
+    const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
+    const isUserLocked = user?.isLocked || false;
+
+    if (userIsLoading || locationsIsLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-lg">Loading...</div>
+            </div>
+        );
+    }
+    
+    if (isUserLocked) {
+        return (
+          <div className="p-6">
+            <Header name="Price Portal" />
+            <div className="mt-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">
+                  Price Management Disabled
+                </div>
+                <div className="text-red-700 dark:text-red-300 mb-4">
+                  Your price management access has been temporarily disabled.
+                </div>
+                <div className="text-sm text-red-600 dark:text-red-400">
+                  Contact your administrator for assistance: ITSUPPORT@hueymagoos.com
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
+
+    if (!hasAccess) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="text-xl font-semibold text-red-600">Access Denied</div>
+                <div className="text-gray-600">
+                    You need LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role access to view this content.
+                </div>
+            </div>
+        );
+    }
+
+    return <PricePortalContent user={user} locationsData={locationsData} hasAccess={hasAccess} locationsIsLoading={locationsIsLoading} isPriceDataLoading={userIsLoading} />;
+};
+
 export default PricePortalPage;
