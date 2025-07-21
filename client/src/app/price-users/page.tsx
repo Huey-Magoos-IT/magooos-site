@@ -6,39 +6,13 @@ import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
+import { parsePriceChangeCSV, PriceChangeReport, ReportChangeDetail } from "@/lib/reportUtils";
 import {
     PriceChangeReport as UtilPriceChangeReport,
     PriceChange as UtilPriceChange
 } from "@/lib/priceChangeUtils";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
-
-interface PriceChangeReport {
-  id: string;
-  franchiseeId: string;
-  franchiseeName: string;
-  groupName: string;
-  locationIds: string[];
-  submittedDate: string;
-  status: 'pending' | 'sent' | 'archived';
-  changes: {
-    itemName: string;
-    locationId: string;
-    oldPrice: number;
-    newPrice: number;
-  }[];
-  totalChanges: number;
-  // New fields for user tracking
-  userId?: string;
-  username?: string;
-}
-
-interface ReportChangeDetail {
-  itemName: string;
-  locationId: string;
-  oldPrice: number;
-  newPrice: number;
-}
 
 interface PriceUser {
   id: string;
@@ -56,159 +30,6 @@ interface SendReportModalProps {
   report: PriceChangeReport | null;
   onSendReport?: (report: PriceChangeReport, email: string, selectedLocations: string[], scheduleType: 'immediate' | 'scheduled', scheduledDate?: string) => void;
 }
-
-// Function to parse price change CSV files from S3
-const parsePriceChangeCSV = async (csvData: string, fileName: string): Promise<PriceChangeReport | null> => {
-  try {
-    const lines = csvData.trim().split('\n');
-    if (lines.length < 2) return null;
-    
-    const headers = lines[0].split(',').map(h => h.trim());
-    const changes: ReportChangeDetail[] = [];
-    
-    // Extract metadata from filename
-    // New format: {timestamp}_{sanitizedGroupName}_{sanitizedUsername}_{userId}_{reportId}.csv
-    // Old format: PRICE-{timestamp}-{id}-{groupName}.csv (fallback)
-    const fileNameWithoutExt = fileName.replace('.csv', '');
-    let reportId = fileNameWithoutExt;
-    let extractedUsername = 'Unknown User';
-    let extractedUserId = 'unknown';
-    
-    if (fileNameWithoutExt.includes('_')) {
-      // New format: timestamp_groupName_username_userId_PRICE-reportId
-      // Find where PRICE- starts to properly split the filename
-      const priceIndex = fileNameWithoutExt.indexOf('PRICE-');
-      if (priceIndex !== -1) {
-        // Extract the report ID (everything from PRICE- onwards)
-        reportId = fileNameWithoutExt.substring(priceIndex);
-        
-        // Extract the parts before PRICE-
-        const beforePrice = fileNameWithoutExt.substring(0, priceIndex - 1); // -1 to remove the underscore
-        const parts = beforePrice.split('_');
-        
-        if (parts.length >= 4) {
-          // Last two parts before PRICE- should be username and userId
-          extractedUserId = parts[parts.length - 1];
-          extractedUsername = parts[parts.length - 2];
-        }
-      } else {
-        // Fallback: try to split by underscores
-        const parts = fileNameWithoutExt.split('_');
-        if (parts.length >= 5) {
-          extractedUsername = parts[parts.length - 3];
-          extractedUserId = parts[parts.length - 2];
-          reportId = parts[parts.length - 1];
-        }
-      }
-    } else if (fileNameWithoutExt.includes('-')) {
-      // Old format with dashes (fallback)
-      const fileNameParts = fileNameWithoutExt.split('-');
-      if (fileNameParts.length >= 3) {
-        reportId = `${fileNameParts[0]}-${fileNameParts[1]}-${fileNameParts[2]}`;
-      } else {
-        reportId = fileNameWithoutExt;
-      }
-    }
-    
-    console.log('Parsing filename:', fileName);
-    console.log('Extracted data:', { reportId, extractedUsername, extractedUserId });
-    
-    let groupName = 'Unknown Group';
-    let submittedDate = new Date().toISOString();
-    let franchiseeName = extractedUsername; // Use extracted username as franchisee name
-    let locationIds: string[] = [];
-    
-    console.log('CSV headers:', headers);
-    console.log('CSV lines count:', lines.length);
-    
-    // Parse CSV rows with better handling for quoted fields
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.trim()) continue;
-      
-      // Better CSV parsing that handles quoted fields
-      const row: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          row.push(current.trim().replace(/^"|"$/g, '')); // Remove surrounding quotes
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      row.push(current.trim().replace(/^"|"$/g, '')); // Add the last field
-      
-      if (row.length < headers.length) {
-        console.log(`Skipping row ${i}: insufficient columns (${row.length} < ${headers.length})`);
-        continue;
-      }
-      
-      const rowData: {[key: string]: string} = {};
-      headers.forEach((header, index) => {
-        rowData[header] = (row[index] || '').replace(/^\t+/, ''); // Remove leading tabs
-      });
-      
-      console.log(`Row ${i} data:`, rowData);
-      
-      // Extract metadata from first row
-      if (i === 1) {
-        groupName = rowData['Group Name'] || groupName;
-        submittedDate = rowData['Submitted Date'] || submittedDate;
-        franchiseeName = extractedUsername; // Use extracted username instead of group name
-      }
-      
-      // Parse price change data
-      const itemName = rowData['Item Name'];
-      const locationId = rowData['Location ID'];
-      const oldPrice = parseFloat(rowData['Old Price'] || '0');
-      const newPrice = parseFloat(rowData['New Price'] || '0');
-      
-      if (itemName && locationId && !isNaN(oldPrice) && !isNaN(newPrice)) {
-        changes.push({
-          itemName,
-          locationId,
-          oldPrice,
-          newPrice
-        });
-        
-        // Collect unique location IDs
-        if (!locationIds.includes(locationId)) {
-          locationIds.push(locationId);
-        }
-      } else {
-        console.log(`Skipping row ${i}: invalid data`, { itemName, locationId, oldPrice, newPrice });
-      }
-    }
-    
-    console.log('Total changes parsed:', changes.length);
-    
-    if (changes.length === 0) return null;
-    
-    return {
-      id: reportId,
-      franchiseeId: extractedUserId,
-      franchiseeName,
-      groupName,
-      locationIds,
-      submittedDate,
-      status: 'pending', // Default status for newly loaded reports
-      changes,
-      totalChanges: changes.length,
-      // Include extracted user information
-      userId: extractedUserId,
-      username: extractedUsername
-    };
-  } catch (error) {
-    console.error('Error parsing price change CSV:', error);
-    return null;
-  }
-};
 
 const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, report, onSendReport }) => {
   const [email, setEmail] = useState('');
