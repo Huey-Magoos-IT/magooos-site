@@ -154,7 +154,7 @@ const AuthProvider = ({ children }: any) => {
                                 className="mx-auto mb-4"
                             />
                             <h1 className="text-3xl font-bold text-gray-900">
-                                Huey Magoo's Portal
+                                Huey Magoo&apos;s Portal
                             </h1>
                             <p className="text-gray-600 mt-2">
                                 Sign in to access corporate resources.
