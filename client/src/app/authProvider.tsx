@@ -72,7 +72,7 @@ const AuthProvider = ({ children }: any) => {
 
   return (
     <div>
-      <Authenticator formFields={formFields}>
+      <Authenticator hideSignUp={true} formFields={formFields}>
         {({ user }: any) =>
           user ? (
             <div>{children}</div>
