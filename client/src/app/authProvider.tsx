@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react";
+import { Authenticator } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import { Hub } from 'aws-amplify/utils';
 import { useDispatch } from 'react-redux';
@@ -17,19 +17,41 @@ Amplify.configure({
   },
 });
 
-const components = {
-  Header() {
+const customComponents = {
+  Root({ children }: { children: React.ReactNode }) {
     return (
-      <div className="flex justify-center mb-5">
-        <Image src="/logo.png" alt="Logo" width={100} height={100} />
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="w-full max-w-md p-8 mx-auto bg-white rounded-2xl shadow-xl dark:bg-gray-800">
+          {children}
+        </div>
       </div>
     );
+  },
+  Header() {
+    return (
+      <div className="flex justify-center mb-6">
+        <Image src="/logo.png" alt="Logo" width={120} height={120} />
+      </div>
+    );
+  },
+  SignIn: {
+    Header() {
+      return (
+        <header className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Access Your Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Please sign in to continue.
+          </p>
+        </header>
+      );
+    },
   },
 };
 
 const AuthProvider = ({ children }: any) => {
   const dispatch = useDispatch();
-  const { authStatus } = useAuthenticator(context => [context.authStatus]);
 
   useEffect(() => {
     const listener = (data: any) => {
@@ -49,20 +71,12 @@ const AuthProvider = ({ children }: any) => {
     return () => unsubscribe();
   }, [dispatch]);
 
-  // Render children directly if authenticated
-  if (authStatus === 'authenticated') {
-    return <>{children}</>;
-  }
-
-  // Render a full-page login UI if not authenticated
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <Authenticator hideSignUp={true} components={components}>
-          {/* This part won't be rendered due to the check above, but it's required by Authenticator */}
-        </Authenticator>
-      </div>
-    </div>
+    <Authenticator hideSignUp={true} components={customComponents}>
+      {({ signOut, user }) => (
+        <>{children}</>
+      )}
+    </Authenticator>
   );
 };
 
