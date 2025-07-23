@@ -196,7 +196,7 @@ const AuthProvider = ({ children }: any) => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            © 2024 Huey Magoo&apos;s. All rights reserved.
+            © 2025 Huey Magoo&apos;s. All rights reserved.
           </p>
         </div>
       </div>
