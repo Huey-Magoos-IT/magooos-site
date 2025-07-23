@@ -1,11 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Authenticator, ThemeProvider, Theme } from "@aws-amplify/ui-react";
 import { Amplify } from "aws-amplify";
 import { Hub } from 'aws-amplify/utils';
 import { useDispatch } from 'react-redux';
+import Image from "next/image";
 import { api } from '../state/api';
 import "@aws-amplify/ui-react/styles.css";
 
+// Amplify Configuration remains the same
 Amplify.configure({
   Auth: {
     Cognito: {
@@ -16,193 +18,158 @@ Amplify.configure({
   },
 });
 
-const formFields = {
-  signIn: {
-    username: {
-      placeholder: "Enter your username",
-      label: "Username",
-      inputProps: { required: true },
-    },
-    password: {
-      placeholder: "Enter your password",
-      label: "Password",
-      inputProps: { type: "password", required: true },
-    },
-  },
-};
-
-const customTheme: Theme = {
-  name: 'custom-theme',
+// A much simpler theme, we'll control most styling with Tailwind and CSS
+const theme: Theme = {
+  name: "hueys-minimal-theme",
   tokens: {
     colors: {
       brand: {
-        primary: {
-          10: '#eff6ff',
-          20: '#dbeafe',
-          40: '#93c5fd',
-          60: '#60a5fa',
-          80: '#3b82f6',
-          90: '#2563eb',
-          100: '#1d4ed8',
-        },
+        primary: { '80': '#d97706' }, // Huey's Gold
       },
     },
-    components: {
-      button: {
-        primary: {
-          backgroundColor: '{colors.brand.primary.80}',
-          color: '#ffffff',
-          _hover: {
-            backgroundColor: '{colors.brand.primary.90}',
-          },
-          _focus: {
-            backgroundColor: '{colors.brand.primary.90}',
-          },
-          _active: {
-            backgroundColor: '{colors.brand.primary.100}',
-          },
-        },
-        link: {
-          color: '{colors.brand.primary.80}',
-          _hover: {
-            color: '{colors.brand.primary.90}',
-          },
-        },
-      },
-      fieldcontrol: {
-        borderColor: '#e5e7eb',
-        _focus: {
-          borderColor: '{colors.brand.primary.80}',
-        },
-        _error: {
-          borderColor: '#ef4444',
-        },
-      },
-    },
+    radii: { medium: '0.5rem' },
   },
 };
 
+// Image gallery for the brand showcase
+const images = [
+  "/p1.jpeg", "/p2.jpeg", "/p3.jpeg", "/p4.jpeg",
+  "/p5.jpeg", "/p6.jpeg", "/p7.jpeg", "/p8.jpeg",
+  "/p9.jpeg", "/p10.jpeg", "/p11.jpeg", "/p12.jpeg",
+];
+
+// The definitive AuthProvider Component
 const AuthProvider = ({ children }: any) => {
   const dispatch = useDispatch();
+  const [currentImage, setCurrentImage] = useState(0);
 
   useEffect(() => {
-    const listener = (data: any) => {
-      switch (data.payload.event) {
-        case 'signedIn':
-          console.log('User signed in, resetting API state.');
-          dispatch(api.util.resetApiState());
-          break;
-        case 'signedOut':
-          console.log('User signed out, resetting API state.');
-          dispatch(api.util.resetApiState());
-          break;
+    const timer = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    }, 5000);
+
+    const hubListener = (data: any) => {
+      if (data.payload.event === 'signedIn' || data.payload.event === 'signedOut') {
+        dispatch(api.util.resetApiState());
       }
     };
+    const unsubscribe = Hub.listen('auth', hubListener);
 
-    const unsubscribe = Hub.listen('auth', listener);
-    return () => unsubscribe();
+    return () => {
+      clearInterval(timer);
+      unsubscribe();
+    };
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-dark-bg dark:via-dark-secondary dark:to-dark-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4 shadow-lg">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Sign in to access your management portal
-          </p>
-        </div>
+    <Authenticator.Provider>
+        <style jsx global>{`
+            .amplify-button[data-variation="primary"] {
+                background: linear-gradient(to right, #f59e0b, #d97706);
+                color: white;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                padding: 0.75rem 0;
+                transition: all 0.2s ease-in-out;
+                border: none;
+                box-shadow: 0 4px 15px 0 rgba(245, 158, 11, 0.4);
+            }
+            .amplify-button[data-variation="primary"]:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px 0 rgba(245, 158, 11, 0.5);
+            }
+            .amplify-button[data-variation="primary"]:active {
+                transform: translateY(0);
+            }
+            .amplify-field-control {
+                border-radius: 0.5rem;
+                padding: 1.5rem 1rem;
+                border: 1px solid #d1d5db;
+                transition: all 0.2s ease-in-out;
+            }
+            .amplify-field-control:focus {
+                border-color: #f59e0b;
+                box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+            }
+            .amplify-button[data-variation="link"] {
+                color: #b45309;
+                font-weight: 500;
+            }
+            .amplify-button[data-variation="link"]:hover {
+                color: #92400e;
+            }
+            .amplify-tabs__item--active {
+                border-color: #f59e0b;
+                color: #f59e0b;
+            }
+        `}</style>
+         <ThemeProvider theme={theme}>
+            <Authenticator hideSignUp={true}>
+              {({ user }) => {
+                if (user) {
+                  return children;
+                }
 
-        <div className="bg-white dark:bg-dark-secondary rounded-2xl shadow-2xl border border-gray-200 dark:border-stroke-dark p-8">
-          <ThemeProvider theme={customTheme}>
-            <Authenticator
-              hideSignUp={true}
-              formFields={formFields}
-              components={{
-                Header() {
-                  return null;
-                },
+                return (
+                  <main className="grid grid-cols-1 lg:grid-cols-2 h-screen w-screen font-sans">
+                    {/* Left Side: Brand Showcase */}
+                    <div className="relative hidden lg:block">
+                      {images.map((src, idx) => (
+                        <Image
+                          key={src}
+                          src={src}
+                          alt="Huey Magoo's Chicken Tenders"
+                          layout="fill"
+                          objectFit="cover"
+                          className={`transition-opacity duration-1000 ${idx === currentImage ? "opacity-100" : "opacity-0"}`}
+                          priority={idx === 0}
+                        />
+                      ))}
+                      <div className="absolute inset-0 bg-black/50" />
+                      <div className="absolute bottom-12 left-12 text-white p-4">
+                        <h2
+                          className="text-5xl font-extrabold"
+                          style={{ textShadow: "2px 2px 8px rgba(0,0,0,0.8)" }}
+                        >
+                          The Filet Mignon of Chicken®
+                        </h2>
+                        <p
+                          className="text-xl mt-3 max-w-lg"
+                          style={{ textShadow: "1px 1px 4px rgba(0,0,0,0.8)" }}
+                        >
+                          Authentic Southern-style tenders, hand-breaded and made to order.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Side: Login Form */}
+                    <div className="flex flex-col items-center justify-center bg-gray-50 p-6 sm:p-8">
+                       <div className="w-full max-w-xs space-y-8">
+                         <div className="text-center">
+                            <Image
+                                src="/logo.png"
+                                alt="Huey Magoo's Logo"
+                                width={100}
+                                height={100}
+                                className="mx-auto mb-4"
+                            />
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                Huey Magoo's Portal
+                            </h1>
+                            <p className="text-gray-600 mt-2">
+                                Sign in to access corporate resources.
+                            </p>
+                         </div>
+                         {/* Amplify's Sign In component is rendered here automatically */}
+                         <Authenticator.SignIn />
+                       </div>
+                    </div>
+                  </main>
+                );
               }}
-            >
-              {({ user }) =>
-                user ? (
-                  <div>{children}</div>
-                ) : (
-                  <div></div>
-                )
-              }
             </Authenticator>
-          </ThemeProvider>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Secure access to your business tools
-          </p>
-        </div>
-      </div>
-
-      {/* Custom CSS for additional styling */}
-      <style jsx global>{`
-        .amplify-authenticator {
-          --amplify-components-authenticator-router-border-radius: 1rem;
-          --amplify-components-button-primary-background-color: #3b82f6;
-          --amplify-components-button-primary-hover-background-color: #2563eb;
-          --amplify-components-button-primary-focus-background-color: #2563eb;
-          --amplify-components-button-primary-active-background-color: #1d4ed8;
-          --amplify-components-fieldcontrol-border-radius: 0.5rem;
-          --amplify-components-fieldcontrol-focus-border-color: #3b82f6;
-          --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
-          --amplify-components-button-primary-border-radius: 0.5rem;
-          --amplify-components-button-primary-font-weight: 600;
-          --amplify-components-button-link-color: #3b82f6;
-          --amplify-components-button-link-hover-color: #2563eb;
-        }
-        
-        .amplify-button[data-variation="primary"] {
-          transition: all 0.2s ease-in-out;
-        }
-        
-        .amplify-button[data-variation="primary"]:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        
-        .amplify-button[data-variation="primary"]:active {
-          transform: translateY(0);
-        }
-        
-        .amplify-field-control {
-          transition: all 0.2s ease-in-out;
-        }
-        
-        .amplify-authenticator__form {
-          gap: 1.5rem;
-        }
-        
-        .amplify-field {
-          margin-bottom: 1rem;
-        }
-        
-        .amplify-button[data-variation="link"] {
-          font-weight: 500;
-          text-decoration: none;
-        }
-        
-        .amplify-button[data-variation="link"]:hover {
-          text-decoration: underline;
-        }
-      `}</style>
-    </div>
+         </ThemeProvider>
+    </Authenticator.Provider>
   );
 };
 
