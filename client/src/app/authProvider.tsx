@@ -226,7 +226,7 @@ const AuthProvider = ({ children }: any) => {
       </button>
       <div className="text-center">
         <button type="button" onClick={() => setAuthView('forgotPassword')} className="text-sm text-blue-600 hover:underline">
-          Forgot Password?
+          Reset Password
         </button>
       </div>
     </form>
@@ -293,7 +293,7 @@ const AuthProvider = ({ children }: any) => {
 
   const renderForgotPasswordForm = () => (
     <form onSubmit={handleForgotPassword} className="space-y-6">
-       <h3 className="text-xl font-bold text-center">Reset Password</h3>
+       <h3 className="text-xl font-bold text-center">Password Reset</h3>
       {error && <p className="text-red-500 text-center">{error}</p>}
       {/* Username Field */}
       <div className="space-y-2">
@@ -312,7 +312,7 @@ const AuthProvider = ({ children }: any) => {
         </div>
       </div>
       <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl">
-        {isLoading ? 'Sending Code...' : 'Send Reset Code'}
+        {isLoading ? 'Sending Code...' : 'Send Password Reset Code'}
       </button>
       <div className="text-center">
         <button type="button" onClick={() => setAuthView('signIn')} className="text-sm text-blue-600 hover:underline">
@@ -324,7 +324,7 @@ const AuthProvider = ({ children }: any) => {
 
   const renderConfirmResetPasswordForm = () => (
     <form onSubmit={handleConfirmResetPassword} className="space-y-6">
-      <h3 className="text-xl font-bold text-center">Confirm Reset</h3>
+      <h3 className="text-xl font-bold text-center">Confirm Password Reset</h3>
       {error && <p className="text-red-500 text-center">{error}</p>}
       {/* Confirmation Code Field */}
       <div className="space-y-2">

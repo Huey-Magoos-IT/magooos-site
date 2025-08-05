@@ -73,6 +73,9 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
     const [syncAll, setSyncAll] = useState<boolean>(false);
     const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+    const [allExpanded, setAllExpanded] = useState<boolean>(true);
+    const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
+    const [isNearBottom, setIsNearBottom] = useState<boolean>(false);
     const [submissionModal, setSubmissionModal] = useState<{
         isOpen: boolean;
         success: boolean;
@@ -197,8 +200,40 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                 }
             });
             setExpandedCategories(initialExpansionState);
+            setAllExpanded(true);
         }
     }, [categoryList]);
+
+    // Scroll event handling for floating elements
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            
+            // Show back-to-top button after scrolling 300px
+            setShowBackToTop(scrollTop > 300);
+            
+            // Check if near bottom (within 200px of bottom)
+            const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+            setIsNearBottom(distanceFromBottom < 200);
+        };
+
+        // Throttle scroll events for performance
+        let ticking = false;
+        const throttledHandleScroll = () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    handleScroll();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', throttledHandleScroll);
+        return () => window.removeEventListener('scroll', throttledHandleScroll);
+    }, []);
 
     const userLocations: Location[] = useMemo(() => {
         if (!user?.locationIds || !locationsData?.locations) return [];
@@ -226,6 +261,36 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 
     const toggleCategoryExpansion = (categoryName: string) => {
         setExpandedCategories(prev => ({ ...prev, [categoryName]: !prev[categoryName] }));
+    };
+
+    const toggleAllCategories = () => {
+        const newExpandedState = !allExpanded;
+        setAllExpanded(newExpandedState);
+        
+        const newExpandedCategories: {[key: string]: boolean} = {};
+        categoryList.forEach((cat: { value: string, label: string }) => {
+            if (cat.value !== 'all') {
+                newExpandedCategories[cat.label] = newExpandedState;
+            }
+        });
+        setExpandedCategories(newExpandedCategories);
+    };
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+    const scrollToSubmitButton = () => {
+        const submitSection = document.getElementById('submit-section');
+        if (submitSection) {
+            submitSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
     };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
@@ -404,6 +469,26 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                 <option value="desc">Z-A</option>
                             </select>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categories</label>
+                            <button
+                                onClick={toggleAllCategories}
+                                className="px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200 flex items-center space-x-2"
+                                aria-label={allExpanded ? "Collapse all categories" : "Expand all categories"}
+                            >
+                                <span className="text-sm font-medium">
+                                    {allExpanded ? 'Collapse All' : 'Expand All'}
+                                </span>
+                                <svg
+                                    className={`w-4 h-4 transition-transform duration-200 ${allExpanded ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -512,7 +597,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </div>
                 )}
 
-                <div className="flex justify-center">
+                <div id="submit-section" className="flex justify-center">
                     <button
                         onClick={handleSubmitChanges}
                         disabled={Object.keys(priceChanges).length === 0}
@@ -526,6 +611,41 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </button>
                 </div>
             </div>
+
+            {/* Floating Submit Button */}
+            {Object.keys(priceChanges).length > 0 && !isNearBottom && (
+                <div className="fixed bottom-6 right-6 z-40 fade-in-up">
+                    <button
+                        onClick={scrollToSubmitButton}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+                        aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
+                    >
+                        <div className="flex items-center space-x-2">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                            <span className="font-medium text-sm">
+                                Submit ({Object.keys(priceChanges).length})
+                            </span>
+                        </div>
+                    </button>
+                </div>
+            )}
+
+            {/* Back to Top Button */}
+            {showBackToTop && (
+                <div className="fixed bottom-6 left-6 z-40 fade-in-up">
+                    <button
+                        onClick={scrollToTop}
+                        className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                        aria-label="Scroll to top"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        </svg>
+                    </button>
+                </div>
+            )}
 
             {/* Validation Error Modal */}
             {validationModal.isOpen && (
