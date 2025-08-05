@@ -211,13 +211,26 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             const windowHeight = window.innerHeight;
             const documentHeight = document.documentElement.scrollHeight;
             
-            // Show back-to-top button after scrolling 300px
-            setShowBackToTop(scrollTop > 300);
+            // Show back-to-top button after scrolling 100px (reduced threshold)
+            setShowBackToTop(scrollTop > 100);
             
-            // Check if near bottom (within 200px of bottom)
+            // Check if near bottom (within 300px of bottom) - increased threshold
             const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-            setIsNearBottom(distanceFromBottom < 200);
+            setIsNearBottom(distanceFromBottom < 300);
+            
+            // Debug logging
+            console.log('Scroll Debug:', {
+                scrollTop,
+                windowHeight,
+                documentHeight,
+                distanceFromBottom,
+                showBackToTop: scrollTop > 100,
+                isNearBottom: distanceFromBottom < 300
+            });
         };
+
+        // Initial call to set state
+        handleScroll();
 
         // Throttle scroll events for performance
         let ticking = false;
@@ -232,7 +245,11 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         };
 
         window.addEventListener('scroll', throttledHandleScroll);
-        return () => window.removeEventListener('scroll', throttledHandleScroll);
+        window.addEventListener('resize', handleScroll); // Also handle resize
+        return () => {
+            window.removeEventListener('scroll', throttledHandleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
     }, []);
 
     const userLocations: Location[] = useMemo(() => {
@@ -614,17 +631,17 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 
             {/* Floating Submit Button */}
             {Object.keys(priceChanges).length > 0 && !isNearBottom && (
-                <div className="fixed bottom-6 right-6 z-40 fade-in-up">
+                <div className="fixed bottom-6 right-6 z-50">
                     <button
                         onClick={scrollToSubmitButton}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4 py-3 shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 animate-pulse"
                         aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
                     >
                         <div className="flex items-center space-x-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                             </svg>
-                            <span className="font-medium text-sm">
+                            <span className="font-medium text-sm whitespace-nowrap">
                                 Submit ({Object.keys(priceChanges).length})
                             </span>
                         </div>
@@ -632,20 +649,43 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                 </div>
             )}
 
-            {/* Back to Top Button */}
-            {showBackToTop && (
-                <div className="fixed bottom-6 left-6 z-40 fade-in-up">
-                    <button
-                        onClick={scrollToTop}
-                        className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                        aria-label="Scroll to top"
-                    >
+            {/* Back to Top Button - Always visible for testing */}
+            <div className="floating-button bottom-6 left-6">
+                <button
+                    onClick={scrollToTop}
+                    className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                    aria-label="Scroll to top"
+                    title="Back to top"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* Test Floating Submit Button - Always visible for testing */}
+            <div className="floating-button bottom-20 right-6">
+                <button
+                    onClick={handleSubmitChanges}
+                    disabled={Object.keys(priceChanges).length === 0}
+                    className={`rounded-full px-4 py-3 shadow-xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 ${
+                        Object.keys(priceChanges).length > 0
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-300 dark:focus:ring-blue-800 animate-pulse'
+                            : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    }`}
+                    aria-label={Object.keys(priceChanges).length > 0 ? `Submit ${Object.keys(priceChanges).length} price changes` : 'No changes to submit'}
+                    title={Object.keys(priceChanges).length > 0 ? `Submit ${Object.keys(priceChanges).length} changes` : 'Make price changes to enable submit'}
+                >
+                    <div className="flex items-center space-x-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
-                    </button>
-                </div>
-            )}
+                        <span className="font-medium text-sm whitespace-nowrap">
+                            {Object.keys(priceChanges).length > 0 ? `Submit (${Object.keys(priceChanges).length})` : 'Submit'}
+                        </span>
+                    </div>
+                </button>
+            </div>
 
             {/* Validation Error Modal */}
             {validationModal.isOpen && (

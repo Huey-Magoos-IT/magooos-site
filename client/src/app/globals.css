@@ -134,6 +134,13 @@ html {
   animation: fadeOutDown 0.3s ease-out;
 }
 
+/* Ensure floating elements are visible */
+.floating-button {
+  position: fixed !important;
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
 /* Enhanced Dark Mode Form Elements */
 .dark .MuiOutlinedInput-notchedOutline {
   border-color: #3d3d3d !important;
