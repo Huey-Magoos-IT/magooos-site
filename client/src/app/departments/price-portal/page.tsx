@@ -265,7 +265,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
         const limitedPrice = isNaN(newRegularPrice) ? 0 : parseFloat(newRegularPrice.toFixed(2));
         const [itemName, locationId] = itemLocationKey.split('|');
-        const isSynced = syncedItems[itemName] || syncAll;
+        const isSynced = syncedItems[itemName];
 
         setPriceChanges(prevChanges => {
             let updatedChanges = { ...prevChanges };
@@ -306,20 +306,38 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     };
 
     const handleSyncToggle = (itemName: string) => {
-        const newSyncedItems = { ...syncedItems, [itemName]: !syncedItems[itemName] };
+        const isBecomingSynced = !syncedItems[itemName];
+        const newSyncedItems = { ...syncedItems, [itemName]: isBecomingSynced };
         setSyncedItems(newSyncedItems);
+
+        // If a user types a price then hits sync, propagate the price.
+        if (isBecomingSynced && availableLocations.length > 0) {
+            const masterInputKey = `${itemName}|${availableLocations[0].id}`;
+            const masterPrice = priceChanges[masterInputKey];
+
+            if (masterPrice !== undefined) {
+                // Re-trigger price change with the existing master price to propagate it.
+                handlePriceChange(masterInputKey, masterPrice);
+            }
+        }
     };
 
     const handleToggleSyncAll = (checked: boolean) => {
         setSyncAll(checked);
-        const newSyncedItems: { [key: string]: boolean } = { ...syncedItems };
-        
-        // Apply "Sync All" only to currently visible (sorted/filtered) items
-        sortedItems.forEach(item => {
-            newSyncedItems[item.name] = checked;
-        });
-        
+        const newSyncedItems: { [key: string]: boolean } = {};
+        if (checked) {
+            sortedItems.forEach(item => {
+                newSyncedItems[item.name] = true;
+            });
+        }
         setSyncedItems(newSyncedItems);
+    };
+
+    const handlePriceInputFocus = (priceChangeKey: string, currentPrice: number | undefined) => {
+        // If input is empty and has a current price, populate it on focus.
+        if (priceChanges[priceChangeKey] === undefined && currentPrice !== undefined) {
+            setPriceChanges(prev => ({ ...prev, [priceChangeKey]: currentPrice }));
+        }
     };
 
     const handleSubmitChanges = async () => {
@@ -395,26 +413,24 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         // When the user changes filters (sortedItems changes), check if all visible items are synced
         // and update the "Sync All" checkbox accordingly.
         if (sortedItems.length > 0) {
-            const allVisibleItemsSynced = sortedItems.every(item => syncedItems[item.name]);
-            if (syncAll !== allVisibleItemsSynced) {
-                setSyncAll(allVisibleItemsSynced);
+            const allVisibleItemsSynced = sortedItems.every(item => syncedItems[item.name] || syncAll);
+            if (syncAll && !allVisibleItemsSynced) {
+                // If syncAll is on but some items are not, it means we need to sync them
+                const newSyncedItems = { ...syncedItems };
+                sortedItems.forEach(item => {
+                    if(!newSyncedItems[item.name]) newSyncedItems[item.name] = true;
+                });
+                setSyncedItems(newSyncedItems);
+            } else if (!syncAll && allVisibleItemsSynced) {
+                 //This case is handled by individual toggle
+            }
+            else {
+                const effectiveSyncAll = sortedItems.every(item => syncedItems[item.name]);
+                if (syncAll !== effectiveSyncAll) {
+                    setSyncAll(effectiveSyncAll);
+                }
             }
         } else if (syncAll) {
-            // If there are no items, "Sync All" should be off
-            setSyncAll(false);
-        }
-    }, [sortedItems, syncedItems, syncAll]);
-
-    useEffect(() => {
-        // When the user changes filters (sortedItems changes), check if all visible items are synced
-        // and update the "Sync All" checkbox accordingly.
-        if (sortedItems.length > 0) {
-            const allVisibleItemsSynced = sortedItems.every(item => syncedItems[item.name]);
-            if (syncAll !== allVisibleItemsSynced) {
-                setSyncAll(allVisibleItemsSynced);
-            }
-        } else if (syncAll) {
-            // If there are no items, "Sync All" should be off
             setSyncAll(false);
         }
     }, [sortedItems, syncedItems, syncAll]);
@@ -566,7 +582,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                 <td className="px-6 py-4 text-center">
                                                 <input
                                                      type="checkbox"
-                                                     checked={syncedItems[item.name] || false}
+                                                     checked={syncedItems[item.name] || syncAll}
                                                      onChange={() => handleSyncToggle(item.name)}
                                                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                                  />
@@ -574,7 +590,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                 {availableLocations.map((location, index) => {
                                                     const currentPrice = item.locationPrices[location.id];
                                                     const priceChangeKey = `${item.name}|${location.id}`;
-                                                    const isSynced = syncedItems[item.name] || false;
+                                                    const isSynced = syncedItems[item.name] || syncAll;
                                                     const isMasterInput = isSynced && index === 0;
                                                     const isSyncedFollower = isSynced && index > 0;
 
@@ -589,10 +605,11 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                                 <div className="w-16 relative">
                                                                     <input
                                                                         type="number"
-                                                                        step="0.01"
+                                                                        step="0.10"
                                                                         min="0"
                                                                         placeholder={currentPrice !== undefined ? currentPrice.toFixed(2) : '0.00'}
                                                                         value={priceChanges[priceChangeKey] ?? ''}
+                                                                        onFocus={() => handlePriceInputFocus(priceChangeKey, currentPrice)}
                                                                         onChange={(e) => handlePriceChange(priceChangeKey, parseFloat(e.target.value))}
                                                                         onBlur={(e) => {
                                                                             const value = parseFloat(e.target.value);
