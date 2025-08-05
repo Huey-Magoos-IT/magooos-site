@@ -578,28 +578,10 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             </div>
             
             {/* --- FLOATING ACTION BUTTONS --- */}
-            <div className={`fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-3 transition-opacity duration-300 ${showBackToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                
-                {/* Floating Submit Button */}
-                <button
-                    onClick={handleSubmitChanges}
-                    disabled={Object.keys(priceChanges).length === 0}
-                    className={`rounded-full px-6 py-3 shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 ${
-                        Object.keys(priceChanges).length > 0
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-gray-400 text-gray-800 cursor-not-allowed'
-                    }`}
-                    aria-label={Object.keys(priceChanges).length > 0 ? `Submit ${Object.keys(priceChanges).length} price changes` : 'No changes to submit'}
-                >
-                    <span className="font-semibold" role="status">
-                        Submit {Object.keys(priceChanges).length > 0 && `(${Object.keys(priceChanges).length})`}
-                    </span>
-                </button>
-
-                {/* Back to Top Button */}
+            {showBackToTop && (
                 <button
                     onClick={scrollToTop}
-                    className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                    className="fixed bottom-6 right-6 z-50 bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 animate-fade-in"
                     aria-label="Scroll to top"
                     title="Back to top"
                 >
@@ -607,8 +589,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
                 </button>
-
-            </div>
+            )}
 
             {/* Validation Error Modal */}
             {validationModal.isOpen && (
