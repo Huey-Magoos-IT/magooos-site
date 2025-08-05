@@ -75,7 +75,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
     const [allExpanded, setAllExpanded] = useState<boolean>(true);
     const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
-    const [isNearBottom, setIsNearBottom] = useState<boolean>(false);
     const [submissionModal, setSubmissionModal] = useState<{
         isOpen: boolean;
         success: boolean;
@@ -208,48 +207,11 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const windowHeight = window.innerHeight;
-            const documentHeight = document.documentElement.scrollHeight;
-            
-            // Show back-to-top button after scrolling 100px (reduced threshold)
             setShowBackToTop(scrollTop > 100);
-            
-            // Check if near bottom (within 300px of bottom) - increased threshold
-            const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
-            setIsNearBottom(distanceFromBottom < 300);
-            
-            // Debug logging
-            console.log('Scroll Debug:', {
-                scrollTop,
-                windowHeight,
-                documentHeight,
-                distanceFromBottom,
-                showBackToTop: scrollTop > 100,
-                isNearBottom: distanceFromBottom < 300
-            });
         };
 
-        // Initial call to set state
-        handleScroll();
-
-        // Throttle scroll events for performance
-        let ticking = false;
-        const throttledHandleScroll = () => {
-            if (!ticking) {
-                requestAnimationFrame(() => {
-                    handleScroll();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
-
-        window.addEventListener('scroll', throttledHandleScroll);
-        window.addEventListener('resize', handleScroll); // Also handle resize
-        return () => {
-            window.removeEventListener('scroll', throttledHandleScroll);
-            window.removeEventListener('resize', handleScroll);
-        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const userLocations: Location[] = useMemo(() => {
@@ -298,16 +260,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             top: 0,
             behavior: 'smooth'
         });
-    };
-
-    const scrollToSubmitButton = () => {
-        const submitSection = document.getElementById('submit-section');
-        if (submitSection) {
-            submitSection.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
     };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
@@ -371,18 +323,14 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             );
             
             if (uploadResult.success) {
-                // Lock the user immediately after successful submission
                 try {
                     await toggleUserStatus({ userId: user?.userId! });
                     console.log('User locked successfully after price submission');
                 } catch (lockError) {
                     console.error('Failed to lock user after submission:', lockError);
-                    // Continue with success flow even if lock fails - this is a safety measure
                 }
 
-                // Store the submitted report for the "report in progress" screen
                 setSubmittedReport(report);
-                
                 setSubmissionModal({
                     isOpen: true,
                     success: true,
@@ -630,8 +578,24 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             </div>
             
             {/* --- FLOATING ACTION BUTTONS --- */}
-            <div className={`fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-3 transition-opacity duration-300 ${showBackToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`fixed bottom-6 right-6 z-50 flex flex-col-reverse items-end gap-3 transition-opacity duration-300 ${showBackToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 
+                {/* Floating Submit Button */}
+                <button
+                    onClick={handleSubmitChanges}
+                    disabled={Object.keys(priceChanges).length === 0}
+                    className={`rounded-full px-6 py-3 shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 ${
+                        Object.keys(priceChanges).length > 0
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-400 text-gray-800 cursor-not-allowed'
+                    }`}
+                    aria-label={Object.keys(priceChanges).length > 0 ? `Submit ${Object.keys(priceChanges).length} price changes` : 'No changes to submit'}
+                >
+                    <span className="font-semibold" role="status">
+                        Submit {Object.keys(priceChanges).length > 0 && `(${Object.keys(priceChanges).length})`}
+                    </span>
+                </button>
+
                 {/* Back to Top Button */}
                 <button
                     onClick={scrollToTop}
@@ -640,22 +604,10 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     title="Back to top"
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
                 </button>
-                
-                {/* Floating Submit Button */}
-                {Object.keys(priceChanges).length > 0 && (
-                    <button
-                        onClick={handleSubmitChanges}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-3 shadow-lg transition-transform duration-300 hover:scale-105"
-                        aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
-                    >
-                        <div className="flex items-center space-x-2">
-                            <span className="font-semibold" role="status">Submit ({Object.keys(priceChanges).length})</span>
-                        </div>
-                    </button>
-                )}
+
             </div>
 
             {/* Validation Error Modal */}
