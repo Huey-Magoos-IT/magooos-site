@@ -309,17 +309,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         const isBecomingSynced = !syncedItems[itemName];
         const newSyncedItems = { ...syncedItems, [itemName]: isBecomingSynced };
         setSyncedItems(newSyncedItems);
-
-        // If a user types a price then hits sync, propagate the price.
-        if (isBecomingSynced && availableLocations.length > 0) {
-            const masterInputKey = `${itemName}|${availableLocations[0].id}`;
-            const masterPrice = priceChanges[masterInputKey];
-
-            if (masterPrice !== undefined) {
-                // Re-trigger price change with the existing master price to propagate it.
-                handlePriceChange(masterInputKey, masterPrice);
-            }
-        }
     };
 
     const handleToggleSyncAll = (checked: boolean) => {
