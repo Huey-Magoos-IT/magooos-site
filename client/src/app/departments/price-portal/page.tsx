@@ -614,42 +614,48 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </div>
                 )}
 
-                <div
-                    id="submit-section"
-                    className={`transition-all duration-300 ease-in-out py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm ${
-                        !isNearBottom && Object.keys(priceChanges).length > 0
-                            ? 'sticky bottom-0 z-40 shadow-lg'
-                            : 'static'
-                    }`}
-                >
-                    <div className="flex justify-center">
-                        <button
-                            onClick={handleSubmitChanges}
-                            disabled={Object.keys(priceChanges).length === 0}
-                            className={`px-8 py-3 rounded-lg font-medium transition-all duration-300 ${
-                                Object.keys(priceChanges).length > 0
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
-                            }`}
-                        >
-                            Submit Price Changes {Object.keys(priceChanges).length > 0 && `(${Object.keys(priceChanges).length})`}
-                        </button>
-                    </div>
+                <div id="submit-section" className="flex justify-center pt-6">
+                    <button
+                        onClick={handleSubmitChanges}
+                        disabled={Object.keys(priceChanges).length === 0}
+                        className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+                            Object.keys(priceChanges).length > 0
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                        }`}
+                    >
+                        Submit Price Changes {Object.keys(priceChanges).length > 0 && `(${Object.keys(priceChanges).length})`}
+                    </button>
                 </div>
             </div>
             
-            {/* Back to Top Button */}
+            {/* Floating Action Buttons */}
             {showBackToTop && (
-                <button
-                    onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 z-50 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-lg transition-opacity duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 animate-fade-in-up"
-                    aria-label="Scroll to top"
-                    title="Back to top"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                </button>
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-4">
+                    {/* Floating Submit Button */}
+                    {Object.keys(priceChanges).length > 0 && (
+                        <button
+                            onClick={handleSubmitChanges}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-3 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+                            aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
+                        >
+                            <div className="flex items-center space-x-2">
+                                <span className="font-semibold">Submit ({Object.keys(priceChanges).length})</span>
+                            </div>
+                        </button>
+                    )}
+                    {/* Back to Top Button */}
+                    <button
+                        onClick={scrollToTop}
+                        className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-lg transition-opacity duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+                        aria-label="Scroll to top"
+                        title="Back to top"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+                </div>
             )}
 
             {/* Validation Error Modal */}
