@@ -263,20 +263,42 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
-        const limitedPrice = parseFloat(newRegularPrice.toFixed(2));
-        
-        setPriceChanges(prevChanges => {
-            const updatedChanges = { ...prevChanges, [itemLocationKey]: limitedPrice };
-            const [itemName, locationId] = itemLocationKey.split('|');
-            const changedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.name === itemName);
+        const limitedPrice = isNaN(newRegularPrice) ? 0 : parseFloat(newRegularPrice.toFixed(2));
+        const [itemName, locationId] = itemLocationKey.split('|');
+        const isSynced = syncedItems[itemName] || syncAll;
 
-            if (changedItem?.isOriginal) {
-                const saucedItem = crossLocationItems.find((item: CrossLocationPriceItem) => item.originalId === changedItem.id);
-                if (saucedItem) {
-                    const unitCount = changedItem.sauceUnitCount || 1;
-                    const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
-                    const saucedItemKey = `${saucedItem.name}|${locationId}`;
-                    updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
+        setPriceChanges(prevChanges => {
+            let updatedChanges = { ...prevChanges };
+
+            if (isSynced) {
+                // If synced, apply the price change to all selected locations for this item
+                availableLocations.forEach(loc => {
+                    const key = `${itemName}|${loc.id}`;
+                    updatedChanges[key] = limitedPrice;
+
+                    const changedItem = crossLocationItems.find(item => item.name === itemName);
+                    if (changedItem?.isOriginal) {
+                        const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
+                        if (saucedItem) {
+                            const unitCount = changedItem.sauceUnitCount || 1;
+                            const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                            const saucedItemKey = `${saucedItem.name}|${loc.id}`;
+                            updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
+                        }
+                    }
+                });
+            } else {
+                // Not synced, just update the single item
+                updatedChanges[itemLocationKey] = limitedPrice;
+                const changedItem = crossLocationItems.find(item => item.name === itemName);
+                if (changedItem?.isOriginal) {
+                    const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
+                    if (saucedItem) {
+                        const unitCount = changedItem.sauceUnitCount || 1;
+                        const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                        const saucedItemKey = `${saucedItem.name}|${locationId}`;
+                        updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
+                    }
                 }
             }
             return updatedChanges;
@@ -284,7 +306,20 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     };
 
     const handleSyncToggle = (itemName: string) => {
-        setSyncedItems(prev => ({ ...prev, [itemName]: !prev[itemName] }));
+        const newSyncedItems = { ...syncedItems, [itemName]: !syncedItems[itemName] };
+        setSyncedItems(newSyncedItems);
+    };
+
+    const handleToggleSyncAll = (checked: boolean) => {
+        setSyncAll(checked);
+        const newSyncedItems: { [key: string]: boolean } = { ...syncedItems };
+        
+        // Apply "Sync All" only to currently visible (sorted/filtered) items
+        sortedItems.forEach(item => {
+            newSyncedItems[item.name] = checked;
+        });
+        
+        setSyncedItems(newSyncedItems);
     };
 
     const handleSubmitChanges = async () => {
@@ -355,6 +390,34 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             });
         }
     };
+
+    useEffect(() => {
+        // When the user changes filters (sortedItems changes), check if all visible items are synced
+        // and update the "Sync All" checkbox accordingly.
+        if (sortedItems.length > 0) {
+            const allVisibleItemsSynced = sortedItems.every(item => syncedItems[item.name]);
+            if (syncAll !== allVisibleItemsSynced) {
+                setSyncAll(allVisibleItemsSynced);
+            }
+        } else if (syncAll) {
+            // If there are no items, "Sync All" should be off
+            setSyncAll(false);
+        }
+    }, [sortedItems, syncedItems, syncAll]);
+
+    useEffect(() => {
+        // When the user changes filters (sortedItems changes), check if all visible items are synced
+        // and update the "Sync All" checkbox accordingly.
+        if (sortedItems.length > 0) {
+            const allVisibleItemsSynced = sortedItems.every(item => syncedItems[item.name]);
+            if (syncAll !== allVisibleItemsSynced) {
+                setSyncAll(allVisibleItemsSynced);
+            }
+        } else if (syncAll) {
+            // If there are no items, "Sync All" should be off
+            setSyncAll(false);
+        }
+    }, [sortedItems, syncedItems, syncAll]);
 
     if (locationsIsLoading || isPriceDataLoading) {
         return (
@@ -461,8 +524,13 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Price Management</h3>
-                            <label className="flex items-center space-x-2">
-                                <input type="checkbox" checked={syncAll} onChange={(e) => setSyncAll(e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={syncAll}
+                                    onChange={(e) => handleToggleSyncAll(e.target.checked)}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
                                 <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
                             </label>
                         </div>
@@ -496,11 +564,20 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <input type="checkbox" checked={syncedItems[item.name] || false} onChange={() => handleSyncToggle(item.name)} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                <input
+                                                     type="checkbox"
+                                                     checked={syncedItems[item.name] || false}
+                                                     onChange={() => handleSyncToggle(item.name)}
+                                                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                 />
                                                 </td>
-                                                {availableLocations.map(location => {
+                                                {availableLocations.map((location, index) => {
                                                     const currentPrice = item.locationPrices[location.id];
                                                     const priceChangeKey = `${item.name}|${location.id}`;
+                                                    const isSynced = syncedItems[item.name] || false;
+                                                    const isMasterInput = isSynced && index === 0;
+                                                    const isSyncedFollower = isSynced && index > 0;
+
                                                     return (
                                                         <td key={location.id} className="px-6 py-4 text-center">
                                                             <div className="flex justify-center items-center space-x-4">
@@ -509,23 +586,33 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                                         {currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : 'N/A'}
                                                                     </span>
                                                                 </div>
-                                                                <div className="w-16">
+                                                                <div className="w-16 relative">
                                                                     <input
                                                                         type="number"
                                                                         step="0.01"
                                                                         min="0"
                                                                         placeholder={currentPrice !== undefined ? currentPrice.toFixed(2) : '0.00'}
-                                                                        value={priceChanges[priceChangeKey] || ''}
-                                                                        onChange={(e) => handlePriceChange(priceChangeKey, parseFloat(e.target.value) || 0)}
+                                                                        value={priceChanges[priceChangeKey] ?? ''}
+                                                                        onChange={(e) => handlePriceChange(priceChangeKey, parseFloat(e.target.value))}
                                                                         onBlur={(e) => {
                                                                             const value = parseFloat(e.target.value);
                                                                             if (!isNaN(value)) {
-                                                                                handlePriceChange(priceChangeKey, parseFloat(value.toFixed(2)));
+                                                                                handlePriceChange(priceChangeKey, value);
                                                                             }
                                                                         }}
-                                                                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                                        disabled={currentPrice === undefined || (syncedItems[item.name] && availableLocations[0] && location.id !== availableLocations[0].id)}
+                                                                        className={`w-full px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                                            isSyncedFollower 
+                                                                                ? 'bg-gray-200 dark:bg-gray-600 cursor-not-allowed' 
+                                                                                : 'bg-white dark:bg-gray-700'
+                                                                        } border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white`}
+                                                                        disabled={currentPrice === undefined || isSyncedFollower}
                                                                     />
+                                                                     {isMasterInput && (
+                                                                        <span title="Sync Master" className="absolute -right-1 -top-1 flex h-3 w-3">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </td>
