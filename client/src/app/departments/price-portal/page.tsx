@@ -629,34 +629,34 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                 </div>
             </div>
             
-            {/* Floating Action Buttons */}
-            {showBackToTop && (
-                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-4">
-                    {/* Floating Submit Button */}
-                    {Object.keys(priceChanges).length > 0 && (
-                        <button
-                            onClick={handleSubmitChanges}
-                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-3 shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
-                            aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
-                        >
-                            <div className="flex items-center space-x-2">
-                                <span className="font-semibold">Submit ({Object.keys(priceChanges).length})</span>
-                            </div>
-                        </button>
-                    )}
-                    {/* Back to Top Button */}
+            {/* --- FLOATING ACTION BUTTONS --- */}
+            <div className={`fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-3 transition-opacity duration-300 ${showBackToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                
+                {/* Back to Top Button */}
+                <button
+                    onClick={scrollToTop}
+                    className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                    aria-label="Scroll to top"
+                    title="Back to top"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
+                    </svg>
+                </button>
+                
+                {/* Floating Submit Button */}
+                {Object.keys(priceChanges).length > 0 && (
                     <button
-                        onClick={scrollToTop}
-                        className="bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-full p-3 shadow-lg transition-opacity duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                        aria-label="Scroll to top"
-                        title="Back to top"
+                        onClick={handleSubmitChanges}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-3 shadow-lg transition-transform duration-300 hover:scale-105"
+                        aria-label={`Submit ${Object.keys(priceChanges).length} price changes`}
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                        </svg>
+                        <div className="flex items-center space-x-2">
+                            <span className="font-semibold" role="status">Submit ({Object.keys(priceChanges).length})</span>
+                        </div>
                     </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Validation Error Modal */}
             {validationModal.isOpen && (
