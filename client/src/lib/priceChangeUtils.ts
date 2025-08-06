@@ -212,31 +212,33 @@ export const groupChangesByLocation = (changes: PriceChange[]): { [locationName:
 /**
  * Validates price changes before submission
  * @param changes Array of price changes
- * @returns Validation result
+ * @returns Validation result with errors and warnings
  */
-export const validatePriceChanges = (changes: PriceChange[]): { isValid: boolean; errors: string[] } => {
+export const validatePriceChanges = (changes: PriceChange[]): { isValid: boolean; errors: string[]; warnings: string[] } => {
   const errors: string[] = [];
-  
+  const warnings: string[] = [];
+
   if (changes.length === 0) {
     errors.push('No price changes detected');
   }
-  
-  changes.forEach((change, index) => {
+
+  changes.forEach((change) => {
     if (change.newPrice < 0) {
-      errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price cannot be negative`);
+      errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price cannot be negative.`);
     }
-    
+
     if (change.newPrice > 999.99) {
-      errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price too high (max $999.99)`);
+      errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price is too high (max $999.99).`);
     }
-    
+
     if (Math.abs(change.newPrice - change.oldPrice) > 50) {
-      errors.push(`Large price change for ${change.itemName} at ${change.locationName}: ${change.oldPrice.toFixed(2)} → ${change.newPrice.toFixed(2)}`);
+      warnings.push(`Large price change for ${change.itemName} at ${change.locationName}: $${change.oldPrice.toFixed(2)} → $${change.newPrice.toFixed(2)}.`);
     }
   });
-  
+
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
+    warnings,
   };
 };

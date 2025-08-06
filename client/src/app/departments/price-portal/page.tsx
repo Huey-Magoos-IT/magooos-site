@@ -88,6 +88,12 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         errors: string[];
     }>({ isOpen: false, errors: [] });
 
+    const [confirmationModal, setConfirmationModal] = useState<{
+        isOpen: boolean;
+        warnings: string[];
+        onConfirm: () => void;
+    }>({ isOpen: false, warnings: [], onConfirm: () => {} });
+
     // State to track submitted report for "report in progress" screen
     const [submittedReport, setSubmittedReport] = useState<PriceChangeReport | null>(null);
 
@@ -329,73 +335,64 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         }
     };
 
-    const handleSubmitChanges = async () => {
+    const proceedWithSubmission = async (changes: PriceChange[]) => {
         try {
-            const changes = extractPriceChanges(originalCrossLocationItems, priceChanges, availableLocations);
-            
-            const validation = validatePriceChanges(changes);
-            if (!validation.isValid) {
-                setValidationModal({
-                    isOpen: true,
-                    errors: validation.errors
-                });
-                return;
-            }
-            
             const userInfo = {
                 id: String(user?.userId || 'unknown'),
                 username: user?.username || 'Unknown User',
                 groupName: userLocations.length > 0 ? userLocations[0].name : 'Unknown Group'
             };
-            
+
             const report = createPriceChangeReport(changes, userInfo, user?.locationIds || []);
-            
             const csvContent = convertPriceChangesToCSV(changes, {
                 groupName: report.groupName,
                 submittedDate: report.submittedDate,
                 reportId: report.id
             });
-            
-            const uploadResult = await uploadPriceChangeReport(
-                csvContent,
-                report.id,
-                report.groupName,
-                userInfo.id,
-                userInfo.username
-            );
-            
+
+            const uploadResult = await uploadPriceChangeReport(csvContent, report.id, report.groupName, userInfo.id, userInfo.username);
+
             if (uploadResult.success) {
                 try {
                     await toggleUserStatus({ userId: user?.userId! });
-                    console.log('User locked successfully after price submission');
                 } catch (lockError) {
                     console.error('Failed to lock user after submission:', lockError);
                 }
-
                 setSubmittedReport(report);
-                setSubmissionModal({
-                    isOpen: true,
-                    success: true,
-                    reportId: report.id,
-                    totalChanges: changes.length
-                });
+                setSubmissionModal({ isOpen: true, success: true, reportId: report.id, totalChanges: changes.length });
                 setPriceChanges({});
             } else {
-                setSubmissionModal({
-                    isOpen: true,
-                    success: false,
-                    error: uploadResult.error
-                });
+                setSubmissionModal({ isOpen: true, success: false, error: uploadResult.error });
             }
-            
         } catch (error) {
-            console.error('Error submitting price changes:', error);
+            console.error('Error proceeding with submission:', error);
             setSubmissionModal({
                 isOpen: true,
                 success: false,
-                error: 'An error occurred while submitting price changes. Please try again.'
+                error: 'An error occurred during submission processing. Please try again.'
             });
         }
+    };
+
+    const handleSubmitChanges = async () => {
+        const changes = extractPriceChanges(originalCrossLocationItems, priceChanges, availableLocations);
+        const { isValid, errors, warnings } = validatePriceChanges(changes);
+
+        if (!isValid) {
+            setValidationModal({ isOpen: true, errors });
+            return;
+        }
+
+        if (warnings.length > 0) {
+            setConfirmationModal({
+                isOpen: true,
+                warnings,
+                onConfirm: () => proceedWithSubmission(changes)
+            });
+            return;
+        }
+        
+        await proceedWithSubmission(changes);
     };
 
     useEffect(() => {
@@ -682,6 +679,56 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
                 </button>
+            )}
+
+            {/* Confirmation Modal for Warnings */}
+            {confirmationModal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                Price Change Warning
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                                Please review the following large price changes. Are you sure you want to proceed?
+                            </p>
+                            <div className="text-left space-y-2 text-sm text-gray-600 dark:text-gray-300 max-h-60 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md border border-gray-200 dark:border-gray-600">
+                                {confirmationModal.warnings.map((warning, index) => (
+                                    <div key={index} className="flex items-start">
+                                        <svg className="w-4 h-4 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M8.257 3.099c.636-1.213 2.45-1.213 3.086 0l6.242 11.928A1.75 1.75 0 0116.002 18H3.998a1.75 1.75 0 01-1.583-2.973L8.257 3.099zM10 9a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 9zm0 6a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-yellow-700 dark:text-yellow-300">{warning}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-center space-x-4">
+                            <button
+                                onClick={() => setConfirmationModal({ isOpen: false, warnings: [], onConfirm: () => {} })}
+                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    confirmationModal.onConfirm();
+                                    setConfirmationModal({ isOpen: false, warnings: [], onConfirm: () => {} });
+                                }}
+                                className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium"
+                            >
+                                Submit Anyway
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Validation Error Modal */}
