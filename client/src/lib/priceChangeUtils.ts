@@ -112,14 +112,14 @@ export const convertPriceChangesToCSV = (
   const csvData = changes.map(change => ({
     'Report ID': reportInfo.reportId,
     'Group Name': reportInfo.groupName,
-    'Submitted Date': new Date(reportInfo.submittedDate).toLocaleDateString(),
+    'Submitted Date': new Date(reportInfo.submittedDate).toISOString(),
     'Item Name': change.itemName,
     'Location ID': change.locationId,
     'Location Name': change.locationName,
     'Old Price': change.oldPrice.toFixed(2),
     'New Price': change.newPrice.toFixed(2),
     'Price Difference': (change.newPrice - change.oldPrice).toFixed(2),
-    'Change Timestamp': new Date(change.timestamp).toLocaleString()
+    'Change Timestamp': new Date(change.timestamp).toISOString()
   }));
 
   return convertToCSV(csvData);
@@ -225,10 +225,6 @@ export const validatePriceChanges = (changes: PriceChange[]): { isValid: boolean
   changes.forEach((change) => {
     if (change.newPrice < 0) {
       errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price cannot be negative.`);
-    }
-
-    if (change.newPrice > 999.99) {
-      errors.push(`Invalid price for ${change.itemName} at ${change.locationName}: Price is too high (max $999.99).`);
     }
 
     if (Math.abs(change.newPrice - change.oldPrice) > 50) {
