@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useGetAuthUserQuery, useToggleUserStatusMutation } from "@/state/api";
 import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
@@ -67,8 +67,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     const [priceDataError, setPriceDataError] = useState<string | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-    const CURRENT_SAUCE_PRICE = 0.50; 
-    const [newSaucedPrice, setNewSaucedPrice] = useState<number>(CURRENT_SAUCE_PRICE);
+    const [locationSaucePrices, setLocationSaucePrices] = useState<{ [key: string]: number }>({});
     const [priceChanges, setPriceChanges] = useState<{[key: string]: number}>({});
     const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
     const [syncAll, setSyncAll] = useState<boolean>(false);
@@ -82,7 +81,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         totalChanges?: number;
         error?: string;
     }>({ isOpen: false, success: false });
-    
+
     const [validationModal, setValidationModal] = useState<{
         isOpen: boolean;
         errors: string[];
@@ -184,6 +183,24 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     
                     const uniqueCategories = extractUniqueCategoriesFromCrossLocation(accessibleItems);
                     setCategoryList(uniqueCategories);
+
+                    // Dynamically calculate initial sauce prices for each location
+                    const initialSaucePrices: { [key: string]: number } = {};
+                    accessibleLocations.forEach(location => {
+                        let calculatedPrice = 0.30; // Default fallback
+                        const baseItem = accessibleItems.find(item => item.name.includes('BTP-3 Original-3PD') && item.locationPrices[location.id] !== undefined);
+                        const saucedItem = accessibleItems.find(item => item.name.includes('BTP-3 Sauced-3PD') && item.locationPrices[location.id] !== undefined);
+
+                        if (baseItem && saucedItem && baseItem.sauceUnitCount) {
+                            const basePrice = baseItem.locationPrices[location.id];
+                            const saucedPrice = saucedItem.locationPrices[location.id];
+                            if (basePrice !== undefined && saucedPrice !== undefined) {
+                                calculatedPrice = (saucedPrice - basePrice) / baseItem.sauceUnitCount;
+                            }
+                        }
+                        initialSaucePrices[location.id] = parseFloat(calculatedPrice.toFixed(2));
+                    });
+                    setLocationSaucePrices(initialSaucePrices);
                     
                 } catch (error) {
                     console.error("Error loading price data from S3:", error);
@@ -287,7 +304,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
                         if (saucedItem) {
                             const unitCount = changedItem.sauceUnitCount || 1;
-                            const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                            const saucePriceForLocation = locationSaucePrices[loc.id] ?? 0.30;
+                            const calculatedSaucedItemPrice = limitedPrice + (unitCount * saucePriceForLocation);
                             const saucedItemKey = `${saucedItem.name}|${loc.id}`;
                             updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                         }
@@ -301,7 +319,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
                     if (saucedItem) {
                         const unitCount = changedItem.sauceUnitCount || 1;
-                        const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                        const saucePriceForLocation = locationSaucePrices[locationId] ?? 0.30;
+                        const calculatedSaucedItemPrice = limitedPrice + (unitCount * saucePriceForLocation);
                         const saucedItemKey = `${saucedItem.name}|${locationId}`;
                         updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                     }
@@ -421,6 +440,59 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         }
     }, [sortedItems, syncedItems, syncAll]);
 
+    // Recalculate sauced item prices when any location-specific sauce price changes
+    useEffect(() => {
+        setPriceChanges(prevChanges => {
+            let updatedChanges = { ...prevChanges };
+
+            crossLocationItems.forEach(item => {
+                if (item.originalId) { // This is a sauced item
+                    const originalItem = crossLocationItems.find(orig => orig.id === item.originalId);
+                    if (originalItem) {
+                        const unitCount = originalItem.sauceUnitCount || 1;
+                        Object.keys(item.locationPrices).forEach(locationId => {
+                            const originalItemKey = `${originalItem.name}|${locationId}`;
+                            const basePrice = prevChanges[originalItemKey] ?? originalItem.locationPrices[locationId];
+                            const saucePriceForLocation = locationSaucePrices[locationId];
+                            
+                            if (basePrice !== undefined && saucePriceForLocation !== undefined) {
+                                const newCalculatedSaucedPrice = basePrice + (unitCount * saucePriceForLocation);
+                                const saucedItemKey = `${item.name}|${locationId}`;
+                                updatedChanges[saucedItemKey] = parseFloat(newCalculatedSaucedPrice.toFixed(2));
+                            }
+                        });
+                    }
+                }
+            });
+            return updatedChanges;
+        });
+    }, [locationSaucePrices]);
+
+    // Group locations by their current sauce price for UI rendering
+    const saucePriceGroups = useMemo(() => {
+        const groups: { [price: string]: LocationInfo[] } = {};
+        for (const location of availableLocations) {
+            const price = locationSaucePrices[location.id]?.toFixed(2) || '0.30';
+            if (!groups[price]) {
+                groups[price] = [];
+            }
+            groups[price].push(location);
+        }
+        return groups;
+    }, [locationSaucePrices, availableLocations]);
+
+    // Handler to update sauce prices for a group of locations
+    const handleSaucePriceGroupChange = (priceKey: string, newPrice: number) => {
+        const locationsToUpdate = saucePriceGroups[priceKey];
+        if (locationsToUpdate) {
+            const updatedSaucePrices = { ...locationSaucePrices };
+            locationsToUpdate.forEach(loc => {
+                updatedSaucePrices[loc.id] = newPrice;
+            });
+            setLocationSaucePrices(updatedSaucePrices);
+        }
+    };
+
     if (locationsIsLoading || isPriceDataLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -456,31 +528,51 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </p>
                 </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-lg mx-auto">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">Sauced Tender Price Control</h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Per Tender Sauce Price:</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${CURRENT_SAUCE_PRICE.toFixed(2)}</span>
-                        </div>
-                        <div>
-                            <div className="flex items-center mb-2">
-                                <label htmlFor="newSaucedPriceInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300">NEW Per Tender Sauced Price:</label>
-                                <div className="relative ml-2 group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                                        This is the additional upcharge for making a tender meal ‘sauced’. Modifying this value will be used to calculate prices for “Sauced” menu items if automatic calculation is implemented.
-                                        <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                    <div className="space-y-6">
+                        {Object.entries(saucePriceGroups).map(([price, locations]) => (
+                            <div key={price} className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <div className="mb-3">
+                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Locations with this price:</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {locations.map(loc => (
+                                            <span key={loc.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-xs font-medium">{loc.displayName}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Sauce Price:</span>
+                                        <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">${parseFloat(price).toFixed(2)}</span>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center mb-1">
+                                            <label htmlFor={`newSaucedPriceInput-${price}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">NEW Per Tender Sauced Price:</label>
+                                        </div>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                                            <input
+                                                id={`newSaucedPriceInput-${price}`}
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={locationSaucePrices[locations[0]?.id] ?? ''}
+                                                onChange={(e) => handleSaucePriceGroupChange(price, parseFloat(e.target.value) || 0)}
+                                                onBlur={(e) => {
+                                                    const value = parseFloat(e.target.value);
+                                                    if (!isNaN(value)) {
+                                                        handleSaucePriceGroupChange(price, parseFloat(value.toFixed(2)));
+                                                    }
+                                                }}
+                                                className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-                                <input id="newSaucedPriceInput" type="number" step="0.01" min="0" value={newSaucedPrice} onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)} onBlur={(e) => { const value = parseFloat(e.target.value); if (!isNaN(value)) { setNewSaucedPrice(parseFloat(value.toFixed(2))); } }} className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
 
