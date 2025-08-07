@@ -548,11 +548,20 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                 </tr>
                                 <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                                     <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"></th>
-                                    <th className="px-6 py-2"></th>
-                                    {availableLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-16 text-center">Current</span><span className="w-16 text-center">New</span></div></th>))}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800">
+                                    <th className="px-6 py-2 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={syncAll}
+                                            onChange={(e) => handleToggleSyncAll(e.target.checked)}
+                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            aria-label="Sync All Visible Items"
+                                            title="Sync all visible items"
+                                        />
+                                    </th>
+                                     {availableLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-24 text-center">Current</span><span className="w-24 text-center">New</span></div></th>))}
+                                 </tr>
+                             </thead>
+                             <tbody className="bg-white dark:bg-gray-800">
                                 {Object.entries(groupedItems).map(([categoryName, itemsInCategory]) => (
                                     <React.Fragment key={categoryName}>
                                         <tr className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
@@ -583,12 +592,12 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                     return (
                                                         <td key={location.id} className="px-6 py-4 text-center">
                                                             <div className="flex justify-center items-center space-x-4">
-                                                                <div className="w-16 text-center">
+                                                                <div className="w-24 text-center">
                                                                     <span className="inline-block px-2 py-1 text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 rounded">
                                                                         {currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : 'N/A'}
                                                                     </span>
                                                                 </div>
-                                                                <div className="w-16 relative">
+                                                                <div className="w-24 relative">
                                                                     <input
                                                                         type="number"
                                                                         step="0.10"
