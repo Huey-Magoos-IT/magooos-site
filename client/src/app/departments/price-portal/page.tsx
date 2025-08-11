@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGetAuthUserQuery, useToggleUserStatusMutation } from "@/state/api";
 import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
@@ -67,8 +67,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     const [priceDataError, setPriceDataError] = useState<string | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-    const CURRENT_SAUCE_PRICE = 0.50; 
-    const [newSaucedPrice, setNewSaucedPrice] = useState<number>(CURRENT_SAUCE_PRICE);
+    const [newSaucedPrices, setNewSaucedPrices] = useState<{[locationId: string]: number}>({});
     const [priceChanges, setPriceChanges] = useState<{[key: string]: number}>({});
     const [syncedItems, setSyncedItems] = useState<{[key: string]: boolean}>({});
     const [syncAll, setSyncAll] = useState<boolean>(false);
@@ -82,9 +81,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         totalChanges?: number;
         error?: string;
     }>({ isOpen: false, success: false });
-
-    // Ref to prevent initial price calculation on mount
-    const initialSaucePriceLoad = useRef(true);
     
     const [validationModal, setValidationModal] = useState<{
         isOpen: boolean;
@@ -228,6 +224,39 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         return locationsData.locations.filter((location: Location) => user.locationIds!.includes(location.id));
     }, [user?.locationIds, locationsData?.locations]);
 
+    const saucePriceInfo = useMemo(() => {
+    const info: { [price: string]: string[] } = {};
+    const meal5Original = crossLocationItems.find(item => item.name === 'MEALS-5 Original');
+    const meal5Sauced = crossLocationItems.find(item => item.name === 'MEALS-5 Sauced');
+
+    if (meal5Original && meal5Sauced) {
+        availableLocations.forEach(location => {
+            const originalPrice = meal5Original.locationPrices[location.id];
+            const saucedPrice = meal5Sauced.locationPrices[location.id];
+
+            if (originalPrice !== undefined && saucedPrice !== undefined) {
+                // The price difference is for 5 tenders, so divide by 5 for per-tender price
+                const perTenderPrice = (saucedPrice - originalPrice) / 5;
+                const priceStr = perTenderPrice.toFixed(2);
+
+                if (!info[priceStr]) {
+                    info[priceStr] = [];
+                }
+                info[priceStr].push(location.displayName);
+            }
+        });
+    }
+
+    return Object.entries(info).map(([price, locations]) => ({
+        price: parseFloat(price),
+        locations
+    }));
+    }, [crossLocationItems, availableLocations]);
+
+    const handleSaucePriceChange = (locationId: string, newPrice: number) => {
+        setNewSaucedPrices(prev => ({ ...prev, [locationId]: newPrice }));
+    };
+
     const filteredItems: CrossLocationPriceItem[] = selectedCategory === 'all'
         ? crossLocationItems
         : crossLocationItems.filter((item: CrossLocationPriceItem) => item.category === selectedCategory);
@@ -290,7 +319,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
                         if (saucedItem) {
                             const unitCount = changedItem.sauceUnitCount || 1;
-                            const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                            const locationSaucePrice = newSaucedPrices[loc.id] ?? 0;
+                            const calculatedSaucedItemPrice = limitedPrice + (unitCount * locationSaucePrice);
                             const saucedItemKey = `${saucedItem.name}|${loc.id}`;
                             updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                         }
@@ -304,7 +334,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     const saucedItem = crossLocationItems.find(item => item.originalId === changedItem.id);
                     if (saucedItem) {
                         const unitCount = changedItem.sauceUnitCount || 1;
-                        const calculatedSaucedItemPrice = limitedPrice + (unitCount * newSaucedPrice);
+                        const locationSaucePrice = newSaucedPrices[locationId] ?? 0;
+                        const calculatedSaucedItemPrice = limitedPrice + (unitCount * locationSaucePrice);
                         const saucedItemKey = `${saucedItem.name}|${locationId}`;
                         updatedChanges[saucedItemKey] = parseFloat(calculatedSaucedItemPrice.toFixed(2));
                     }
@@ -424,43 +455,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         }
     }, [sortedItems, syncedItems, syncAll]);
 
-    // Effect to recalculate sauced item prices when the newSaucedPrice changes
-    useEffect(() => {
-        // Skip the effect on the initial render to prevent overriding any loaded-in changes
-        if (initialSaucePriceLoad.current) {
-            initialSaucePriceLoad.current = false;
-            return;
-        }
-
-        setPriceChanges(prevChanges => {
-            let updatedChanges = { ...prevChanges };
-
-            crossLocationItems.forEach(item => {
-                if (item.originalId) { // This is a sauced item
-                    const originalItem = crossLocationItems.find(orig => orig.id === item.originalId);
-
-                    if (originalItem) {
-                        const unitCount = originalItem.sauceUnitCount || 1;
-                        
-                        // Recalculate for every location this item exists in
-                        Object.keys(item.locationPrices).forEach(locationId => {
-                            const originalItemKey = `${originalItem.name}|${locationId}`;
-                            // Use the already changed price if it exists, otherwise use the current price as base
-                            const basePrice = prevChanges[originalItemKey] ?? originalItem.locationPrices[locationId];
-
-                            if (basePrice !== undefined) {
-                                const newCalculatedSaucedPrice = basePrice + (unitCount * newSaucedPrice);
-                                const saucedItemKey = `${item.name}|${locationId}`;
-                                updatedChanges[saucedItemKey] = parseFloat(newCalculatedSaucedPrice.toFixed(2));
-                            }
-                        });
-                    }
-                }
-            });
-            return updatedChanges;
-        });
-    }, [newSaucedPrice]); // Depends only on newSaucedPrice to trigger
-
     if (locationsIsLoading || isPriceDataLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -495,33 +489,66 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         Showing price data for {availableLocations.length} selected location{availableLocations.length !== 1 ? 's' : ''}
                     </p>
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {saucePriceInfo.map(({ price, locations: locs }) => {
+                    const firstLocationId = availableLocations.find(l => l.displayName === locs[0])?.id;
+                    const newPrice = firstLocationId ? (newSaucedPrices[firstLocationId] ?? price) : price;
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-lg mx-auto">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">Sauced Tender Price Control</h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Per Tender Sauce Price:</span>
-                            <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${CURRENT_SAUCE_PRICE.toFixed(2)}</span>
-                        </div>
-                        <div>
-                            <div className="flex items-center mb-2">
-                                <label htmlFor="newSaucedPriceInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300">NEW Per Tender Sauced Price:</label>
-                                <div className="relative ml-2 group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                                        This is the additional upcharge for making a tender meal ‘sauced’. Modifying this value will be used to calculate prices for “Sauced” menu items if automatic calculation is implemented.
-                                        <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                    return (
+                        <div key={price} className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2 text-center">Sauced Tender Price Control</h3>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 truncate" title={locs.join(', ')}>
+                                {locs.length > 2 ? `${locs.slice(0, 2).join(', ')} & ${locs.length - 2} more` : locs.join(', ')}
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Sauce Price:</span>
+                                    <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
+                                </div>
+                                <div>
+                                    <div className="flex items-center mb-2">
+                                         <label htmlFor={`newSaucedPriceInput-${price}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">NEW Per Tender Sauced Price:</label>
+                                        <div className="relative ml-2 group">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+                                                This is the additional upcharge for making a tender meal ‘sauced’. Modifying this value will be used to calculate prices for “Sauced” menu items.
+                                                <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                                         <input
+                                            id={`newSaucedPriceInput-${price}`}
+                                            type="number" step="0.01" min="0" value={newPrice}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value) || 0;
+                                                locs.forEach(locName => {
+                                                    const locId = availableLocations.find(l => l.displayName === locName)?.id;
+                                                    if (locId) handleSaucePriceChange(locId, val);
+                                                })
+                                            }}
+                                            onBlur={(e) => {
+                                                const value = parseFloat(e.target.value);
+                                                if (!isNaN(value)) {
+                                                    locs.forEach(locName => {
+                                                        const locId = availableLocations.find(l => l.displayName === locName)?.id;
+                                                        if (locId) handleSaucePriceChange(locId, parseFloat(value.toFixed(2)));
+                                                    })
+                                                }
+                                            }}
+                                            className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="0.00"
+                                        />
                                     </div>
                                 </div>
                             </div>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-                                <input id="newSaucedPriceInput" type="number" step="0.01" min="0" value={newSaucedPrice} onChange={(e) => setNewSaucedPrice(parseFloat(e.target.value) || 0)} onBlur={(e) => { const value = parseFloat(e.target.value); if (!isNaN(value)) { setNewSaucedPrice(parseFloat(value.toFixed(2))); } }} className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00" />
-                            </div>
                         </div>
-                    </div>
+                    );
+                })}
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
