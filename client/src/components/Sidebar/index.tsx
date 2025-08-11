@@ -72,7 +72,15 @@ const Sidebar = () => {
               src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
               alt="Logo"
               width={40}
-              height={40} className="dark:invert dark:hue-rotate-180"
+              height={40}
+              className="block dark:hidden"
+            />
+            <Image
+              src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_white-01.png"
+              alt="Logo"
+              width={40}
+              height={40}
+              className="hidden dark:block"
             />
             <div className="text-xl font-bold text-gray-800 dark:text-white">
               Huey Magoo&apos;s
