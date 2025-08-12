@@ -185,6 +185,15 @@ const Sidebar = () => {
               />
             )}
             
+            {/* Show Raw Data department if user has ADMIN or RAW_DATA role */}
+            {(isTrueAdmin || hasRole(teamRoles, 'RAW_DATA')) && (
+              <SidebarLink
+                icon={Layers3}
+                label="Raw Data"
+                href="/departments/raw-data"
+              />
+            )}
+
             {/* Show Price Portal if user has LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role */}
             {hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']) && (
               <SidebarLink
