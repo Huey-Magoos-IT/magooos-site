@@ -1,6 +1,6 @@
 # Modularized Data Extraction and Reporting Workflow
 
-This document outlines the updated architecture and workflow for the data extraction and reporting system, transitioning from a monolithic Lambda function to a modular, event-driven design orchestrated by AWS Step Functions.
+This document outlines the updated architecture and workflow for the data extraction and reporting system, transitioning from a monolithic Lambda function to a modular, event-driven design orchestrated by AWS Step Functions. THIS IS ON THE AWS SITE ONLY, SEPERATE FROM THIS SITE.
 
 ## Core Components
 

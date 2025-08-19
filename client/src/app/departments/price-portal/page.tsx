@@ -490,65 +490,23 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </p>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {saucePriceInfo.map(({ price, locations: locs }) => {
-                    const firstLocationId = availableLocations.find(l => l.displayName === locs[0])?.id;
-                    const newPrice = firstLocationId ? (newSaucedPrices[firstLocationId] ?? price) : price;
-
+                <div className="flex justify-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
+                  {saucePriceInfo.map(({ price, locations: locs }) => {
                     return (
-                        <div key={price} className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2 text-center">Sauced Tender Price Control</h3>
+                        <div key={price} className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-sm mx-auto">
+                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2 text-center">Sauced Tender Price Info</h3>
                             <div className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 truncate" title={locs.join(', ')}>
                                 {locs.length > 2 ? `${locs.slice(0, 2).join(', ')} & ${locs.length - 2} more` : locs.join(', ')}
                             </div>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Sauce Price:</span>
-                                    <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
-                                </div>
-                                <div>
-                                    <div className="flex items-center mb-2">
-                                         <label htmlFor={`newSaucedPriceInput-${price}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">NEW Per Tender Sauced Price:</label>
-                                        <div className="relative ml-2 group">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-700 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                                                This is the additional upcharge for making a tender meal ‘sauced’. Modifying this value will be used to calculate prices for “Sauced” menu items.
-                                                <svg className="absolute text-gray-700 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="relative">
-                                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-                                         <input
-                                            id={`newSaucedPriceInput-${price}`}
-                                            type="number" step="0.01" min="0" value={newPrice}
-                                            onChange={(e) => {
-                                                const val = parseFloat(e.target.value) || 0;
-                                                locs.forEach(locName => {
-                                                    const locId = availableLocations.find(l => l.displayName === locName)?.id;
-                                                    if (locId) handleSaucePriceChange(locId, val);
-                                                })
-                                            }}
-                                            onBlur={(e) => {
-                                                const value = parseFloat(e.target.value);
-                                                if (!isNaN(value)) {
-                                                    locs.forEach(locName => {
-                                                        const locId = availableLocations.find(l => l.displayName === locName)?.id;
-                                                        if (locId) handleSaucePriceChange(locId, parseFloat(value.toFixed(2)));
-                                                    })
-                                                }
-                                            }}
-                                            className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">5 Piece Meals Sauce Price:</span>
+                                <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
                             </div>
                         </div>
                     );
                 })}
+                  </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -605,16 +563,16 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         </div>
                     </div>
                     
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
+                    <div className="overflow-auto max-h-[600px] relative">
+                        <table className="w-full relative">
+                            <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700">Item Name</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sync</th>
                                     {availableLocations.map(location => (<th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">{location.displayName.toUpperCase()}</th>))}
                                 </tr>
                                 <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"></th>
+                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 sticky left-0 bg-gray-50 dark:bg-gray-700"></th>
                                     <th className="px-6 py-2 text-center">
                                         <input
                                             type="checkbox"
@@ -626,8 +584,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                         />
                                     </th>
                                      {availableLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-24 text-center">Current</span><span className="w-24 text-center">New</span></div></th>))}
-                                 </tr>
-                             </thead>
+                                  </tr>
+                              </thead>
                              <tbody className="bg-white dark:bg-gray-800">
                                 {Object.entries(groupedItems).map(([categoryName, itemsInCategory]) => (
                                     <React.Fragment key={categoryName}>
@@ -640,7 +598,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                         </tr>
                                         {expandedCategories[categoryName] && itemsInCategory.map(item => (
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white sticky left-0 bg-white dark:bg-gray-800">{item.name}</td>
                                                 <td className="px-6 py-4 text-center">
                                                 <input
                                                      type="checkbox"
@@ -667,7 +625,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                                 <div className="w-24 relative">
                                                                     <input
                                                                         type="number"
-                                                                        step="0.10"
+                                                                        step="0.01"
                                                                         min="0"
                                                                         placeholder={currentPrice !== undefined ? currentPrice.toFixed(2) : '0.00'}
                                                                         value={priceChanges[priceChangeKey] ?? ''}
@@ -745,16 +703,28 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             
             {/* --- FLOATING ACTION BUTTONS --- */}
             {showBackToTop && (
-                <button
-                    onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 z-50 bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 animate-fade-in"
-                    aria-label="Scroll to top"
-                    title="Back to top"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                </button>
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+                    <button
+                        onClick={scrollToTop}
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll to top"
+                        title="Back to top"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll to bottom"
+                        title="Go to bottom"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
             )}
 
             {/* Confirmation Modal for Warnings */}
