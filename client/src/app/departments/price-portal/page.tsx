@@ -300,6 +300,22 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         });
     };
 
+    const scrollTableHorizontally = (direction: 'left' | 'right') => {
+        const tableContainer = document.getElementById('price-table-container');
+        if (tableContainer) {
+            const scrollAmount = 300; // pixels to scroll
+            const currentScroll = tableContainer.scrollLeft;
+            const newScroll = direction === 'left'
+                ? currentScroll - scrollAmount
+                : currentScroll + scrollAmount;
+            
+            tableContainer.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
         const limitedPrice = isNaN(newRegularPrice) ? 0 : parseFloat(newRegularPrice.toFixed(2));
         const [itemName, locationId] = itemLocationKey.split('|');
@@ -551,28 +567,33 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Price Management</h3>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={syncAll}
-                                    onChange={(e) => handleToggleSyncAll(e.target.checked)}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
-                            </label>
+                            <div className="flex items-center space-x-4">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    💡 Tip: Use ← → arrow keys or scroll horizontally to view all locations
+                                </div>
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={syncAll}
+                                        onChange={(e) => handleToggleSyncAll(e.target.checked)}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
-                    <div className="overflow-auto max-h-[600px] relative">
-                        <table className="w-full relative">
-                            <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                    <div className="overflow-x-auto" id="price-table-container">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700">Item Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item Name</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sync</th>
                                     {availableLocations.map(location => (<th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">{location.displayName.toUpperCase()}</th>))}
                                 </tr>
                                 <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 sticky left-0 bg-gray-50 dark:bg-gray-700"></th>
+                                    <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"></th>
                                     <th className="px-6 py-2 text-center">
                                         <input
                                             type="checkbox"
@@ -598,7 +619,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                         </tr>
                                         {expandedCategories[categoryName] && itemsInCategory.map(item => (
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white sticky left-0 bg-white dark:bg-gray-800">{item.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
                                                 <td className="px-6 py-4 text-center">
                                                 <input
                                                      type="checkbox"
@@ -703,25 +724,39 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             
             {/* --- FLOATING ACTION BUTTONS --- */}
             {showBackToTop && (
-                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+                <button
+                    onClick={scrollToTop}
+                    className="fixed bottom-6 right-6 z-50 bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                    aria-label="Scroll to top"
+                    title="Back to top"
+                >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                </button>
+            )}
+
+            {/* Horizontal Navigation Buttons */}
+            {availableLocations.length > 3 && (
+                <div className="fixed left-6 bottom-6 z-50 flex gap-2">
                     <button
-                        onClick={scrollToTop}
-                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
-                        aria-label="Scroll to top"
-                        title="Back to top"
+                        onClick={() => scrollTableHorizontally('left')}
+                        className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll table left"
+                        title="Scroll left to see more locations"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
                     <button
-                        onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
-                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
-                        aria-label="Scroll to bottom"
-                        title="Go to bottom"
+                        onClick={() => scrollTableHorizontally('right')}
+                        className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll table right"
+                        title="Scroll right to see more locations"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                 </div>
