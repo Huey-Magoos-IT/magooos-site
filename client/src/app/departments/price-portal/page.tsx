@@ -86,6 +86,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         isOpen: boolean;
         errors: string[];
     }>({ isOpen: false, errors: [] });
+    
+    const [showHorizontalScroll, setShowHorizontalScroll] = useState<boolean>(false);
 
     const [confirmationModal, setConfirmationModal] = useState<{
         isOpen: boolean;
@@ -213,11 +215,48 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         const handleScroll = () => {
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             setShowBackToTop(scrollTop > 100);
+            
+            // Check if the table is in view and needs horizontal scrolling
+            const tableContainer = document.getElementById('price-table-container');
+            if (tableContainer) {
+                const rect = tableContainer.getBoundingClientRect();
+                const isInView = rect.top < window.innerHeight && rect.bottom > 0;
+                const needsHorizontalScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
+                setShowHorizontalScroll(isInView && needsHorizontalScroll);
+            }
         };
 
+        handleScroll(); // Check initially
         window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+        window.addEventListener('resize', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
+    }, [availableLocations]);
+
+    // Sync the sticky scrollbar with the table
+    useEffect(() => {
+        const tableContainer = document.getElementById('price-table-container');
+        const stickyScrollbar = document.getElementById('sticky-horizontal-scrollbar');
+        
+        if (!tableContainer || !stickyScrollbar) return;
+
+        const syncScroll = (source: HTMLElement, target: HTMLElement) => {
+            target.scrollLeft = source.scrollLeft;
+        };
+
+        const handleTableScroll = () => syncScroll(tableContainer, stickyScrollbar);
+        const handleStickyScroll = () => syncScroll(stickyScrollbar, tableContainer);
+
+        tableContainer.addEventListener('scroll', handleTableScroll);
+        stickyScrollbar.addEventListener('scroll', handleStickyScroll);
+
+        return () => {
+            tableContainer.removeEventListener('scroll', handleTableScroll);
+            stickyScrollbar.removeEventListener('scroll', handleStickyScroll);
+        };
+    }, [showHorizontalScroll]);
 
     const userLocations: Location[] = useMemo(() => {
         if (!user?.locationIds || !locationsData?.locations) return [];
@@ -300,21 +339,6 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
         });
     };
 
-    const scrollTableHorizontally = (direction: 'left' | 'right') => {
-        const tableContainer = document.getElementById('price-table-container');
-        if (tableContainer) {
-            const scrollAmount = 300; // pixels to scroll
-            const currentScroll = tableContainer.scrollLeft;
-            const newScroll = direction === 'left'
-                ? currentScroll - scrollAmount
-                : currentScroll + scrollAmount;
-            
-            tableContainer.scrollTo({
-                left: newScroll,
-                behavior: 'smooth'
-            });
-        }
-    };
 
     const handlePriceChange = (itemLocationKey: string, newRegularPrice: number) => {
         const limitedPrice = isNaN(newRegularPrice) ? 0 : parseFloat(newRegularPrice.toFixed(2));
@@ -567,20 +591,15 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Price Management</h3>
-                            <div className="flex items-center space-x-4">
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    💡 Tip: Use ← → arrow keys or scroll horizontally to view all locations
-                                </div>
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={syncAll}
-                                        onChange={(e) => handleToggleSyncAll(e.target.checked)}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    />
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
-                                </label>
-                            </div>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={syncAll}
+                                    onChange={(e) => handleToggleSyncAll(e.target.checked)}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
+                            </label>
                         </div>
                     </div>
                     
@@ -724,41 +743,51 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             
             {/* --- FLOATING ACTION BUTTONS --- */}
             {showBackToTop && (
-                <button
-                    onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 z-50 bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
-                    aria-label="Scroll to top"
-                    title="Back to top"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                </button>
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+                    <button
+                        onClick={scrollToTop}
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll to top"
+                        title="Back to top"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        aria-label="Scroll to bottom"
+                        title="Go to bottom"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
             )}
 
-            {/* Horizontal Navigation Buttons */}
-            {availableLocations.length > 3 && (
-                <div className="fixed left-6 bottom-6 z-50 flex gap-2">
-                    <button
-                        onClick={() => scrollTableHorizontally('left')}
-                        className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
-                        aria-label="Scroll table left"
-                        title="Scroll left to see more locations"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <button
-                        onClick={() => scrollTableHorizontally('right')}
-                        className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
-                        aria-label="Scroll table right"
-                        title="Scroll right to see more locations"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
+            {/* Sticky Horizontal Scrollbar */}
+            {showHorizontalScroll && (
+                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2">
+                    <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Scroll for locations:</span>
+                        <div
+                            id="sticky-horizontal-scrollbar"
+                            className="flex-1 overflow-x-auto"
+                            style={{
+                                overflowY: 'hidden',
+                                height: '40px'
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: document.getElementById('price-table-container')?.scrollWidth || '100%',
+                                    height: '1px'
+                                }}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
 
