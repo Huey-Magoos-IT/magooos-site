@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar for price table container */
+#price-table-container::-webkit-scrollbar {
+  display: none;
+}
+
 *,
 *::before,
 *::after {

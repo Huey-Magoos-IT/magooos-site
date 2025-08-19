@@ -603,7 +603,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         </div>
                     </div>
                     
-                    <div className="overflow-x-auto" id="price-table-container">
+                    <div className="overflow-x-auto" id="price-table-container" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <table className="w-full">
                             <thead className="bg-gray-50 dark:bg-gray-700">
                                 <tr>
@@ -769,24 +769,21 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 
             {/* Sticky Horizontal Scrollbar */}
             {showHorizontalScroll && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2">
-                    <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Scroll for locations:</span>
+                <div className="fixed bottom-0 left-0 right-0 z-40 bg-transparent pointer-events-none" style={{ paddingBottom: '80px' }}>
+                    <div
+                        id="sticky-horizontal-scrollbar"
+                        className="overflow-x-auto bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pointer-events-auto"
+                        style={{
+                            overflowY: 'hidden',
+                            height: '12px'
+                        }}
+                    >
                         <div
-                            id="sticky-horizontal-scrollbar"
-                            className="flex-1 overflow-x-auto"
                             style={{
-                                overflowY: 'hidden',
-                                height: '40px'
+                                width: document.getElementById('price-table-container')?.scrollWidth || '100%',
+                                height: '1px'
                             }}
-                        >
-                            <div
-                                style={{
-                                    width: document.getElementById('price-table-container')?.scrollWidth || '100%',
-                                    height: '1px'
-                                }}
-                            />
-                        </div>
+                        />
                     </div>
                 </div>
             )}
