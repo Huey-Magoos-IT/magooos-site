@@ -2,9 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide scrollbar for price table container */
+/* Hide scrollbar for price table container only (not the sticky one) */
 #price-table-container::-webkit-scrollbar {
   display: none;
+}
+
+/* Ensure sticky scrollbar remains visible */
+#sticky-horizontal-scrollbar::-webkit-scrollbar {
+  display: block;
+  height: 12px;
+}
+
+#sticky-horizontal-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#sticky-horizontal-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+#sticky-horizontal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 *,
