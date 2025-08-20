@@ -225,18 +225,25 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                 const isInView = rect.top < window.innerHeight && rect.bottom > 0;
                 const needsHorizontalScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
                 
-                // Only show sticky scrollbar if table bottom is not visible (table extends below viewport)
-                const tableBottomVisible = rect.bottom <= window.innerHeight;
-                const shouldShowStickyScroll = isInView && needsHorizontalScroll && !tableBottomVisible;
-                
-                setShowHorizontalScroll(shouldShowStickyScroll);
+                setShowHorizontalScroll(isInView && needsHorizontalScroll);
                 
                 // Update sticky scrollbar position and width
-                if (stickyScrollbar && shouldShowStickyScroll) {
+                if (stickyScrollbar && isInView && needsHorizontalScroll) {
                     const stickyScrollbarContainer = stickyScrollbar.parentElement;
                     if (stickyScrollbarContainer) {
                         stickyScrollbarContainer.style.left = `${rect.left}px`;
                         stickyScrollbarContainer.style.width = `${rect.width}px`;
+                        
+                        // Position at screen bottom if table bottom is not visible,
+                        // otherwise position at table bottom
+                        const tableBottomVisible = rect.bottom <= window.innerHeight;
+                        if (tableBottomVisible) {
+                            // Position at table bottom
+                            stickyScrollbarContainer.style.bottom = `${window.innerHeight - rect.bottom}px`;
+                        } else {
+                            // Position at screen bottom
+                            stickyScrollbarContainer.style.bottom = '0px';
+                        }
                     }
                 }
             }
