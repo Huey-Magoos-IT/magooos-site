@@ -218,11 +218,22 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             
             // Check if the table is in view and needs horizontal scrolling
             const tableContainer = document.getElementById('price-table-container');
+            const stickyScrollbar = document.getElementById('sticky-horizontal-scrollbar');
+            
             if (tableContainer) {
                 const rect = tableContainer.getBoundingClientRect();
                 const isInView = rect.top < window.innerHeight && rect.bottom > 0;
                 const needsHorizontalScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
                 setShowHorizontalScroll(isInView && needsHorizontalScroll);
+                
+                // Update sticky scrollbar position and width
+                if (stickyScrollbar && isInView && needsHorizontalScroll) {
+                    const stickyScrollbarContainer = stickyScrollbar.parentElement;
+                    if (stickyScrollbarContainer) {
+                        stickyScrollbarContainer.style.left = `${rect.left}px`;
+                        stickyScrollbarContainer.style.width = `${rect.width}px`;
+                    }
+                }
             }
         };
 
@@ -769,7 +780,15 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 
             {/* Sticky Horizontal Scrollbar */}
             {showHorizontalScroll && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 bg-transparent pointer-events-none" style={{ paddingBottom: '80px' }}>
+                <div
+                    id="sticky-scrollbar-container"
+                    className="fixed z-40 bg-transparent pointer-events-none"
+                    style={{
+                        bottom: '20px',
+                        left: '0px',
+                        width: '100%'
+                    }}
+                >
                     <div
                         id="sticky-horizontal-scrollbar"
                         className="overflow-x-auto bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pointer-events-auto"
