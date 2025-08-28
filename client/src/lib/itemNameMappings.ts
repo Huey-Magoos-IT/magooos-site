@@ -7,7 +7,12 @@ const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-l
  * Fetches all unique item names from the price data files in S3.
  * This function is designed to be called on the client-side, specifically in an admin-only section.
  */
-export const fetchUniqueItemNames = async (): Promise<string[]> => {
+export interface MappedItem {
+    name: string;
+    category: string;
+}
+
+export const fetchUniqueItemsWithCategory = async (): Promise<MappedItem[]> => {
     try {
         const files = await fetchFiles(S3_DATA_LAKE, 'price-pool/');
         if (files.length === 0) {
@@ -15,19 +20,29 @@ export const fetchUniqueItemNames = async (): Promise<string[]> => {
             return [];
         }
 
-        // Use the latest file to get the most up-to-date item list
         const latestFile = files[0];
         const csvData = await fetchCSV(`${S3_DATA_LAKE}/price-pool/${latestFile}`);
-
         const { items } = await parseCrossLocationPriceData(csvData);
 
-        const uniqueNames = new Set(items.map(item => item.name));
+        const uniqueItems = Array.from(new Set(items.map(item => item.name)))
+            .map(name => {
+                const item = items.find(i => i.name === name);
+                return {
+                    name: name,
+                    category: item?.category || 'Uncategorized',
+                };
+            });
 
-        return Array.from(uniqueNames).sort();
+        return uniqueItems.sort((a, b) => {
+            if (a.category < b.category) return -1;
+            if (a.category > b.category) return 1;
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+        });
 
     } catch (error) {
         console.error("Error fetching unique item names from S3:", error);
-        // In case of an error, return an empty array to prevent the page from crashing.
         return [];
     }
 };
