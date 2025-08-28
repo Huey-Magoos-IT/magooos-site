@@ -50,6 +50,7 @@ export const fetchUniqueItemsWithCategory = async (): Promise<MappedItem[]> => {
 export interface ItemMapping {
     originalName: string;
     friendlyName: string;
+    category?: string;
 }
 
 /**
