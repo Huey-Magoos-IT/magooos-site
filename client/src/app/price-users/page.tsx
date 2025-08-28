@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useGetAuthUserQuery, useGetUsersQuery, useToggleUserStatusMutation, useGetTeamsQuery } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { hasRole, isPriceAdmin } from "@/lib/accessControl";
@@ -461,6 +462,11 @@ const PriceUsersPage = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/price-users/item-mappings">
+                  <button className="px-4 py-2 rounded-lg font-medium transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300">
+                      Manage Item Mappings
+                  </button>
+              </Link>
               <button
                 onClick={() => setShowArchived(!showArchived)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${

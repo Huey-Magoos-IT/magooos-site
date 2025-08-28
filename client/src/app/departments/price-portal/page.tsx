@@ -18,6 +18,7 @@ import {
     PriceChangeReport
 } from "@/lib/priceChangeUtils";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
+import { fetchItemNameMappings, ItemMapping } from "@/lib/itemNameMappings";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 
@@ -88,6 +89,8 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
     }>({ isOpen: false, errors: [] });
     
     const [showHorizontalScroll, setShowHorizontalScroll] = useState<boolean>(false);
+    const [locationsExpanded, setLocationsExpanded] = useState<boolean>(false);
+    const [saucePriceExpanded, setSaucePriceExpanded] = useState<boolean>(false);
 
     const [confirmationModal, setConfirmationModal] = useState<{
         isOpen: boolean;
@@ -97,6 +100,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
 
     // State to track submitted report for "report in progress" screen
     const [submittedReport, setSubmittedReport] = useState<PriceChangeReport | null>(null);
+    const [itemNameMappings, setItemNameMappings] = useState<Map<string, string>>(new Map());
 
     // Clear location selection on page refresh (session-only persistence)
     useEffect(() => {
@@ -150,6 +154,10 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             if (user?.locationIds && locationsData?.locations && selectedLocationIds.length > 0) {
                 try {
                     setIsPriceDataLoading(true);
+                    
+                    const mappings = await fetchItemNameMappings();
+                    const mappingsMap = new Map(mappings.map(m => [m.originalName, m.friendlyName]));
+                    setItemNameMappings(mappingsMap);
                     setPriceDataError(null);
                     
                     const files = await fetchFiles(S3_DATA_LAKE, 'price-pool/');
@@ -541,35 +549,86 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             Change Locations
                         </button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        {availableLocations.map((location: LocationInfo) => (
-                            <span key={location.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-                                {location.displayName}
-                            </span>
-                        ))}
+                    
+                    {/* Location tags with smart height management */}
+                    <div className={`relative ${availableLocations.length > 12 ? 'mb-2' : ''}`}>
+                        <div
+                            className={`flex flex-wrap gap-2 transition-all duration-300 overflow-hidden ${
+                                availableLocations.length > 12 && !locationsExpanded
+                                    ? 'max-h-20'
+                                    : availableLocations.length > 20
+                                        ? 'max-h-48 overflow-y-auto'
+                                        : 'max-h-none'
+                            }`}
+                        >
+                            {availableLocations.map((location: LocationInfo) => (
+                                <span key={location.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                                    {location.displayName}
+                                </span>
+                            ))}
+                        </div>
+                        
+                        {/* Show expand/collapse button for many locations */}
+                        {availableLocations.length > 12 && (
+                            <div className={`${!locationsExpanded ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white dark:from-gray-800 to-transparent h-8 flex items-end justify-center' : 'mt-2 flex justify-center'}`}>
+                                <button
+                                    onClick={() => setLocationsExpanded(!locationsExpanded)}
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-600 transition-colors"
+                                >
+                                    {locationsExpanded ? `Show Less ▲` : `Show All ${availableLocations.length} ▼`}
+                                </button>
+                            </div>
+                        )}
                     </div>
+                    
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                         Showing price data for {availableLocations.length} selected location{availableLocations.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 
-                <div className="flex justify-center">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
-                  {saucePriceInfo.map(({ price, locations: locs }) => {
-                    return (
-                        <div key={price} className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 max-w-sm mx-auto">
-                            <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-2 text-center">Sauced Tender Price Info</h3>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 truncate" title={locs.join(', ')}>
-                                {locs.length > 2 ? `${locs.slice(0, 2).join(', ')} & ${locs.length - 2} more` : locs.join(', ')}
-                            </div>
-                            <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">5 Piece Meals Sauce Price:</span>
-                                <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
-                            </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sauced Tender Price Info</h3>
+                        {saucePriceInfo.length > 3 && (
+                            <button
+                                onClick={() => setSaucePriceExpanded(!saucePriceExpanded)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-600 transition-colors"
+                            >
+                                {saucePriceExpanded ? `Show Less ▲` : `Show All ${saucePriceInfo.length} ▼`}
+                            </button>
+                        )}
+                    </div>
+                    
+                    <div className="relative">
+                        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 transition-all duration-300 ${
+                            saucePriceInfo.length > 3 && !saucePriceExpanded ? 'max-h-64 overflow-hidden' : 'max-h-none'
+                        }`}>
+                            {saucePriceInfo.map(({ price, locations: locs }, index) => {
+                                const isHidden = saucePriceInfo.length > 3 && !saucePriceExpanded && index >= 3;
+                                return (
+                                    <div
+                                        key={price}
+                                        className={`bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 transition-all duration-300 ${
+                                            isHidden ? 'opacity-50 transform scale-95' : 'opacity-100 transform scale-100'
+                                        }`}
+                                    >
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center mb-3" title={locs.join(', ')}>
+                                            {locs.length > 3 ? `${locs.slice(0, 3).join(', ')} & ${locs.length - 3} more` : locs.join(', ')}
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
+                                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">5 Piece Sauce:</span>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
-                  </div>
+                        
+                        {/* Show gradient overlay when collapsed */}
+                        {saucePriceInfo.length > 3 && !saucePriceExpanded && (
+                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none"></div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -661,7 +720,9 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                         </tr>
                                         {expandedCategories[categoryName] && itemsInCategory.map(item => (
                                             <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                    {itemNameMappings.get(item.name) || item.name}
+                                                </td>
                                                 <td className="px-6 py-4 text-center">
                                                 <input
                                                      type="checkbox"
