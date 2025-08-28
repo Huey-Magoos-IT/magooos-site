@@ -96,7 +96,10 @@ const ItemMappingsPage = () => {
         const categories = [...new Set(mappings.map(m => m.category))];
         return [
             { value: 'all', label: 'All Categories' },
-            ...categories.map(cat => ({ value: cat, label: cat }))
+            ...categories.map(cat => ({
+                value: cat,
+                label: cat?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Uncategorized'
+            }))
         ];
     }, [mappings]);
 
