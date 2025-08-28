@@ -265,8 +265,16 @@ const ItemMappingsPage = () => {
                                         <tr className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
                                             <td colSpan={2} className="px-6 py-3 text-left">
                                                 <div className="flex items-center">
+                                                    <svg
+                                                        className={`w-4 h-4 mr-2 transition-transform duration-200 ${expandedCategories[categoryName] ? 'rotate-90' : ''}`}
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
                                                     <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
-                                                        {expandedCategories[categoryName] ? '▼' : '►'} {categoryName} ({itemsInCategory.length})
+                                                        {categoryName} ({itemsInCategory.length})
                                                     </span>
                                                 </div>
                                             </td>
