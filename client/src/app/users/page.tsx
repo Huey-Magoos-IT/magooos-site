@@ -10,6 +10,7 @@ import {
   useListCognitoUsersQuery,
   useResendVerificationLinkMutation,
   useDeleteCognitoUserMutation,
+  useUpdateUserEmailMutation,
   type User as ApiUser, // Alias the User interface from API
   type CognitoUser,
 } from "@/state/api";
@@ -42,9 +43,10 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle
+  DialogTitle,
+  TextField,
 } from "@mui/material";
-import { AlertCircle, Check, User as UserIcon, UserPlus } from "lucide-react"; // Alias the User icon
+import { AlertCircle, Check, User as UserIcon, UserPlus, Edit } from "lucide-react"; // Alias the User icon
 import ViewToggle, { ViewType } from "@/components/ViewToggle";
 import RoleBadge from "@/components/RoleBadge";
 import UserCard from "@/components/UserCard";
@@ -73,6 +75,7 @@ const Users = () => {
   });
   const [resendVerificationLink, { isLoading: isResendingVerification }] = useResendVerificationLinkMutation();
   const [deleteCognitoUser, { isLoading: isDeletingCognitoUser }] = useDeleteCognitoUserMutation();
+  const [updateUserEmail, { isLoading: isUpdatingEmail }] = useUpdateUserEmailMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -85,6 +88,9 @@ const Users = () => {
   const [cognitoUserToDelete, setCognitoUserToDelete] = useState<string | null>(null);
   const [isResendDialogOpen, setIsResendDialogOpen] = useState(false);
   const [cognitoUserToResend, setCognitoUserToResend] = useState<string | null>(null);
+  const [isEditEmailModalOpen, setIsEditEmailModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<ApiUser | null>(null);
+  const [newEmail, setNewEmail] = useState("");
   // The user object passed from UserCard will match its internal prop structure
   const [userToDelete, setUserToDelete] = useState<{
     userId: number;
@@ -364,6 +370,26 @@ const Users = () => {
     { field: "userId", headerName: "ID", width: 70 },
     { field: "username", headerName: "Username", width: 150 },
     {
+      field: "email",
+      headerName: "Email",
+      width: 250,
+      renderCell: (params: GridRenderCellParams) => (
+        <div className="flex items-center">
+          <span>{params.value}</span>
+          <button
+            onClick={() => {
+              setUserToEdit(params.row);
+              setNewEmail(params.row.email);
+              setIsEditEmailModalOpen(true);
+            }}
+            className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
+            <Edit size={16} />
+          </button>
+        </div>
+      ),
+    },
+    {
       field: "profilePictureUrl",
       headerName: "Profile Picture",
       width: 100,
@@ -492,7 +518,7 @@ const Users = () => {
   const { activeUsers, disabledUsers } = useMemo(() => {
     if (!users) return { activeUsers: [], disabledUsers: [] };
 
-    const allFilteredUsers = users.filter(user => {
+    const allFilteredUsers = users.filter((user: ApiUser) => {
       const matchesSearch = searchQuery === "" ||
         (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase()));
       
@@ -625,6 +651,7 @@ const Users = () => {
                 user={{
                   userId: user.userId as number,
                   username: user.username as string,
+                  email: user.email,
                   profilePictureUrl: user.profilePictureUrl,
                   teamId: user.teamId,
                   locationIds: user.locationIds,
@@ -658,6 +685,7 @@ const Users = () => {
                 user={{
                   userId: user.userId as number,
                   username: user.username as string,
+                  email: user.email,
                   profilePictureUrl: user.profilePictureUrl,
                   teamId: user.teamId,
                   locationIds: user.locationIds,
@@ -849,6 +877,43 @@ const Users = () => {
           </Button>
           <Button onClick={handleResendVerification} color="primary" variant="contained" autoFocus disabled={isResendingVerification}>
             {isResendingVerification ? <CircularProgress size={24} color="inherit" /> : "Send Link"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Email Modal */}
+      <Dialog open={isEditEmailModalOpen} onClose={() => setIsEditEmailModalOpen(false)}>
+        <DialogTitle>Edit Email for {userToEdit?.username}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Email Address"
+            type="email"
+            fullWidth
+            variant="standard"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditEmailModalOpen(false)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              if (userToEdit && newEmail) {
+                try {
+                  await updateUserEmail({ userId: userToEdit.userId!, email: newEmail }).unwrap();
+                  toast.success("Email updated. Please check for a verification email.");
+                  setIsEditEmailModalOpen(false);
+                  refetchUsers();
+                } catch (error) {
+                  toast.error("Failed to update email.");
+                }
+              }
+            }}
+            disabled={isUpdatingEmail}
+          >
+            {isUpdatingEmail ? <CircularProgress size={24} /> : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

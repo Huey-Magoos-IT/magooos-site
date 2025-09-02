@@ -15,6 +15,7 @@ import {
   deleteCognitoUser,
   getPriceUsers,
   toggleUserStatus,
+  updateUserEmail,
 } from "../controllers/userController";
 
 const router = Router();
@@ -30,6 +31,7 @@ router.post("/location-user", createLocationUser); // POST to create a new locat
 router.patch("/:userId/disable", disableUser); // PATCH to disable a user (in DB and Cognito)
 router.patch("/:userId/enable", enableUser); // PATCH to enable a user (in DB and Cognito)
 router.delete("/:userId", deleteUser); // DELETE a user (permanent from DB and Cognito)
+router.patch("/:userId/email", updateUserEmail); // PATCH to update a user's email
 
 // --- Cognito Management Routes ---
 router.get("/cognito/list", listCognitoUsers); // GET Cognito users with optional filtering

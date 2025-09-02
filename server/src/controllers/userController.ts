@@ -7,7 +7,8 @@ import {
   AdminDeleteUserCommand,
   ListUsersCommand,
   AdminCreateUserCommand,
-  ResendConfirmationCodeCommand
+  ResendConfirmationCodeCommand,
+  AdminUpdateUserAttributesCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
@@ -280,6 +281,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
         userId: true,
         cognitoId: true,
         username: true,
+        email: true,
         profilePictureUrl: true,
         teamId: true,
         groupId: true,
@@ -365,12 +367,13 @@ export const postUser = async (req: Request, res: Response) => {
     const {
       username,
       cognitoId,
+      email,
       profilePictureUrl = "i1.jpg",
       teamId = 1, // Default teamId if not provided
       locationIds = [], // Default to empty array if not provided
     } = req.body;
 
-    console.log("[postUser] Extracted data:", { username, cognitoId, profilePictureUrl, teamId, locationIds });
+    console.log("[postUser] Extracted data:", { username, cognitoId, email, profilePictureUrl, teamId, locationIds });
 
     // Ensure locationIds are strings if Prisma expects String[] and receives numbers
     const processedLocationIds = Array.isArray(locationIds) ? locationIds.map(id => String(id)) : [];
@@ -379,6 +382,7 @@ export const postUser = async (req: Request, res: Response) => {
       data: {
         username,
         cognitoId,
+        email,
         profilePictureUrl,
         teamId: Number(teamId), // Ensure teamId is a number
         locationIds: processedLocationIds, // Add locationIds
@@ -1285,6 +1289,50 @@ export const toggleUserStatus = async (req: Request, res: Response): Promise<voi
       message: "Error toggling user status",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+};
+
+export const updateUserEmail = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400).json({ message: "Email is required." });
+    return;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { userId: parseInt(userId) },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    // Update in Cognito
+    const command = new AdminUpdateUserAttributesCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Username: user.username,
+      UserAttributes: [
+        { Name: "email", Value: email },
+        { Name: "email_verified", Value: "false" },
+      ],
+    });
+    await cognitoClient.send(command);
+
+    // Update in local DB
+    await prisma.user.update({
+      where: { userId: parseInt(userId) },
+      data: { email },
+    });
+
+    res.status(200).json({ message: "User email updated successfully. A new verification link has been sent." });
+
+  } catch (error: any) {
+    console.error(`Error updating email for user ${userId}:`, error);
+    res.status(500).json({ message: `Error updating email: ${error.message}` });
   }
 };
 

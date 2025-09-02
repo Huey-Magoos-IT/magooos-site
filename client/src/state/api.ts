@@ -59,7 +59,7 @@ export interface Group {
 export interface User {
   userId?: number;
   username: string;
-  email: string;
+  email?: string;
   profilePictureUrl?: string;
   cognitoId?: string;
   teamId?: number;
@@ -470,6 +470,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users"],
     }),
+    updateUserEmail: build.mutation<User, { userId: number; email: string }>({
+      query: ({ userId, email }) => ({
+        url: `users/${userId}/email`,
+        method: "PATCH",
+        body: { email },
+      }),
+      invalidatesTags: ["Users", "CognitoUsers"],
+    }),
   }),
 });
 
@@ -511,4 +519,5 @@ export const {
   useDeleteCognitoUserMutation,
   // Price user management hooks
   useToggleUserStatusMutation,
+  useUpdateUserEmailMutation,
 } = api;

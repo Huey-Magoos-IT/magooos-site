@@ -13,6 +13,7 @@ interface UserCardProps {
   user: {
     userId: number;
     username: string;
+    email?: string;
     profilePictureUrl?: string;
     teamId?: number | null;
     locationIds?: string[];
@@ -302,7 +303,9 @@ const UserCard: React.FC<UserCardProps> = ({
             </div>
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">{user.username}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">ID: {user.userId}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {user.email || `ID: ${user.userId}`}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-1">
