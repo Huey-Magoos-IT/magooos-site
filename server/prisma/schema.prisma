@@ -18,6 +18,7 @@ model User {
   userId            Int     @id @default(autoincrement())
   cognitoId         String  @unique
   username          String  @unique
+  email             String? @unique
   profilePictureUrl String?
   teamId            Int?
   groupId           Int?    // For LocationAdmin users
