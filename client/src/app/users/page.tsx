@@ -91,6 +91,8 @@ const Users = () => {
   const [isEditEmailModalOpen, setIsEditEmailModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<ApiUser | null>(null);
   const [newEmail, setNewEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   // The user object passed from UserCard will match its internal prop structure
   const [userToDelete, setUserToDelete] = useState<{
     userId: number;
@@ -882,38 +884,72 @@ const Users = () => {
       </Dialog>
 
       {/* Edit Email Modal */}
-      <Dialog open={isEditEmailModalOpen} onClose={() => setIsEditEmailModalOpen(false)}>
+      <Dialog open={isEditEmailModalOpen} onClose={() => {
+        setIsEditEmailModalOpen(false);
+        setEmailError("");
+      }}>
         <DialogTitle>Edit Email for {userToEdit?.username}</DialogTitle>
         <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Please enter the new email address. A confirmation will be required.
+          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
-            label="Email Address"
+            label="New Email Address"
             type="email"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
+            error={!!emailError}
+          />
+          <TextField
+            margin="dense"
+            label="Confirm New Email Address"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={confirmEmail}
+            onChange={(e) => setConfirmEmail(e.target.value)}
+            error={!!emailError}
+            helperText={emailError}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsEditEmailModalOpen(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setIsEditEmailModalOpen(false);
+            setEmailError("");
+          }}>Cancel</Button>
           <Button
             onClick={async () => {
+              if (newEmail !== confirmEmail) {
+                setEmailError("Emails do not match.");
+                return;
+              }
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(newEmail)) {
+                setEmailError("Invalid email format.");
+                return;
+              }
+              setEmailError("");
+
               if (userToEdit && newEmail) {
                 try {
                   await updateUserEmail({ userId: userToEdit.userId!, email: newEmail }).unwrap();
-                  toast.success("Email updated. Please check for a verification email.");
+                  toast.success(`Email for ${userToEdit.username} updated to ${newEmail}. A verification email has been sent.`);
                   setIsEditEmailModalOpen(false);
                   refetchUsers();
-                } catch (error) {
-                  toast.error("Failed to update email.");
+                } catch (error: any) {
+                  const errorMessage = error.data?.message || "Failed to update email.";
+                  toast.error(errorMessage);
+                  setEmailError(errorMessage);
                 }
               }
             }}
-            disabled={isUpdatingEmail}
+            disabled={isUpdatingEmail || !newEmail || !confirmEmail}
           >
-            {isUpdatingEmail ? <CircularProgress size={24} /> : "Save"}
+            {isUpdatingEmail ? <CircularProgress size={24} /> : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>

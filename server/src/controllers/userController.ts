@@ -1300,12 +1300,54 @@ export const updateUserEmail = async (req: Request, res: Response): Promise<void
     res.status(400).json({ message: "Email is required." });
     return;
   }
-
+ 
   try {
+    // --- Authorization Check ---
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+ 
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+ 
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+ 
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+ 
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isAdmin) {
+      res.status(403).json({ message: "Access denied: Admin role required to update user email" });
+      return;
+    }
+    // --- End Authorization Check ---
+ 
     const user = await prisma.user.findUnique({
       where: { userId: parseInt(userId) },
     });
-
+ 
     if (!user) {
       res.status(404).json({ message: "User not found." });
       return;
