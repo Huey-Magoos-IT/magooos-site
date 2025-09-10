@@ -27,6 +27,16 @@ client/
 │   │   ├── departments/
 │   │   │   ├── data/
 │   │   │   │   └── page.tsx
+│   │   │   ├── percent-of-scans/
+│   │   │   │   └── page.tsx
+│   │   │   ├── price-portal/
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── location-selection/
+│   │   │   │       └── page.tsx
+│   │   │   ├── raw-data/
+│   │   │   │   └── page.tsx
+│   │   │   ├── raw-loyalty/
+│   │   │   │   └── page.tsx
 │   │   │   └── reporting/
 │   │   │       └── page.tsx
 │   │   ├── home/
@@ -93,6 +103,11 @@ client/
 │   ├── lib/
 │   │   ├── accessControl.ts
 │   │   ├── csvProcessing.ts
+│   │   ├── itemNameMappings.ts
+│   │   ├── legacyLambdaProcessing.ts
+│   │   ├── priceChangeUtils.ts
+│   │   ├── priceDataUtils.ts
+│   │   ├── reportUtils.ts
 │   │   └── utils.ts
 │   └── state/
 │       ├── api.ts
@@ -164,9 +179,10 @@ client/
 - `api.ts`: Defines all API endpoints using RTK Query, handles authentication, caching, and real-time updates.
   * Projects: CRUD operations for project management
   * Tasks: Creation, updates, status changes, assignments
-  * Users: Profile management and permissions
-  * Teams: Team creation, role management, and member assignments
+  * Users: Profile management and permissions, including new modals
+  * Teams: Team creation, role management, and member assignments (expanded for SCANS)
   * Roles: List available roles, add/remove roles from teams
+  * Groups: CRUD and location assignments
   * Search: Global search across all entities
 - `lambdaApi.ts`: Defines Lambda function endpoints and direct DynamoDB interactions.
   * Data processing: Report generation and analysis
@@ -175,6 +191,10 @@ client/
 
 8. Department Pages:
 - `departments/data/page.tsx`: Data department page with data analysis tools and visualization (role-restricted to DATA).
+- `departments/percent-of-scans/page.tsx`: Scan percentage analysis (role-restricted to SCANS or REPORTING).
+- `departments/price-portal/page.tsx`: Price management portal with location selection (`location-selection/page.tsx`), using `priceDataUtils.ts` and `priceChangeUtils.ts` (restricted to DATA or ADMIN).
+- `departments/raw-data/page.tsx`: Raw CSV data access and processing with `legacyLambdaProcessing.ts`.
+- `departments/raw-loyalty/page.tsx`: Raw loyalty data handling, integrated with loyalty lambdas.
 - `departments/reporting/page.tsx`: Reporting department page with enhanced capabilities:
   * Dual processing approach:
     * Lambda-based processing for large datasets
@@ -187,6 +207,7 @@ client/
   * CSV data visualization with sortable columns and pagination
   * Export functionality for processed data
   * Direct S3 access for CSV processing in the browser
+  * Enhanced with `reportUtils.ts` for advanced analytics
 
 9. Additional Features:
 - `search/page.tsx`: Global search interface with filters and real-time results.
@@ -195,7 +216,7 @@ client/
   * Current team and team type (admin/regular)
   * User ID and system details
 - `teams/page.tsx`: Enhanced team management with:
-  * Create teams with role selection (ADMIN, DATA, REPORTING)
+  * Create teams with role selection (ADMIN, DATA, REPORTING, SCANS)
   * Join existing teams with real-time status updates
   * View team roles and current membership
   * Add or remove roles from existing teams
@@ -203,12 +224,14 @@ client/
   * Improved validation with role-specific messaging
 - `groups/page.tsx`: Location-based access control management:
   * Create and manage groups of locations
-  * Assign LocationAdmin users to groups
-  * View and edit location assignments
+  * Assign LocationAdmin users to groups using `ModalCreateLocationUser`
+  * View and edit location assignments with `GroupCard`
   * Automatic synchronization of locations for group members
   * Role-based access control for group management
+- `home/page.tsx`: Main dashboard after authentication.
+- `price-users/page.tsx`: Price users management with `item-mappings/page.tsx` for mappings using `itemNameMappings.ts`.
 - `timeline/page.tsx`: Organization-wide timeline showing all project milestones.
-- `users/page.tsx`: User administration, role management, and team assignments.
+- `users/page.tsx`: User administration, role management, and team assignments with `ModalCreateUser`.
 
 ### Core Feature Modules
 - **Auth System**: Cognito integration with JWT validation
@@ -455,6 +478,11 @@ export const {
 | TaskCard        | Drag-and-drop, status updates         | useUpdateTaskStatus        |
 | BoardView       | DnD context provider                  | useGetProjectsTasks        |
 | LocationTable   | Location selection, sorting           | useGetLocationsQuery       |
+| RoleBadge       | Visual role indicators                | User roles from api.ts     |
+| ViewToggle      | Switch between view modes             | Project views              |
+| ModalCreateUser | User creation modal                   | useCreateUserMutation      |
+| ModalCreateLocationUser | Location user creation     | useAssignGroupMutation     |
+| GroupCard       | Group details and management          | useGetGroupsQuery          |
 
 ### Data Visualization Components
 ```typescript

@@ -208,10 +208,10 @@ export const isLocationUser = (teamRoles: TeamRole[] | undefined): boolean => {
 
 Create a new file `client/src/app/groups/page.tsx` with:
 
-- Admin view: List of all groups with creation and editing capabilities
+- Admin view: List of all groups with creation and editing capabilities using `GroupCard/index.tsx`
 - LocationAdmin view: Only shows their assigned group
 - Group creation/editing dialog with location selection
-- Group assignment dialog for assigning groups to LocationAdmin users
+- Group assignment dialog for assigning groups to LocationAdmin users, including `ModalCreateLocationUser/index.tsx` for location user creation
 
 ### 3.4 Update Sidebar
 
@@ -342,3 +342,5 @@ pm2 restart all
 
 ### 7.3 Frontend Deployment
 Deploy via Amplify CI/CD pipeline.
+
+The implementation includes `location_sync_lambda.py` for automatic synchronization of locations to group members.

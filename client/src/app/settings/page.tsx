@@ -34,18 +34,8 @@ const Settings = () => {
           <div className={textStyles}>{userDetails?.team?.teamName || 'No team'}</div>
         </div>
         <div>
-          <label className={labelStyles}>Team Type</label>
-          <div className={textStyles}>
-            {userDetails?.team?.isAdmin ? 'Admin Team' : 'Regular Team'}
-          </div>
-        </div>
-        <div>
-          <label className={labelStyles}>User ID</label>
-          <div className={textStyles}>{userDetails?.userId || 'Not available'}</div>
-        </div>
-        <div>
-          <label className={labelStyles}>Cognito ID</label>
-          <div className={textStyles}>{userDetails?.cognitoId || 'Not available'}</div>
+          <label className={labelStyles}>Email</label>
+          <div className={textStyles}>{userDetails?.email || 'Not available'}</div>
         </div>
       </div>
     </div>

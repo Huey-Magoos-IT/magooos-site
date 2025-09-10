@@ -69,6 +69,7 @@
    - Click "Create function"
 
 ### Add Lambda Function Code
+The lambda function (`extras/post-confirmation-lambda.js`) syncs user data including email to the RDS database:
 ```javascript
 import https from 'node:https';
 
@@ -76,6 +77,7 @@ export const handler = async (event) => {
   const postData = JSON.stringify({
     username: event.request.userAttributes.preferred_username || event.username,
     cognitoId: event.username,
+    email: event.request.userAttributes.email,
     profilePictureUrl: "i1.jpeg",
     teamId: 1  // Default team ID
   });
@@ -214,6 +216,8 @@ const formFields = {
     }
   }
 };
+
+// The form includes email verification, and the post-confirmation lambda syncs email to the database.
 ```
 
 ### Add Auth Provider to App
@@ -245,12 +249,13 @@ Add to server/src/controllers/userController.ts:
 ```typescript
 export const createUser = async (req, res) => {
   try {
-    const { username, cognitoId, profilePictureUrl, teamId } = req.body;
+    const { username, cognitoId, email, profilePictureUrl, teamId } = req.body;
     
     const user = await prisma.user.create({
       data: {
         username,
         cognitoId,
+        email,
         profilePictureUrl,
         teamId
       }
@@ -262,6 +267,8 @@ export const createUser = async (req, res) => {
     res.status(500).json({ error: "Error creating user" });
   }
 };
+
+// Supports user creation modals like ModalCreateUser and ModalCreateLocationUser, which include email.
 ```
 
 Add to server/src/routes/userRoutes.ts:
@@ -282,13 +289,14 @@ router.post('/create-user', createUser);
 
 If your backend server (e.g., the Express application running on EC2, or other microservices) needs to perform administrative actions on users within this Cognito User Pool (such as disabling, enabling, or administratively updating user attributes), the IAM role associated with that backend service will require specific permissions targeting the User Pool.
 
-For example, to implement features like administratively disabling or enabling users, the backend service's IAM role (e.g., `EC2-Backend-CognitoDisableUser-Role` in our project) must have an IAM policy granting permissions for actions like:
+For example, the backend service's IAM role (e.g., `EC2-Backend-CognitoDisableUser-Role` in the project) has an IAM policy granting permissions for actions like:
 - `cognito-idp:AdminDisableUser`
 - `cognito-idp:AdminEnableUser`
-- (Potentially others like `cognito-idp:AdminUpdateUserAttributes`, `cognito-idp:AdminGetUser` etc., depending on the features)
+- `cognito-idp:AdminUpdateUserAttributes` for email and other attributes
+- `cognito-idp:AdminGetUser` for user retrieval
 
-These permissions should be scoped to the specific User Pool resource:
-`arn:aws:cognito-idp:YOUR_AWS_REGION:YOUR_ACCOUNT_ID:userpool/YOUR_USER_POOL_ID`
+These permissions are scoped to the specific User Pool resource:
+`arn:aws:cognito-idp:us-east-2:974496641387:userpool/us-east-2_5rTsYPjpA`
 
 **Example Policy Statement Snippet:**
 ```json
@@ -296,9 +304,11 @@ These permissions should be scoped to the specific User Pool resource:
     "Effect": "Allow",
     "Action": [
         "cognito-idp:AdminDisableUser",
-        "cognito-idp:AdminEnableUser"
+        "cognito-idp:AdminEnableUser",
+        "cognito-idp:AdminUpdateUserAttributes",
+        "cognito-idp:AdminGetUser"
     ],
-    "Resource": "arn:aws:cognito-idp:us-east-2:974496641387:userpool/us-east-2_5rTsYPjpA" // Replace with your actual User Pool ARN
+    "Resource": "arn:aws:cognito-idp:us-east-2:974496641387:userpool/us-east-2_5rTsYPjpA"
 }
 ```
 This is distinct from the permissions required for Lambda triggers (like the post-confirmation trigger) or the API Gateway authorizer setup. Ensure that any backend service performing user management actions has its IAM role appropriately configured with these specific Cognito permissions.

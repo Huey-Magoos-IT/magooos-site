@@ -7,6 +7,13 @@ server/
 │   ├── schema.prisma              # Database schema and relationships
 │   ├── migrations/                # Database migration history
 │   │   └── YYYYMMDDHHMMSS_name/   # Timestamped migrations
+│   │       ├── 20250513185606_add_scans_role/migration.sql  # Add SCANS role
+│   │       ├── 20250514174615_add_user_isdisabled_field/migration.sql  # Add isDisabled field
+│   │       ├── 20250829201713_add_user_email/migration.sql  # Initial email addition
+│   │       ├── 20250908224416_remove_email_temp/migration.sql  # Temp removal
+│   │       ├── 20250908225439_add_email_again/migration.sql  # Re-add email
+│   │       ├── 20250908232040_remove_email_only/migration.sql  # Remove email-only constraint
+│   │       └── 20250908233723_add_email_feature_finally/migration.sql  # Final email feature
 │   └── seedData/                  # Sample data for development
 │       ├── user.json
 │       ├── team.json
@@ -21,16 +28,22 @@ server/
 │   │   ├── taskController.ts      # Task operations and assignments
 │   │   ├── teamController.ts      # Team management operations
 │   │   ├── userController.ts      # User operations and Cognito sync
-│   │   ├── groupController.ts     # Group and location management
+│   │   ├── groupController.ts     # Group and location management with multi-auth (body, headers, bearer)
 │   │   └── searchController.ts    # Global search functionality
 │   └── routes/                    # API endpoint definitions
 │       ├── projectRoutes.ts       # Project-related endpoints
 │       ├── taskRoutes.ts          # Task management endpoints
 │       ├── teamRoutes.ts          # Team operations endpoints
-│       ├── groupRoutes.ts         # Group management endpoints
+│       ├── groupRoutes.ts         # Group management endpoints with multi-auth support
 │       ├── userRoutes.ts          # User management endpoints
 │       └── searchRoutes.ts        # Search functionality endpoints
 └── ecosystem.config.js            # PM2 production configuration
+├── lambda/index.js                # Lambda function entry point for AWS integrations
+└── scripts/                       # Additional server scripts
+    ├── create-location-team.ts    # Create location-based teams
+    ├── fix-admin-roles.ts         # Fix admin role assignments
+    ├── reset-teams-and-roles.ts   # Reset teams and roles
+    └── migrate-and-seed-location-roles.sh  # Shell script for location role seeding
 ```
 
 ## Detailed Component Breakdown
@@ -90,6 +103,7 @@ server/
      *Note: Requires the EC2 instance role (e.g., `EC2-Backend-CognitoDisableUser-Role`) to have `cognito-idp:AdminDisableUser` and `cognito-idp:AdminEnableUser` permissions for the User Pool (`us-east-2_5rTsYPjpA`).*
    - Authentication handling
    - Profile picture management
+   - New modals support: `ModalCreateUser` and `ModalCreateLocationUser` integration
 
 5. **Search Controller** (`controllers/searchController.ts`)
    - Global search implementation
@@ -152,6 +166,7 @@ Core Models:
    - Location access (locationIds array)
    - Task relationships (author/assignee)
    - `isDisabled: boolean`           # Tracks if the user account is active or soft-deleted.
+   - `email: String?`                # User email field, added iteratively via recent migrations
 
 2. **Group**
    - Group name and description
@@ -160,7 +175,7 @@ Core Models:
    - Created/updated timestamps
 
 3. **Role**
-   - Role name (e.g., ADMIN, DATA, REPORTING, LOCATION_ADMIN, LOCATION_USER)
+   - Role name (e.g., ADMIN, DATA, REPORTING, SCANS, LOCATION_ADMIN, LOCATION_USER)
    - Optional description
    - Relationship to teams through TeamRole
 
@@ -620,6 +635,14 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
 | API Gateway Test          | curl -v API_GATEWAY_URL/prod/teams    | After deploy    |
 | DynamoDB Table Status     | aws dynamodb describe-table           | Weekly          |
 
+## Additional Scripts and Maintenance:
+- `create-location-team.ts`: Script for creating location-specific teams
+- `fix-admin-roles.ts`: Fixes admin role assignments
+- `reset-teams-and-roles.ts`: Resets teams and roles for testing
+- `migrate-and-seed-location-roles.sh`: Seeds location roles in database
+
+Run these scripts as needed for maintenance, e.g., `ts-node create-location-team.ts`
+
 ## Troubleshooting
 
 1. **Database Connection Issues**
@@ -804,6 +827,28 @@ When implementing authentication for new endpoints, ensure support for multiple 
    }
    ```
 
+## Additional Troubleshooting for New Features
+
+8. **Group and Location Issues**
+```bash
+# Test group endpoints with multi-auth
+curl -v -H "x-user-cognito-id: USER_ID" https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod/groups
+curl -v -H "Authorization: Bearer $TOKEN" https://puvzjk01yl.execute-api.us-east-2.amazonaws.com/prod/groups
+```
+
+9. **Email Field Issues**
+```typescript
+// Ensure email sync in userController.ts
+// Check migrations applied: npx prisma migrate status
+```
+
+10. **Lambda Integration Issues**
+```bash
+# Test lambda/index.js deployment
+aws lambda invoke --function-name loyalty-lambda response.json
+```
+
+## Authentication Troubleshooting (Continued)
 4. **Comprehensive Logging**
    ```typescript
    // Log authentication attempts for debugging

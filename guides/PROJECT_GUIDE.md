@@ -17,7 +17,7 @@ All other AWS integrations should prefer direct HTTP/HTTPS requests or API Gatew
 - Routes: JWT validation → API Gateway
 - Team management: `teamController.ts` with role-based permissions
 - Role management: `Role` and `TeamRole` models for granular access control
-- User lifecycle management: Includes enabling and disabling user accounts (soft delete) via API, synchronized with AWS Cognito.
+- User lifecycle management: Includes enabling and disabling user accounts (soft delete) via API, synchronized with AWS Cognito. Includes email field in User model (added via migrations like 20250908233723_add_email_feature_finally).
 
 ## State Management (`client/src/state/`)
 - Redux Toolkit: `api.ts` handles Cognito token injection
@@ -68,7 +68,7 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 1.  **Role-Based Access Control:**
     - Department pages require specific role permissions
     - Access verification through `accessControl.ts` utility functions
-    - Roles include: `ADMIN` (all access), `DATA` (data department), `REPORTING` (reporting department)
+    - Roles include: `ADMIN` (all access), `DATA` (data department), `REPORTING` (reporting department), `SCANS` (scans-related access), `LOCATION_ADMIN` (group/location management), `LOCATION_USER` (location-specific access)
     - Teams can have multiple roles simultaneously
     - Restricted content with proper error handling
     - Reusable access control components and permission checks
@@ -78,13 +78,21 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Groups of locations managed by admins
     - `LocationAdmin` users assigned to groups
     - `LocationUsers` with access to specific locations
-    - Automatic synchronization of locations for group members
+    - Automatic synchronization of locations for group members via `location_sync_lambda.py`
     - Location-based data filtering in reporting and data pages
     - Permission boundaries enforced at controller level
     - Multi-level permission hierarchy (`Admin` → `LocationAdmin` → `LocationUser`)
     - Direct DynamoDB integration for efficient location data access
     - Array fields (`locationIds`) for optimal performance with current scale
     - Comprehensive authentication with multiple methods for reliability
+    - Dedicated `groups/page.tsx` for UI management
+    - New components: `GroupCard/index.tsx`, `ModalCreateLocationUser/index.tsx`
+
+3.  **Groups and Location Management:**
+    - Enhanced with `groupController.ts` and `groupRoutes.ts` for CRUD operations
+    - Multi-authentication support (body params, custom headers, Bearer tokens)
+    - Scripts: `create-location-team.ts`, `migrate-and-seed-location-roles.sh` for setup
+    - Postman collection: `postman_location_testing_collection.json` for testing
 
 3.  **Priority System (Legacy):**
     - `client/src/app/priority/[level]/page.tsx`
@@ -92,10 +100,11 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Priority levels: Urgent, High, Medium, Low, Backlog (this will be removed for department pages)
 
 4.  **Component Architecture:**
-    - Modal system: `ModalNewProject` ↔ `ModalNewTask`
-    - View components: `BoardView` ↔ `taskController.ts`
-    - Team components: Role-aware UI with conditional rendering based on permissions
+    - Modal system: `ModalNewProject` ↔ `ModalNewTask`, plus `ModalCreateUser`, `ModalCreateLocationUser`
+    - View components: `BoardView` ↔ `taskController.ts`, with `ViewToggle` for switching
+    - Team components: Role-aware UI with conditional rendering based on permissions, including `RoleBadge`
     - Permission utilities: `hasRole` and `hasAnyRole` functions for checking access
+    - `GroupCard` for group visualization
 
 5.  **Security Implementation:**
     - `server/prisma/schema.prisma`: `Role` and `TeamRole` models for granular permissions
@@ -117,12 +126,12 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Frontend Prohibition: The AWS SDK should NOT be used in the client-side Next.js application.
 
 8.  **Department Features:**
-    - **Data Department**:
-        - Data analysis tools (planned)
-        - CSV data visualization (planned)
+    - **Data Department** (`app/departments/data/page.tsx`):
+        - Data analysis tools implemented with CSV processing
+        - CSV data visualization using `CSVDataTable`
         - S3 integration for data storage
         - Restricted to `DATA` role
-    - **Reporting Department**:
+    - **Reporting Department** (`app/departments/reporting/page.tsx`):
         - Comprehensive report generation with dual processing approach:
             - Lambda-based processing for large reports (handles datasets exceeding client capabilities)
             - Client-side processing for immediate results (bypasses API Gateway 29-second timeout)
@@ -141,12 +150,30 @@ EC2 (auto-scaled) ←→ RDS (VPC)
             - Sortable data tables with pagination using `CSVDataTable` component
             - Search capabilities within processed data
             - Progress indicators for multi-stage processing
-        - Planned Features:
-            - Analytics dashboards
+            - Analytics dashboards with `reportUtils.ts`
             - Data visualization with charts and graphs
         - Access Control:
             - Restricted to `REPORTING` role
             - Comprehensive error handling for permission boundaries
+    - **Percent of Scans Department** (`app/departments/percent-of-scans/page.tsx`):
+        - Analysis of scan percentages, restricted to `SCANS` or `REPORTING` roles
+        - Integrated with loyalty and price data
+    - **Price Portal Department** (`app/departments/price-portal/page.tsx`):
+        - Price management portal with location selection (`location-selection/page.tsx`)
+        - Item mappings and price change tracking using `priceChangeUtils.ts` and `priceDataUtils.ts`
+        - Restricted to `DATA` or `ADMIN` roles
+    - **Raw Data Department** (`app/departments/raw-data/page.tsx`):
+        - Direct access to raw CSV data from S3
+        - Processing with `legacyLambdaProcessing.ts` for compatibility
+    - **Raw Loyalty Department** (`app/departments/raw-loyalty/page.tsx`):
+        - Raw loyalty data handling and reporting
+        - Integration with `loyalty_data_report_lambda.py`
+
+9.  **Price-Users Features** (`app/price-users/page.tsx`):
+    - Management of price users and item mappings (`item-mappings/page.tsx`)
+    - Utilities: `itemNameMappings.ts` for name standardization
+    - Role-restricted to `DATA` or `ADMIN`
+    - Supports price portal workflows
 
 ## AWS Infrastructure:
 - EC2 auto-scaling groups for backend API (port 80)
@@ -165,6 +192,19 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 - Automated testing with Jest and Cypress
 - Error tracking with Sentry integration
 - Documentation system with architecture diagrams
+
+## Extras Directory and Additional Tools:
+- `extras/` contains Lambda scripts and utilities:
+  - `post-confirmation-lambda.js`: Cognito post-confirmation trigger
+  - `lambda_trigger_for_aws.js`: General AWS Lambda triggers
+  - `lambda-data-extractor.py`: Data extraction from Lambda
+  - `loyalty_lambda.py`: Loyalty program processing
+  - `red_flag_report_lambda.py`: Red flag detection and reporting
+  - `loyalty_data_report_lambda.py`: Loyalty data reporting
+  - `location_sync_lambda.py`: Location synchronization
+- Build and workflow guides: `price-pages-build-guide.md`, `modularized_lambda_workflow.md`
+- Testing tools: `compare_csv.py`, `compare_endpoints.py`, `postman_location_testing_collection.json`, `postman_setup_guide.md`
+- Server scripts: `create-location-team.ts`, `fix-admin-roles.ts`, `reset-teams-and-roles.ts`
 
 # AWS OPERATIONAL DETAILS
 
