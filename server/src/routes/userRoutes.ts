@@ -16,6 +16,7 @@ import {
   getPriceUsers,
   toggleUserStatus,
   updateUserEmail,
+  adminResetUserPassword,
 } from "../controllers/userController";
 
 const router = Router();
@@ -32,6 +33,7 @@ router.patch("/:userId/disable", disableUser); // PATCH to disable a user (in DB
 router.patch("/:userId/enable", enableUser); // PATCH to enable a user (in DB and Cognito)
 router.delete("/:userId", deleteUser); // DELETE a user (permanent from DB and Cognito)
 router.patch("/:userId/email", updateUserEmail); // PATCH to update a user's email
+router.patch("/:userId/reset-password", adminResetUserPassword); // PATCH to reset a user's password
 
 // --- Cognito Management Routes ---
 router.get("/cognito/list", listCognitoUsers); // GET Cognito users with optional filtering

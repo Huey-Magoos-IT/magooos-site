@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, User, X, Trash2, AlertTriangle, UserX } from "lucide-react"; // Added AlertTriangle & UserX
+import { ChevronDown, ChevronUp, User, X, Trash2, AlertTriangle, UserX, Edit, KeyRound } from "lucide-react"; // Added AlertTriangle & UserX
 import RoleBadge from "../RoleBadge";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Typography, Box, Chip, CircularProgress } from "@mui/material";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
@@ -45,6 +45,8 @@ interface UserCardProps {
   onDisableUser?: (userId: number) => Promise<void>;
   onEnableUser?: (userId: number) => Promise<void>;
   onDeleteUser?: (user: UserCardProps['user']) => void;
+  onEditEmail?: (user: UserCardProps['user']) => void;
+  onResetPassword?: (user: UserCardProps['user']) => void;
 }
 
 const UserCard: React.FC<UserCardProps> = ({
@@ -57,6 +59,8 @@ const UserCard: React.FC<UserCardProps> = ({
   onDisableUser,
   onEnableUser,
   onDeleteUser,
+  onEditEmail,
+  onResetPassword,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [openLocationDialog, setOpenLocationDialog] = useState(false);
@@ -309,6 +313,24 @@ const UserCard: React.FC<UserCardProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-1">
+            {isAdmin && onEditEmail && (
+              <button
+                onClick={() => onEditEmail(user)}
+                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label="Edit Email"
+              >
+                <Edit size={18} />
+              </button>
+            )}
+            {isAdmin && onResetPassword && (
+              <button
+                onClick={() => onResetPassword(user)}
+                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label="Reset Password"
+              >
+                <KeyRound size={18} />
+              </button>
+            )}
             {isAdmin && !user.isDisabled && onDisableUser && (
               <button
                 onClick={openDeleteConfirmModal}

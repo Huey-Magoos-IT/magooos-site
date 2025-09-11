@@ -9,6 +9,7 @@ import {
   AdminCreateUserCommand,
   ResendConfirmationCodeCommand,
   AdminUpdateUserAttributesCommand,
+  AdminSetUserPasswordCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Initialize Cognito Client
@@ -1459,5 +1460,82 @@ export const deleteCognitoUser = async (req: Request, res: Response): Promise<vo
       message: "Error deleting Cognito user",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+};
+export const adminResetUserPassword = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    res.status(400).json({ message: "New password is required." });
+    return;
+  }
+
+  try {
+    // --- Authorization Check (copied from updateUserEmail) ---
+    let requestingUser = null;
+    const requestingUserIdFromBody = req.body.requestingUserId;
+    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
+    const authHeader = req.headers['authorization'] as string;
+ 
+    if (requestingUserIdFromBody) {
+      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
+    } else if (cognitoIdFromHeader) {
+      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
+    } else if (authHeader && authHeader.startsWith('Bearer ')) {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    } else if (process.env.NODE_ENV !== 'production') {
+      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
+    }
+ 
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+ 
+    const userWithRoles = await prisma.user.findUnique({
+      where: { userId: requestingUser.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+ 
+    const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+    
+    if (!isAdmin) {
+      res.status(403).json({ message: "Access denied: Admin role required to reset password" });
+      return;
+    }
+    // --- End Authorization Check ---
+
+    const user = await prisma.user.findUnique({
+      where: { userId: parseInt(userId) },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    const command = new AdminSetUserPasswordCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Username: user.username,
+      Password: newPassword,
+      Permanent: true,
+    });
+
+    await cognitoClient.send(command);
+
+    res.status(200).json({ message: "User password reset successfully." });
+
+  } catch (error: any) {
+    console.error(`Error resetting password for user ${userId}:`, error);
+    res.status(500).json({ message: `Error resetting password: ${error.message}` });
   }
 };

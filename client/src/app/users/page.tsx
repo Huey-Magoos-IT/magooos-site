@@ -11,6 +11,7 @@ import {
   useResendVerificationLinkMutation,
   useDeleteCognitoUserMutation,
   useUpdateUserEmailMutation,
+  useAdminResetUserPasswordMutation,
   type User as ApiUser, // Alias the User interface from API
   type CognitoUser,
 } from "@/state/api";
@@ -46,7 +47,7 @@ import {
   DialogTitle,
   TextField,
 } from "@mui/material";
-import { AlertCircle, Check, User as UserIcon, UserPlus, Edit } from "lucide-react"; // Alias the User icon
+import { AlertCircle, Check, User as UserIcon, UserPlus, Edit, KeyRound } from "lucide-react"; // Alias the User icon
 import ViewToggle, { ViewType } from "@/components/ViewToggle";
 import RoleBadge from "@/components/RoleBadge";
 import UserCard from "@/components/UserCard";
@@ -76,6 +77,7 @@ const Users = () => {
   const [resendVerificationLink, { isLoading: isResendingVerification }] = useResendVerificationLinkMutation();
   const [deleteCognitoUser, { isLoading: isDeletingCognitoUser }] = useDeleteCognitoUserMutation();
   const [updateUserEmail, { isLoading: isUpdatingEmail }] = useUpdateUserEmailMutation();
+  const [adminResetUserPassword, { isLoading: isResettingPassword }] = useAdminResetUserPasswordMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -93,6 +95,10 @@ const Users = () => {
   const [newEmail, setNewEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   // The user object passed from UserCard will match its internal prop structure
   const [userToDelete, setUserToDelete] = useState<{
     userId: number;
@@ -378,16 +384,34 @@ const Users = () => {
       renderCell: (params: GridRenderCellParams) => (
         <div className="flex items-center">
           <span>{params.value}</span>
-          <button
-            onClick={() => {
-              setUserToEdit(params.row);
-              setNewEmail(params.row.email);
-              setIsEditEmailModalOpen(true);
-            }}
-            className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            <Edit size={16} />
-          </button>
+          {isUserAdmin && (
+            <>
+              <Tooltip title="Edit Email">
+                <button
+                  onClick={() => {
+                    setUserToEdit(params.row);
+                    setNewEmail(params.row.email);
+                    setConfirmEmail(params.row.email);
+                    setIsEditEmailModalOpen(true);
+                  }}
+                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  <Edit size={16} />
+                </button>
+              </Tooltip>
+              <Tooltip title="Reset Password">
+                <button
+                  onClick={() => {
+                    setUserToEdit(params.row);
+                    setIsResetPasswordModalOpen(true);
+                  }}
+                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                >
+                  <KeyRound size={16} />
+                </button>
+              </Tooltip>
+            </>
+          )}
         </div>
       ),
     },
@@ -667,6 +691,16 @@ const Users = () => {
                 onDisableUser={handleDisableUser}
                 onEnableUser={handleEnableUser}
                 onDeleteUser={openDeleteConfirmationDialog}
+                onEditEmail={(userToEdit) => {
+                  setUserToEdit(userToEdit as ApiUser);
+                  setNewEmail(userToEdit.email || "");
+                  setConfirmEmail(userToEdit.email || "");
+                  setIsEditEmailModalOpen(true);
+                }}
+                onResetPassword={(userToReset) => {
+                  setUserToEdit(userToReset as ApiUser);
+                  setIsResetPasswordModalOpen(true);
+                }}
                 updateStatus={updateStatus}
               />
             ))}
@@ -950,6 +984,75 @@ const Users = () => {
             disabled={isUpdatingEmail || !newEmail || !confirmEmail}
           >
             {isUpdatingEmail ? <CircularProgress size={24} /> : "Save Changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reset Password Modal */}
+      <Dialog open={isResetPasswordModalOpen} onClose={() => {
+        setIsResetPasswordModalOpen(false);
+        setPasswordError("");
+      }}>
+        <DialogTitle>Reset Password for {userToEdit?.username}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Please enter a new password for the user.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="New Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            error={!!passwordError}
+          />
+          <TextField
+            margin="dense"
+            label="Confirm New Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={!!passwordError}
+            helperText={passwordError}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setIsResetPasswordModalOpen(false);
+            setPasswordError("");
+          }}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              if (newPassword !== confirmPassword) {
+                setPasswordError("Passwords do not match.");
+                return;
+              }
+              if (newPassword.length < 8) {
+                setPasswordError("Password must be at least 8 characters long.");
+                return;
+              }
+              setPasswordError("");
+
+              if (userToEdit && newPassword) {
+                try {
+                  await adminResetUserPassword({ userId: userToEdit.userId!, newPassword }).unwrap();
+                  toast.success(`Password for ${userToEdit.username} has been reset.`);
+                  setIsResetPasswordModalOpen(false);
+                } catch (error: any) {
+                  const errorMessage = error.data?.message || "Failed to reset password.";
+                  toast.error(errorMessage);
+                  setPasswordError(errorMessage);
+                }
+              }
+            }}
+            disabled={isResettingPassword || !newPassword || !confirmPassword}
+          >
+            {isResettingPassword ? <CircularProgress size={24} /> : "Reset Password"}
           </Button>
         </DialogActions>
       </Dialog>

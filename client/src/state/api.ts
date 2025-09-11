@@ -478,6 +478,13 @@ export const api = createApi({
       }),
       invalidatesTags: ["Users", "CognitoUsers"],
     }),
+    adminResetUserPassword: build.mutation<{ message: string }, { userId: number; newPassword: string }>({
+      query: ({ userId, newPassword }) => ({
+        url: `users/${userId}/reset-password`,
+        method: 'PATCH',
+        body: { newPassword },
+      }),
+    }),
   }),
 });
 
@@ -520,4 +527,5 @@ export const {
   // Price user management hooks
   useToggleUserStatusMutation,
   useUpdateUserEmailMutation,
+  useAdminResetUserPasswordMutation,
 } = api;
