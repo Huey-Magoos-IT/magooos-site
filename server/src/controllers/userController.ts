@@ -1523,14 +1523,27 @@ export const adminResetUserPassword = async (req: Request, res: Response): Promi
       return;
     }
 
-    const command = new AdminSetUserPasswordCommand({
+    const setPasswordCommand = new AdminSetUserPasswordCommand({
       UserPoolId: COGNITO_USER_POOL_ID,
       Username: user.username,
       Password: newPassword,
       Permanent: true,
     });
 
-    await cognitoClient.send(command);
+    await cognitoClient.send(setPasswordCommand);
+    
+    // After setting the password, we must update an attribute to clear the RESET_REQUIRED status.
+    // We can "touch" the email attribute without changing it.
+    const updateUserAttributesCommand = new AdminUpdateUserAttributesCommand({
+        UserPoolId: COGNITO_USER_POOL_ID,
+        Username: user.username,
+        UserAttributes: [{
+            Name: 'email_verified',
+            Value: 'true'
+        }]
+    });
+    await cognitoClient.send(updateUserAttributesCommand);
+
 
     res.status(200).json({ message: "User password reset successfully." });
 
