@@ -20,7 +20,7 @@ Amplify.configure({
 
 const AuthProvider = ({ children }: any) => {
   const dispatch = useDispatch();
-  const router = useRouter();
+  const router = useRouter(); // Call useRouter unconditionally
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -77,6 +77,7 @@ const AuthProvider = ({ children }: any) => {
         setAuthView('newPasswordRequired');
       } else {
         setIsAuthenticated(true);
+        router.push('/home'); // Redirect here after successful sign-in
       }
     } catch (error: any) {
       console.error('Error signing in:', error);
