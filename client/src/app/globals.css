@@ -64,11 +64,11 @@ body,
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 107, 44, 0.4);
+  background: rgba(255, 184, 148, 0.3); /* Softer orange for dark mode */
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 107, 44, 0.7);
+  background: rgba(255, 184, 148, 0.5); /* Softer orange for dark mode */
 }
 
 /* Firefox scrollbar */
@@ -78,7 +78,7 @@ body,
 }
 
 .dark * {
-  scrollbar-color: rgba(255, 107, 44, 0.4) transparent;
+  scrollbar-color: rgba(255, 184, 148, 0.3) transparent; /* Softer orange for dark mode */
 }
 
 /* Smooth scrolling */
@@ -224,7 +224,7 @@ html {
 }
 
 .dark *:focus-visible {
-  outline-color: #FF9670;
+  outline-color: #FFB894; /* Softer orange for dark mode */
 }
 
 /* Smooth Transitions */
@@ -294,15 +294,15 @@ html {
 
 /* Dark Mode Form Elements */
 .dark .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 107, 44, 0.3) !important;
+  border-color: rgba(255, 184, 148, 0.3) !important; /* Softer orange */
 }
 
 .dark .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 107, 44, 0.5) !important;
+  border-color: rgba(255, 184, 148, 0.5) !important; /* Softer orange */
 }
 
 .dark .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #FF6B2C !important;
+  border-color: #FFB894 !important; /* Softer orange */
 }
 
 .dark .MuiInputLabel-root {
@@ -310,7 +310,7 @@ html {
 }
 
 .dark .MuiInputLabel-root.Mui-focused {
-  color: #FF6B2C !important;
+  color: #FFB894 !important; /* Softer orange */
 }
 
 /* Table Enhancements */
@@ -343,23 +343,97 @@ html {
 
 /* Button Enhancements */
 .dark .MuiButton-contained {
-  background-color: #FF6B2C !important;
+  background-color: #FFB894 !important; /* Softer orange for dark mode */
 }
 
 .dark .MuiButton-contained:hover {
-  background-color: #E65A1F !important;
+  background-color: #FF9670 !important; /* Softer orange for dark mode */
 }
 
 .dark .MuiButton-outlined {
-  border-color: #FF6B2C !important;
-  color: #FF9670 !important;
+  border-color: #FFB894 !important; /* Softer orange for dark mode */
+  color: #FFB894 !important; /* Softer orange for dark mode */
 }
 
 .dark .MuiButton-outlined:hover {
-  background-color: rgba(255, 107, 44, 0.1) !important;
+  background-color: rgba(255, 184, 148, 0.1) !important; /* Softer orange for dark mode */
 }
 
 /* === UTILITY CLASSES === */
+
+/* Global Blue to Orange Remapping for Consistency */
+/* Light Mode: Use bright orange */
+.bg-blue-50 { background-color: #FFF5F0 !important; }
+.bg-blue-100 { background-color: #FFE8DB !important; }
+.bg-blue-500 { background-color: #FF6B2C !important; }
+.bg-blue-600 { background-color: #E65A1F !important; }
+.bg-blue-primary { background-color: #FF6B2C !important; }
+
+.text-blue-50 { color: #FFF5F0 !important; }
+.text-blue-100 { color: #FFE8DB !important; }
+.text-blue-500 { color: #FF6B2C !important; }
+.text-blue-600 { color: #E65A1F !important; }
+.text-blue-700 { color: #CC4A16 !important; }
+.text-blue-800 { color: #B33B0E !important; }
+
+.border-blue-100 { border-color: #FFE8DB !important; }
+.border-blue-200 { border-color: #FFD1B8 !important; }
+.border-blue-300 { border-color: #FFB894 !important; }
+.border-blue-400 { border-color: #FF9670 !important; }
+.border-blue-500 { border-color: #FF6B2C !important; }
+.border-blue-600 { border-color: #E65A1F !important; }
+
+/* Dark Mode: Use softer, pastel orange */
+.dark .bg-blue-50 { background-color: rgba(255, 184, 148, 0.1) !important; }
+.dark .bg-blue-100 { background-color: rgba(255, 184, 148, 0.15) !important; }
+.dark .bg-blue-500 { background-color: #FFB894 !important; }
+.dark .bg-blue-600 { background-color: #FF9670 !important; }
+.dark .bg-blue-900 { background-color: rgba(255, 107, 44, 0.2) !important; }
+.dark .bg-blue-primary { background-color: #FFB894 !important; }
+
+.dark .text-blue-100 { color: #FFE8DB !important; }
+.dark .text-blue-200 { color: #FFD1B8 !important; }
+.dark .text-blue-300 { color: #FFB894 !important; }
+.dark .text-blue-400 { color: #FF9670 !important; }
+.dark .text-blue-500 { color: #FFB894 !important; }
+.dark .text-blue-600 { color: #FFB894 !important; }
+.dark .text-blue-700 { color: #FFB894 !important; }
+.dark .text-blue-800 { color: #FF9670 !important; }
+
+.dark .border-blue-100 { border-color: rgba(255, 184, 148, 0.2) !important; }
+.dark .border-blue-200 { border-color: rgba(255, 184, 148, 0.25) !important; }
+.dark .border-blue-300 { border-color: rgba(255, 184, 148, 0.3) !important; }
+.dark .border-blue-400 { border-color: rgba(255, 184, 148, 0.35) !important; }
+.dark .border-blue-500 { border-color: #FFB894 !important; }
+.dark .border-blue-600 { border-color: #FF9670 !important; }
+.dark .border-blue-700 { border-color: rgba(255, 184, 148, 0.4) !important; }
+.dark .border-blue-800 { border-color: rgba(255, 184, 148, 0.3) !important; }
+.dark .border-blue-900 { border-color: rgba(255, 107, 44, 0.25) !important; }
+
+/* Hover states */
+.hover\:bg-blue-50:hover { background-color: #FFE8DB !important; }
+.hover\:bg-blue-100:hover { background-color: #FFD1B8 !important; }
+.hover\:bg-blue-600:hover { background-color: #CC4A16 !important; }
+.hover\:bg-blue-700:hover { background-color: #B33B0E !important; }
+
+.dark .hover\:bg-blue-50:hover { background-color: rgba(255, 184, 148, 0.15) !important; }
+.dark .hover\:bg-blue-600:hover { background-color: #FF9670 !important; }
+.dark .hover\:bg-blue-700:hover { background-color: #E6956F !important; }
+.dark .hover\:bg-blue-800:hover { background-color: rgba(255, 184, 148, 0.25) !important; }
+.dark .hover\:bg-blue-900:hover { background-color: rgba(255, 107, 44, 0.15) !important; }
+
+.hover\:text-blue-600:hover { color: #E65A1F !important; }
+.hover\:text-blue-700:hover { color: #CC4A16 !important; }
+.hover\:text-blue-800:hover { color: #B33B0E !important; }
+
+.dark .hover\:text-blue-200:hover { color: #FFD1B8 !important; }
+.dark .hover\:text-blue-300:hover { color: #FFB894 !important; }
+.dark .hover\:text-blue-400:hover { color: #FF9670 !important; }
+
+/* Ring (focus) states */
+.focus\:ring-blue-500:focus { --tw-ring-color: #FF6B2C !important; }
+.focus\:ring-blue-600:focus { --tw-ring-color: #E65A1F !important; }
+.dark .focus\:ring-blue-500:focus { --tw-ring-color: #FFB894 !important; }
 
 /* Text Shadows for Depth */
 .text-shadow {
