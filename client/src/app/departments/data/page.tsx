@@ -338,8 +338,7 @@ const DataPage = () => {
     <div className="m-5 p-4">
       <Header name="Data Department" />
       <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Welcome to Data Department (Enhanced CSV Processing)</h2>
-        <div className="bg-green-50 p-4 rounded-md mb-4 border-l-4 border-green-500 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100">
+        <div className="bg-emerald-50 p-5 rounded-lg mb-6 border-l-4 border-emerald-500 dark:bg-emerald-900/20 dark:border-emerald-700 shadow-sm">
           <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">DATA Access Successful</h3>
           <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
           <div className="mt-2">

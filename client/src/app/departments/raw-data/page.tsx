@@ -249,9 +249,6 @@ const RawDataPage = () => {
     <div className="m-5 p-4">
       <Header name="Raw Data Report" />
       <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">
-          Generate Raw Data Report
-        </h2>
 
         <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark" style={{ overflow: 'visible' }}>
           <Grid container spacing={4} sx={{ alignItems: 'stretch', display: 'flex' }}>

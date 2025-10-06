@@ -34,48 +34,18 @@ const Navbar = () => {
                   border-b border-gray-200/50 dark:border-stroke-dark/50
                   shadow-sm hover:shadow-md transition-shadow duration-300
                   sticky top-0 z-30">
-      {/* Left Section - Search Bar */}
-      <div className="flex items-center gap-8">
+      {/* Left Section - Menu Button */}
+      <div className="flex items-center gap-4">
         {!isSidebarCollapsed ? null : (
           <button
             onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
-            className="rounded-lg p-2.5 
-                     hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50
-                     dark:hover:from-blue-900/20 dark:hover:to-indigo-900/10
-                     transition-all duration-200 group
-                     shadow-sm hover:shadow-md"
+            className="rounded-lg p-2
+                     hover:bg-blue-50 dark:hover:bg-blue-900/10
+                     transition-colors duration-200"
           >
-            <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300 
-                          group-hover:text-blue-600 dark:group-hover:text-blue-400
-                          transition-colors duration-200" />
+            <Menu className="h-8 w-8 text-gray-800 dark:text-white" />
           </button>
         )}
-        
-        <div className="relative flex h-min w-[200px] md:w-[300px] group">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
-            <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 
-                            group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400
-                            transition-colors duration-200" />
-          </div>
-          <input
-            className="w-full rounded-xl 
-                     border border-gray-200 dark:border-gray-700
-                     bg-gray-50/50 dark:bg-gray-800/50
-                     backdrop-blur-sm
-                     py-2.5 pl-10 pr-4 
-                     text-sm
-                     placeholder-gray-400 dark:placeholder-gray-500
-                     text-gray-900 dark:text-white
-                     focus:border-blue-400 dark:focus:border-blue-500
-                     focus:outline-none 
-                     focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/20
-                     focus:bg-white dark:focus:bg-gray-800
-                     transition-all duration-200
-                     shadow-sm focus:shadow-md"
-            type="search"
-            placeholder="Search anything..."
-          />
-        </div>
       </div>
 
       {/* Right Section - Icons & User */}
