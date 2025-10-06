@@ -27,49 +27,49 @@ const Navbar = () => {
   const currentUserDetails = currentUser?.userDetails;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 animate-slide-down">
-      <div className="max-w-[95%] mx-auto glass rounded-2xl shadow-lift
+    <div className={`fixed top-0 right-0 z-50 px-4 pt-4 animate-slide-down transition-all duration-300 ${
+      isSidebarCollapsed ? 'left-0' : 'left-64'
+    }`}>
+      <div className="glass rounded-2xl shadow-lift
                     border border-orange-200/30 dark:border-orange-500/20">
         <div className="flex items-center justify-between px-6 py-4">
-          {/* Left Section - Menu Button (only when sidebar collapsed) */}
+          {/* Left Section - Logo & Menu */}
           <div className="flex items-center gap-6">
-            {!isSidebarCollapsed ? null : (
-              <>
-                <button
-                  onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
-                  className="rounded-xl p-2.5
-                           bg-orange-50 dark:bg-orange-900/20
-                           hover:bg-orange-100 dark:hover:bg-orange-900/30
-                           transition-all duration-300 group
-                           border border-orange-200/50 dark:border-orange-500/20"
-                >
-                  <Menu className="h-6 w-6 text-orange-600 dark:text-orange-400
-                                group-hover:scale-110 transition-transform duration-300" />
-                </button>
-                
-                <Link href="/home" className="flex items-center gap-3 group">
-                  <div className="relative">
-                    <Image
-                      src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
-                      alt="Logo"
-                      width={36}
-                      height={36}
-                      className="block dark:hidden transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <Image
-                      src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_white-01.png"
-                      alt="Logo"
-                      width={36}
-                      height={36}
-                      className="hidden dark:block transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </div>
-                  <span className="text-xl font-bold gradient-text-orange hidden md:block">
-                    Huey Magoo&apos;s
-                  </span>
-                </Link>
-              </>
+            {isSidebarCollapsed && (
+              <button
+                onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
+                className="rounded-xl p-2.5
+                         bg-orange-50 dark:bg-orange-900/20
+                         hover:bg-orange-100 dark:hover:bg-orange-900/30
+                         transition-all duration-300 group
+                         border border-orange-200/50 dark:border-orange-500/20"
+              >
+                <Menu className="h-6 w-6 text-orange-600 dark:text-orange-400
+                              group-hover:scale-110 transition-transform duration-300" />
+              </button>
             )}
+            
+            <Link href="/home" className="flex items-center gap-3 group">
+              <div className="relative">
+                <Image
+                  src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
+                  alt="Logo"
+                  width={36}
+                  height={36}
+                  className="block dark:hidden transition-transform duration-300 group-hover:scale-110"
+                />
+                <Image
+                  src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_white-01.png"
+                  alt="Logo"
+                  width={36}
+                  height={36}
+                  className="hidden dark:block transition-transform duration-300 group-hover:scale-110"
+                />
+              </div>
+              <span className="text-xl font-bold gradient-text-orange hidden md:block">
+                Huey Magoo&apos;s
+              </span>
+            </Link>
           </div>
 
           {/* Right Section - Actions & User */}

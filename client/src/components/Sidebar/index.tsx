@@ -59,33 +59,8 @@ const Sidebar = () => {
   return (
     <div className={sidebarClassNames}>
       <div className="flex h-full w-full flex-col">
-        {/* Logo Section */}
-        <div className="flex items-center justify-between px-6 py-6 mt-20 border-b border-orange-200/50 dark:border-orange-500/20">
-          <Link href="/home" className="flex items-center gap-3 group">
-            <div className="relative">
-              <Image
-                src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
-                alt="Logo"
-                width={32}
-                height={32}
-                className="block dark:hidden group-hover:scale-110 transition-transform duration-300"
-              />
-              <Image
-                src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_white-01.png"
-                alt="Logo"
-                width={32}
-                height={32}
-                className="hidden dark:block group-hover:scale-110 transition-transform duration-300"
-              />
-            </div>
-            <span className="text-lg font-bold gradient-text-orange">
-              Huey Magoo&apos;s
-            </span>
-          </Link>
-        </div>
-
         {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-2">
+        <nav className="flex-1 overflow-y-auto px-3 py-6 mt-20 space-y-2">
           <SidebarLink icon={Home} label="Home" href="/home" />
           
           {isTrueAdmin && (
