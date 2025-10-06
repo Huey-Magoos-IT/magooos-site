@@ -27,76 +27,161 @@ const Navbar = () => {
   const currentUserDetails = currentUser?.userDetails;
 
   return (
-    <div className="flex items-center justify-between bg-white px-4 py-3 shadow-sm border-b border-gray-100 dark:bg-black dark:border-stroke-dark">
-      {/* Search Bar */}
+    <div className="flex items-center justify-between 
+                  bg-white/80 dark:bg-dark-bg/80 
+                  backdrop-blur-xl backdrop-saturate-150
+                  px-4 py-3 
+                  border-b border-gray-200/50 dark:border-stroke-dark/50
+                  shadow-sm hover:shadow-md transition-shadow duration-300
+                  sticky top-0 z-30">
+      {/* Left Section - Search Bar */}
       <div className="flex items-center gap-8">
         {!isSidebarCollapsed ? null : (
           <button
             onClick={() => dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))}
-            className="rounded p-2 hover:bg-blue-50 transition-colors dark:hover:bg-blue-900/10"
+            className="rounded-lg p-2.5 
+                     hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50
+                     dark:hover:from-blue-900/20 dark:hover:to-indigo-900/10
+                     transition-all duration-200 group
+                     shadow-sm hover:shadow-md"
           >
-            <Menu className="h-8 w-8 text-gray-800 dark:text-white" />
+            <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300 
+                          group-hover:text-blue-600 dark:group-hover:text-blue-400
+                          transition-colors duration-200" />
           </button>
         )}
-        <div className="relative flex h-min w-[200px]">
-          <Search className="absolute left-[4px] top-1/2 mr-2 h-5 w-5 -translate-y-1/2 transform cursor-pointer text-blue-500 dark:text-blue-400" />
+        
+        <div className="relative flex h-min w-[200px] md:w-[300px] group">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+            <Search className="h-5 w-5 text-gray-400 dark:text-gray-500 
+                            group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400
+                            transition-colors duration-200" />
+          </div>
           <input
-            className="w-full rounded-md border border-gray-200 bg-gray-50 p-2 pl-8 placeholder-gray-500 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:bg-gray-700 dark:border-stroke-dark dark:text-white dark:placeholder-gray-300 dark:focus:border-blue-700 dark:focus:ring-blue-900/20"
+            className="w-full rounded-xl 
+                     border border-gray-200 dark:border-gray-700
+                     bg-gray-50/50 dark:bg-gray-800/50
+                     backdrop-blur-sm
+                     py-2.5 pl-10 pr-4 
+                     text-sm
+                     placeholder-gray-400 dark:placeholder-gray-500
+                     text-gray-900 dark:text-white
+                     focus:border-blue-400 dark:focus:border-blue-500
+                     focus:outline-none 
+                     focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/20
+                     focus:bg-white dark:focus:bg-gray-800
+                     transition-all duration-200
+                     shadow-sm focus:shadow-md"
             type="search"
-            placeholder="Search..."
+            placeholder="Search anything..."
           />
         </div>
       </div>
 
-      {/* Icons */}
-      <div className="flex items-center">
+      {/* Right Section - Icons & User */}
+      <div className="flex items-center gap-2">
+        {/* Dark Mode Toggle */}
         <button
           onClick={() => dispatch(setIsDarkMode(!isDarkMode))}
-          className={
-            isDarkMode
-              ? `rounded p-2 transition-colors dark:hover:bg-blue-900/10`
-              : `rounded p-2 transition-colors hover:bg-blue-50`
-          }
+          className="relative rounded-xl p-2.5
+                   bg-gray-100 dark:bg-gray-800
+                   hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100
+                   dark:hover:from-blue-900/30 dark:hover:to-indigo-900/20
+                   transition-all duration-300 group
+                   shadow-sm hover:shadow-md overflow-hidden"
         >
-          {isDarkMode ? (
-            <Sun className="h-6 w-6 cursor-pointer text-blue-500 dark:text-blue-400" />
-          ) : (
-            <Moon className="h-6 w-6 cursor-pointer text-blue-500" />
-          )}
-        </button>
-        <Link
-          href="/settings"
-          className={
-            isDarkMode
-              ? `h-min w-min rounded p-2 transition-colors dark:hover:bg-blue-900/10`
-              : `h-min w-min rounded p-2 transition-colors hover:bg-blue-50`
-          }
-        >
-          <Settings className="h-6 w-6 cursor-pointer text-blue-500 dark:text-blue-400" />
-        </Link>
-        <div className="ml-2 mr-5 hidden min-h-[2em] w-[0.1rem] bg-gray-200 dark:bg-gray-700 md:inline-block"></div>
-        <div className="hidden items-center justify-between md:flex">
-          <div className="align-center flex h-9 w-9 justify-center">
-            {!!currentUserDetails?.profilePictureUrl ? (
-              <Image
-                src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
-                alt={currentUserDetails?.username || "User Profile Picture"}
-                width={100}
-                height={50}
-                className="h-full rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-              />
+          <div className="relative z-10">
+            {isDarkMode ? (
+              <Sun className="h-5 w-5 text-amber-500 dark:text-amber-400 
+                          group-hover:rotate-180 transition-transform duration-500" />
             ) : (
-              <User className="h-6 w-6 cursor-pointer self-center rounded-full text-blue-500 dark:text-blue-400" />
+              <Moon className="h-5 w-5 text-indigo-600 
+                           group-hover:-rotate-12 transition-transform duration-300" />
             )}
           </div>
-          <span className="mx-3 font-medium text-gray-800 dark:text-white">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-indigo-500/0 
+                        group-hover:from-blue-500/10 group-hover:to-indigo-500/10
+                        transition-all duration-300" />
+        </button>
+
+        {/* Settings Link */}
+        <Link
+          href="/settings"
+          className="relative rounded-xl p-2.5
+                   bg-gray-100 dark:bg-gray-800
+                   hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100
+                   dark:hover:from-blue-900/30 dark:hover:to-indigo-900/20
+                   transition-all duration-300 group
+                   shadow-sm hover:shadow-md"
+        >
+          <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400
+                            group-hover:text-blue-600 dark:group-hover:text-blue-400
+                            group-hover:rotate-90 transition-all duration-300" />
+        </Link>
+
+        {/* Divider */}
+        <div className="ml-2 mr-3 hidden h-8 w-[1px] 
+                      bg-gradient-to-b from-transparent via-gray-300 to-transparent
+                      dark:via-gray-600 md:inline-block" />
+
+        {/* User Section */}
+        <div className="hidden items-center gap-3 md:flex">
+          {/* Profile Picture */}
+          <div className="relative group/avatar">
+            <div className="h-10 w-10 rounded-full overflow-hidden
+                          border-2 border-gray-200 dark:border-gray-700
+                          shadow-md group-hover/avatar:shadow-lg
+                          transition-all duration-300
+                          group-hover/avatar:scale-110
+                          group-hover/avatar:border-blue-400 dark:group-hover/avatar:border-blue-500">
+              {!!currentUserDetails?.profilePictureUrl ? (
+                <Image
+                  src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
+                  alt={currentUserDetails?.username || "User Profile Picture"}
+                  width={100}
+                  height={50}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center
+                              bg-gradient-to-br from-blue-500 to-indigo-600
+                              dark:from-blue-600 dark:to-indigo-700">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+              )}
+            </div>
+            {/* Online Status Indicator */}
+            <div className="absolute -bottom-0.5 -right-0.5 
+                          h-3 w-3 rounded-full 
+                          bg-emerald-500 dark:bg-emerald-400
+                          border-2 border-white dark:border-dark-bg
+                          shadow-sm
+                          animate-pulse-subtle" />
+          </div>
+
+          {/* Username */}
+          <span className="font-medium text-gray-800 dark:text-white
+                         max-w-[150px] truncate">
             {currentUserDetails?.username}
           </span>
+
+          {/* Sign Out Button */}
           <button
-            className="hidden rounded-md bg-blue-500 px-4 py-2 text-xs font-bold text-white hover:bg-blue-600 transition-colors shadow-sm hover:shadow md:block"
+            className="relative rounded-xl px-4 py-2
+                     bg-gradient-to-r from-blue-500 to-indigo-600
+                     hover:from-blue-600 hover:to-indigo-700
+                     text-white text-sm font-semibold
+                     shadow-md hover:shadow-xl
+                     transition-all duration-300
+                     transform hover:scale-105 active:scale-95
+                     overflow-hidden group"
             onClick={handleSignOut}
           >
-            Sign out
+            <span className="relative z-10">Sign out</span>
+            <div className="absolute inset-0 
+                          bg-gradient-to-r from-white/0 to-white/20
+                          opacity-0 group-hover:opacity-100
+                          transition-opacity duration-300" />
           </button>
         </div>
       </div>
