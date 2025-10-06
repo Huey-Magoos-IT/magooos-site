@@ -55,7 +55,7 @@ const AuthProvider = ({ children }: any) => {
 
     const unsubscribe = Hub.listen('auth', listener);
     return () => unsubscribe();
-  }, [dispatch]);
+  }, [dispatch, router]);
 
   const checkAuthState = async () => {
     try {
