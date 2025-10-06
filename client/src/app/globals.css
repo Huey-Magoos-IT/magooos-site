@@ -64,11 +64,11 @@ body,
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 184, 148, 0.3); /* Softer orange for dark mode */
+  background: rgba(255, 107, 44, 0.4);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 184, 148, 0.5); /* Softer orange for dark mode */
+  background: rgba(255, 107, 44, 0.7);
 }
 
 /* Firefox scrollbar */
@@ -78,7 +78,7 @@ body,
 }
 
 .dark * {
-  scrollbar-color: rgba(255, 184, 148, 0.3) transparent; /* Softer orange for dark mode */
+  scrollbar-color: rgba(255, 107, 44, 0.4) transparent;
 }
 
 /* Smooth scrolling */
@@ -224,7 +224,7 @@ html {
 }
 
 .dark *:focus-visible {
-  outline-color: #FFB894; /* Softer orange for dark mode */
+  outline-color: #FF9670;
 }
 
 /* Smooth Transitions */
@@ -290,19 +290,244 @@ html {
   animation: glow 2s ease-in-out infinite;
 }
 
+/* === GLOBAL BLUE TO ORANGE CONVERSION === */
+
+/* Convert all blue colors to orange equivalents */
+.bg-blue-50,
+.bg-blue-100 {
+  background-color: #FFE8DB !important; /* orange-100 */
+}
+
+.dark .bg-blue-50,
+.dark .bg-blue-100 {
+  background-color: rgba(255, 184, 148, 0.1) !important; /* Soft orange background */
+}
+
+.bg-blue-500,
+.bg-blue-600 {
+  background-color: #FF6B2C !important; /* orange-500 */
+}
+
+.dark .bg-blue-500,
+.dark .bg-blue-600 {
+  background-color: #CC7A52 !important; /* Darker pastel orange */
+}
+
+.bg-blue-700 {
+  background-color: #E65A1F !important; /* orange-600 */
+}
+
+.dark .bg-blue-700 {
+  background-color: #B86A42 !important;
+}
+
+.bg-blue-900\/10,
+.bg-blue-900\/20 {
+  background-color: rgba(255, 107, 44, 0.1) !important;
+}
+
+.dark .bg-blue-900\/10,
+.dark .bg-blue-900\/20 {
+  background-color: rgba(255, 184, 148, 0.1) !important;
+}
+
+/* Text colors */
+.text-blue-200,
+.text-blue-300 {
+  color: #FFD1B8 !important; /* orange-200 */
+}
+
+.dark .text-blue-200,
+.dark .text-blue-300 {
+  color: #FFC9A8 !important; /* Pastel light */
+}
+
+.text-blue-400,
+.text-blue-500,
+.text-blue-600 {
+  color: #FF6B2C !important; /* orange-500 */
+}
+
+.dark .text-blue-400,
+.dark .text-blue-500,
+.dark .text-blue-600 {
+  color: #FFB894 !important; /* orange-pastel */
+}
+
+.text-blue-700,
+.text-blue-800 {
+  color: #CC4A16 !important; /* orange-700 */
+}
+
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: #FFC9A8 !important;
+}
+
+.text-blue-900 {
+  color: #992D07 !important; /* orange-900 */
+}
+
+.dark .text-blue-900 {
+  color: #FFB894 !important;
+}
+
+/* Border colors */
+.border-blue-100,
+.border-blue-200 {
+  border-color: #FFD1B8 !important; /* orange-200 */
+}
+
+.dark .border-blue-100,
+.dark .border-blue-200 {
+  border-color: rgba(255, 184, 148, 0.3) !important;
+}
+
+.border-blue-300,
+.border-blue-400 {
+  border-color: #FFB894 !important; /* orange-300 */
+}
+
+.dark .border-blue-300,
+.dark .border-blue-400 {
+  border-color: rgba(255, 184, 148, 0.4) !important;
+}
+
+.border-blue-600,
+.border-blue-700 {
+  border-color: #FF6B2C !important; /* orange-500 */
+}
+
+.dark .border-blue-600,
+.dark .border-blue-700 {
+  border-color: #FFB894 !important;
+}
+
+.border-blue-800,
+.border-blue-900 {
+  border-color: #E65A1F !important; /* orange-600 */
+}
+
+.dark .border-blue-800,
+.dark .border-blue-900 {
+  border-color: rgba(255, 184, 148, 0.3) !important;
+}
+
+.border-blue-900\/30 {
+  border-color: rgba(255, 107, 44, 0.3) !important;
+}
+
+.dark .border-blue-900\/30 {
+  border-color: rgba(255, 184, 148, 0.3) !important;
+}
+
+/* Hover states */
+.hover\:bg-blue-50:hover {
+  background-color: #FFE8DB !important;
+}
+
+.dark .hover\:bg-blue-50:hover {
+  background-color: rgba(255, 184, 148, 0.1) !important;
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: #E65A1F !important;
+}
+
+.dark .hover\:bg-blue-700:hover {
+  background-color: #B86A42 !important;
+}
+
+.hover\:bg-blue-900\/10:hover,
+.hover\:bg-blue-900\/20:hover {
+  background-color: rgba(255, 107, 44, 0.15) !important;
+}
+
+.dark .hover\:bg-blue-900\/10:hover,
+.dark .hover\:bg-blue-900\/20:hover {
+  background-color: rgba(255, 184, 148, 0.15) !important;
+}
+
+.hover\:text-blue-200:hover,
+.hover\:text-blue-600:hover {
+  color: #FF6B2C !important;
+}
+
+.dark .hover\:text-blue-200:hover,
+.dark .hover\:text-blue-600:hover {
+  color: #FFC9A8 !important;
+}
+
+.hover\:text-blue-800:hover {
+  color: #CC4A16 !important;
+}
+
+.dark .hover\:text-blue-800:hover {
+  color: #FFB894 !important;
+}
+
+/* Focus states */
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: #FF6B2C !important;
+}
+
+.dark .focus\:ring-blue-500:focus {
+  --tw-ring-color: #FFB894 !important;
+}
+
+.focus\:border-blue-500:focus {
+  border-color: #FF6B2C !important;
+}
+
+.dark .focus\:border-blue-500:focus {
+  border-color: #FFB894 !important;
+}
+
+/* === DARK MODE PASTEL COLOR OVERRIDES === */
+
+/* Apply pastel orange in dark mode for text */
+.dark .text-orange-500,
+.dark .text-orange-600 {
+  color: #FFB894 !important; /* orange-pastel */
+}
+
+.dark .text-orange-400 {
+  color: #FFC9A8 !important; /* orange-pastel-light */
+}
+
+/* Apply pastel colors for backgrounds */
+.dark .bg-orange-500,
+.dark .bg-orange-600 {
+  background-color: #CC7A52 !important; /* Darker pastel for backgrounds */
+}
+
+.dark .bg-red-500 {
+  background-color: #C87A7A !important; /* Darker red pastel */
+}
+
+.dark .bg-gold-500 {
+  background-color: #D4A84A !important; /* Darker gold pastel */
+}
+
+/* Apply pastel for borders */
+.dark .border-orange-400,
+.dark .border-orange-500 {
+  border-color: #FFB894 !important; /* orange-pastel */
+}
+
 /* === MATERIAL UI OVERRIDES === */
 
 /* Dark Mode Form Elements */
 .dark .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 184, 148, 0.3) !important; /* Softer orange */
+  border-color: rgba(255, 184, 148, 0.3) !important; /* Pastel orange */
 }
 
 .dark .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(255, 184, 148, 0.5) !important; /* Softer orange */
+  border-color: rgba(255, 184, 148, 0.5) !important;
 }
 
 .dark .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #FFB894 !important; /* Softer orange */
+  border-color: #FFB894 !important; /* Pastel orange */
 }
 
 .dark .MuiInputLabel-root {
@@ -310,7 +535,7 @@ html {
 }
 
 .dark .MuiInputLabel-root.Mui-focused {
-  color: #FFB894 !important; /* Softer orange */
+  color: #FF6B2C !important;
 }
 
 /* Table Enhancements */
@@ -343,97 +568,23 @@ html {
 
 /* Button Enhancements */
 .dark .MuiButton-contained {
-  background-color: #FFB894 !important; /* Softer orange for dark mode */
+  background-color: #CC7A52 !important; /* Darker pastel orange */
 }
 
 .dark .MuiButton-contained:hover {
-  background-color: #FF9670 !important; /* Softer orange for dark mode */
+  background-color: #B86A42 !important;
 }
 
 .dark .MuiButton-outlined {
-  border-color: #FFB894 !important; /* Softer orange for dark mode */
-  color: #FFB894 !important; /* Softer orange for dark mode */
+  border-color: #FFB894 !important; /* Pastel orange */
+  color: #FFC9A8 !important; /* Pastel light */
 }
 
 .dark .MuiButton-outlined:hover {
-  background-color: rgba(255, 184, 148, 0.1) !important; /* Softer orange for dark mode */
+  background-color: rgba(255, 184, 148, 0.1) !important;
 }
 
 /* === UTILITY CLASSES === */
-
-/* Global Blue to Orange Remapping for Consistency */
-/* Light Mode: Use bright orange */
-.bg-blue-50 { background-color: #FFF5F0 !important; }
-.bg-blue-100 { background-color: #FFE8DB !important; }
-.bg-blue-500 { background-color: #FF6B2C !important; }
-.bg-blue-600 { background-color: #E65A1F !important; }
-.bg-blue-primary { background-color: #FF6B2C !important; }
-
-.text-blue-50 { color: #FFF5F0 !important; }
-.text-blue-100 { color: #FFE8DB !important; }
-.text-blue-500 { color: #FF6B2C !important; }
-.text-blue-600 { color: #E65A1F !important; }
-.text-blue-700 { color: #CC4A16 !important; }
-.text-blue-800 { color: #B33B0E !important; }
-
-.border-blue-100 { border-color: #FFE8DB !important; }
-.border-blue-200 { border-color: #FFD1B8 !important; }
-.border-blue-300 { border-color: #FFB894 !important; }
-.border-blue-400 { border-color: #FF9670 !important; }
-.border-blue-500 { border-color: #FF6B2C !important; }
-.border-blue-600 { border-color: #E65A1F !important; }
-
-/* Dark Mode: Use softer, pastel orange */
-.dark .bg-blue-50 { background-color: rgba(255, 184, 148, 0.1) !important; }
-.dark .bg-blue-100 { background-color: rgba(255, 184, 148, 0.15) !important; }
-.dark .bg-blue-500 { background-color: #FFB894 !important; }
-.dark .bg-blue-600 { background-color: #FF9670 !important; }
-.dark .bg-blue-900 { background-color: rgba(255, 107, 44, 0.2) !important; }
-.dark .bg-blue-primary { background-color: #FFB894 !important; }
-
-.dark .text-blue-100 { color: #FFE8DB !important; }
-.dark .text-blue-200 { color: #FFD1B8 !important; }
-.dark .text-blue-300 { color: #FFB894 !important; }
-.dark .text-blue-400 { color: #FF9670 !important; }
-.dark .text-blue-500 { color: #FFB894 !important; }
-.dark .text-blue-600 { color: #FFB894 !important; }
-.dark .text-blue-700 { color: #FFB894 !important; }
-.dark .text-blue-800 { color: #FF9670 !important; }
-
-.dark .border-blue-100 { border-color: rgba(255, 184, 148, 0.2) !important; }
-.dark .border-blue-200 { border-color: rgba(255, 184, 148, 0.25) !important; }
-.dark .border-blue-300 { border-color: rgba(255, 184, 148, 0.3) !important; }
-.dark .border-blue-400 { border-color: rgba(255, 184, 148, 0.35) !important; }
-.dark .border-blue-500 { border-color: #FFB894 !important; }
-.dark .border-blue-600 { border-color: #FF9670 !important; }
-.dark .border-blue-700 { border-color: rgba(255, 184, 148, 0.4) !important; }
-.dark .border-blue-800 { border-color: rgba(255, 184, 148, 0.3) !important; }
-.dark .border-blue-900 { border-color: rgba(255, 107, 44, 0.25) !important; }
-
-/* Hover states */
-.hover\:bg-blue-50:hover { background-color: #FFE8DB !important; }
-.hover\:bg-blue-100:hover { background-color: #FFD1B8 !important; }
-.hover\:bg-blue-600:hover { background-color: #CC4A16 !important; }
-.hover\:bg-blue-700:hover { background-color: #B33B0E !important; }
-
-.dark .hover\:bg-blue-50:hover { background-color: rgba(255, 184, 148, 0.15) !important; }
-.dark .hover\:bg-blue-600:hover { background-color: #FF9670 !important; }
-.dark .hover\:bg-blue-700:hover { background-color: #E6956F !important; }
-.dark .hover\:bg-blue-800:hover { background-color: rgba(255, 184, 148, 0.25) !important; }
-.dark .hover\:bg-blue-900:hover { background-color: rgba(255, 107, 44, 0.15) !important; }
-
-.hover\:text-blue-600:hover { color: #E65A1F !important; }
-.hover\:text-blue-700:hover { color: #CC4A16 !important; }
-.hover\:text-blue-800:hover { color: #B33B0E !important; }
-
-.dark .hover\:text-blue-200:hover { color: #FFD1B8 !important; }
-.dark .hover\:text-blue-300:hover { color: #FFB894 !important; }
-.dark .hover\:text-blue-400:hover { color: #FF9670 !important; }
-
-/* Ring (focus) states */
-.focus\:ring-blue-500:focus { --tw-ring-color: #FF6B2C !important; }
-.focus\:ring-blue-600:focus { --tw-ring-color: #E65A1F !important; }
-.dark .focus\:ring-blue-500:focus { --tw-ring-color: #FFB894 !important; }
 
 /* Text Shadows for Depth */
 .text-shadow {

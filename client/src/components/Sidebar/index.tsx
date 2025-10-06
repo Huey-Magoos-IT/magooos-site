@@ -60,7 +60,7 @@ const Sidebar = () => {
     <div className={sidebarClassNames}>
       <div className="flex h-full w-full flex-col">
         {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto px-3 py-6 mt-20 space-y-2">
+        <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-2">
           <SidebarLink icon={Home} label="Home" href="/home" />
           
           {isTrueAdmin && (

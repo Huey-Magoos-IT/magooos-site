@@ -22,9 +22,9 @@ const config: Config = {
           700: "#CC4A16",
           800: "#B33B0E",
           900: "#992D07",
-          // Softer variants for dark mode
-          "dark": "#FFB894", // Softer for dark mode text/borders
-          "dark-muted": "#E6956F", // Even softer for subtle elements
+          // Dark mode pastels
+          "pastel": "#FFB894", // Soft peachy orange for dark mode
+          "pastel-light": "#FFC9A8",
         },
         red: {
           50: "#FEF2F2",
@@ -37,9 +37,8 @@ const config: Config = {
           700: "#B91C1C",
           800: "#991B1B",
           900: "#7F1D1D",
-          // Softer variants for dark mode
-          "dark": "#F87171", // Softer for dark mode
-          "dark-muted": "#EF8A8A", // Even softer
+          // Dark mode pastels
+          "pastel": "#F8A5A5", // Soft coral red for dark mode
         },
         gold: {
           50: "#FFFBEB",
@@ -52,6 +51,8 @@ const config: Config = {
           700: "#D97706",
           800: "#B45309",
           900: "#92400E",
+          // Dark mode pastels
+          "pastel": "#FBBF24", // Soft gold for dark mode
         },
         charcoal: {
           50: "#F5F5F5",
