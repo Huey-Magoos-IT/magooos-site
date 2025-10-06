@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { api } from '../state/api';
 import Image from 'next/image';
 import { Eye, EyeOff, Lock, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 Amplify.configure({
   Auth: {
@@ -19,6 +20,7 @@ Amplify.configure({
 
 const AuthProvider = ({ children }: any) => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +43,7 @@ const AuthProvider = ({ children }: any) => {
           console.log('User signed in, resetting API state.');
           dispatch(api.util.resetApiState());
           setIsAuthenticated(true);
+          router.push('/home'); // Redirect to /home after successful login
           break;
         case 'signedOut':
           console.log('User signed out, resetting API state.');

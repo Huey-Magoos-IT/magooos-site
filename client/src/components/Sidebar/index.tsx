@@ -99,8 +99,7 @@ const Sidebar = () => {
         </div>
         {/* NAVBAR LINKS */}
         <nav className="z-10 w-full">
-          {/* Home link hidden as requested */}
-          {/* <SidebarLink icon={Home} label="Home" href="/" /> */}
+          <SidebarLink icon={Home} label="Home" href="/home" />
           {/* Timeline link hidden as requested */}
           {/* Search link hidden as requested */}
           {/* <SidebarLink icon={Search} label="Search" href="/search" /> */}
