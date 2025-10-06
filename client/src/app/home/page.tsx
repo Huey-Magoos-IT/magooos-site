@@ -127,7 +127,7 @@ const HomePage = () => {
                   </h1>
                 </div>
                 <p className="text-xl text-blue-100 max-w-2xl">
-                  Welcome back to your dashboard. Here's what's happening today.
+                  Welcome back to your dashboard. Here&apos;s what&apos;s happening today.
                 </p>
               </div>
               
