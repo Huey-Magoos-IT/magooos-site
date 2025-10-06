@@ -57,7 +57,7 @@ const HomePage = () => {
             {greeting}, {userName}!
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Welcome to your personalized dashboard. Here's a quick overview of what's happening.
+            Welcome to your personalized dashboard. Here&apos;s a quick overview of what&apos;s happening.
           </p>
         </div>
 
