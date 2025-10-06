@@ -60,7 +60,7 @@ const Sidebar = () => {
     <div className={sidebarClassNames}>
       <div className="flex h-full w-full flex-col">
         {/* Logo Section */}
-        <div className="flex items-center justify-between px-6 py-6 border-b border-orange-200/50 dark:border-orange-500/20">
+        <div className="flex items-center justify-between px-6 py-6 mt-20 border-b border-orange-200/50 dark:border-orange-500/20">
           <Link href="/home" className="flex items-center gap-3 group">
             <div className="relative">
               <Image
