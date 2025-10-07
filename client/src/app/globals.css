@@ -137,6 +137,13 @@ html {
   background-clip: text;
 }
 
+.dark .gradient-text-orange {
+  background: linear-gradient(135deg, #FFB894 0%, #F8A5A5 100%); /* Dark mode pastel gradient */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .gradient-text-gold {
   background: linear-gradient(135deg, #FFB627 0%, #FF6B2C 100%);
   -webkit-background-clip: text;
@@ -240,6 +247,10 @@ html {
 .bg-hero-gradient {
   background: linear-gradient(135deg, #FF6B2C 0%, #E63946 100%);
   position: relative;
+}
+
+.dark .bg-hero-gradient {
+  background: linear-gradient(135deg, #CC7A52 0%, #C87A7A 100%); /* Dark mode pastel gradient */
 }
 
 .bg-hero-gradient::before {
@@ -519,7 +530,7 @@ html {
 
 /* Gradient conversions */
 .from-blue-50 {
-  --tw-gradient-from: #FFE8DB !important;
+  --tw-gradient-from: #FFE8DB var(--tw-gradient-from-opacity, 1) !important;
 }
 
 .dark .from-blue-50 {
@@ -528,7 +539,7 @@ html {
 
 .to-blue-50,
 .via-blue-50 {
-  --tw-gradient-to: #FFE8DB !important;
+  --tw-gradient-to: #FFE8DB var(--tw-gradient-to-opacity, 1) !important;
 }
 
 .dark .to-blue-50,
@@ -538,7 +549,7 @@ html {
 
 .from-blue-900\/20,
 .from-blue-900\/10 {
-  --tw-gradient-from: rgba(255, 107, 44, 0.1) !important;
+  --tw-gradient-from: rgba(255, 107, 44, 0.1) var(--tw-gradient-from-opacity, 1) !important;
 }
 
 .dark .from-blue-900\/20,
@@ -549,13 +560,32 @@ html {
 .to-blue-900\/20,
 .to-blue-900\/10,
 .via-blue-900\/20 {
-  --tw-gradient-to: rgba(255, 107, 44, 0.1) !important;
+  --tw-gradient-to: rgba(255, 107, 44, 0.1) var(--tw-gradient-to-opacity, 1) !important;
 }
 
 .dark .to-blue-900\/20,
 .dark .to-blue-900\/10,
 .dark .via-blue-900\/20 {
   --tw-gradient-to: rgba(255, 184, 148, 0.1) !important;
+}
+
+/* Specific gradient overrides for price portal location selection */
+.from-blue-500 {
+  --tw-gradient-from: #FF6B2C var(--tw-gradient-from-opacity, 1) !important; /* orange-500 */
+}
+
+.dark .from-blue-500 {
+  --tw-gradient-from: #FFB894 var(--tw-gradient-from-opacity, 1) !important; /* orange-pastel */
+}
+
+.to-indigo-500,
+.to-indigo-600 {
+  --tw-gradient-to: #E63946 var(--tw-gradient-to-opacity, 1) !important; /* red-500 */
+}
+
+.dark .to-indigo-500,
+.dark .to-indigo-600 {
+  --tw-gradient-to: #F8A5A5 var(--tw-gradient-to-opacity, 1) !important; /* red-pastel */
 }
 
 /* === DARK MODE PASTEL COLOR OVERRIDES === */
@@ -574,6 +604,10 @@ html {
 
 .dark .text-orange-800 {
   color: #FFC9A8 !important;
+}
+
+.dark .text-gold-300 {
+  color: #FBBF24 !important; /* gold-pastel */
 }
 
 /* Apply pastel colors for backgrounds */
@@ -599,6 +633,14 @@ html {
   background-color: #D4A84A !important; /* Darker gold pastel */
 }
 
+.dark .bg-gradient-orange-red {
+  background: linear-gradient(135deg, #CC7A52 0%, #C87A7A 100%) !important; /* Darker pastel gradient */
+}
+
+.dark .bg-gradient-gold-orange {
+  background: linear-gradient(135deg, #D4A84A 0%, #CC7A52 100%) !important; /* Darker pastel gradient */
+}
+
 /* Apply pastel for borders */
 .dark .border-orange-400,
 .dark .border-orange-500 {
@@ -620,6 +662,20 @@ html {
 
 .dark .to-orange-pastel {
   --tw-gradient-to: #FFB894 !important;
+}
+
+/* Dark mode specific overrides for menu/dropdowns */
+.dark .MuiPaper-root {
+  background-color: #1A1A1A !important; /* dark-secondary */
+  border: 1px solid rgba(255, 184, 148, 0.2) !important; /* Pastel orange border */
+}
+
+.dark .MuiMenuItem-root {
+  color: #FFC9A8 !important; /* Pastel light text */
+}
+
+.dark .MuiMenuItem-root:hover {
+  background-color: rgba(255, 184, 148, 0.1) !important; /* Soft hover */
 }
 
 /* === MATERIAL UI OVERRIDES === */
@@ -676,6 +732,7 @@ html {
 /* Button Enhancements */
 .dark .MuiButton-contained {
   background-color: #CC7A52 !important; /* Darker pastel orange */
+  color: #FFF8F0 !important; /* Ensure text is readable */
 }
 
 .dark .MuiButton-contained:hover {
