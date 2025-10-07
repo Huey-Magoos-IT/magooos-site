@@ -321,14 +321,32 @@ html {
   background-color: #B86A42 !important;
 }
 
+.bg-blue-900,
 .bg-blue-900\/10,
 .bg-blue-900\/20 {
   background-color: rgba(255, 107, 44, 0.1) !important;
 }
 
+.dark .bg-blue-900,
 .dark .bg-blue-900\/10,
 .dark .bg-blue-900\/20 {
   background-color: rgba(255, 184, 148, 0.1) !important;
+}
+
+.bg-blue-200 {
+  background-color: #FFD1B8 !important; /* orange-200 */
+}
+
+.dark .bg-blue-200 {
+  background-color: rgba(255, 184, 148, 0.15) !important;
+}
+
+.bg-blue-800 {
+  background-color: #E65A1F !important;
+}
+
+.dark .bg-blue-800 {
+  background-color: rgba(204, 122, 82, 0.8) !important;
 }
 
 /* Text colors */
@@ -430,12 +448,28 @@ html {
   background-color: rgba(255, 184, 148, 0.1) !important;
 }
 
+.hover\:bg-blue-200:hover {
+  background-color: #FFD1B8 !important;
+}
+
+.dark .hover\:bg-blue-200:hover {
+  background-color: rgba(255, 184, 148, 0.2) !important;
+}
+
 .hover\:bg-blue-700:hover {
   background-color: #E65A1F !important;
 }
 
 .dark .hover\:bg-blue-700:hover {
   background-color: #B86A42 !important;
+}
+
+.hover\:bg-blue-800:hover {
+  background-color: #CC4A16 !important;
+}
+
+.dark .hover\:bg-blue-800:hover {
+  background-color: rgba(204, 122, 82, 0.9) !important;
 }
 
 .hover\:bg-blue-900\/10:hover,
@@ -483,16 +517,63 @@ html {
   border-color: #FFB894 !important;
 }
 
+/* Gradient conversions */
+.from-blue-50 {
+  --tw-gradient-from: #FFE8DB !important;
+}
+
+.dark .from-blue-50 {
+  --tw-gradient-from: rgba(255, 184, 148, 0.1) !important;
+}
+
+.to-blue-50,
+.via-blue-50 {
+  --tw-gradient-to: #FFE8DB !important;
+}
+
+.dark .to-blue-50,
+.dark .via-blue-50 {
+  --tw-gradient-to: rgba(255, 184, 148, 0.1) !important;
+}
+
+.from-blue-900\/20,
+.from-blue-900\/10 {
+  --tw-gradient-from: rgba(255, 107, 44, 0.1) !important;
+}
+
+.dark .from-blue-900\/20,
+.dark .from-blue-900\/10 {
+  --tw-gradient-from: rgba(255, 184, 148, 0.1) !important;
+}
+
+.to-blue-900\/20,
+.to-blue-900\/10,
+.via-blue-900\/20 {
+  --tw-gradient-to: rgba(255, 107, 44, 0.1) !important;
+}
+
+.dark .to-blue-900\/20,
+.dark .to-blue-900\/10,
+.dark .via-blue-900\/20 {
+  --tw-gradient-to: rgba(255, 184, 148, 0.1) !important;
+}
+
 /* === DARK MODE PASTEL COLOR OVERRIDES === */
 
 /* Apply pastel orange in dark mode for text */
 .dark .text-orange-500,
-.dark .text-orange-600 {
+.dark .text-orange-600,
+.dark .text-orange-pastel {
   color: #FFB894 !important; /* orange-pastel */
 }
 
-.dark .text-orange-400 {
+.dark .text-orange-400,
+.dark .text-orange-pastel-light {
   color: #FFC9A8 !important; /* orange-pastel-light */
+}
+
+.dark .text-orange-800 {
+  color: #FFC9A8 !important;
 }
 
 /* Apply pastel colors for backgrounds */
@@ -501,11 +582,20 @@ html {
   background-color: #CC7A52 !important; /* Darker pastel for backgrounds */
 }
 
+.dark .bg-orange-100 {
+  background-color: rgba(255, 184, 148, 0.15) !important;
+}
+
+.dark .bg-orange-900\/20 {
+  background-color: rgba(255, 184, 148, 0.1) !important;
+}
+
 .dark .bg-red-500 {
   background-color: #C87A7A !important; /* Darker red pastel */
 }
 
-.dark .bg-gold-500 {
+.dark .bg-gold-500,
+.dark .bg-gold-pastel {
   background-color: #D4A84A !important; /* Darker gold pastel */
 }
 
@@ -513,6 +603,23 @@ html {
 .dark .border-orange-400,
 .dark .border-orange-500 {
   border-color: #FFB894 !important; /* orange-pastel */
+}
+
+/* Gradient from/to for pastel colors */
+.dark .from-orange-pastel {
+  --tw-gradient-from: #FFB894 !important;
+}
+
+.dark .to-red-pastel {
+  --tw-gradient-to: #F8A5A5 !important;
+}
+
+.dark .from-red-pastel {
+  --tw-gradient-from: #F8A5A5 !important;
+}
+
+.dark .to-orange-pastel {
+  --tw-gradient-to: #FFB894 !important;
 }
 
 /* === MATERIAL UI OVERRIDES === */

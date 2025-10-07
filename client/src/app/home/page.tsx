@@ -114,8 +114,8 @@ const HomePage = () => {
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             const colorClasses = {
-              orange: "from-orange-500 to-red-500 shadow-glow-orange",
-              red: "from-red-500 to-red-600 shadow-glow-red",
+              orange: "from-orange-500 to-red-500 dark:from-orange-pastel dark:to-red-pastel shadow-glow-orange",
+              red: "from-red-500 to-red-600 dark:from-red-pastel dark:to-red-pastel shadow-glow-red",
               green: "from-green-500 to-emerald-600"
             }[stat.color];
 

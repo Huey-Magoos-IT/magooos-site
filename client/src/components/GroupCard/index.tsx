@@ -58,7 +58,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-5">
-            <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-md">
+            <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-pastel dark:to-red-pastel text-white flex items-center justify-center shadow-md">
               <span className="font-bold text-xl">{getInitials(group.name)}</span>
             </div>
             <div>
@@ -92,7 +92,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 {onManageUsers && (
                   <button
                     onClick={() => onManageUsers(group)}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-blue-600 dark:text-blue-400"
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-orange-600 dark:text-orange-pastel"
                     aria-label="Manage Users"
                     title="Manage Users"
                   >
@@ -134,7 +134,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
               group.locationIds.map((locationId) => (
                 <span
                   key={locationId}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 shadow-sm"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-pastel shadow-sm"
                 >
                   {locationId}
                 </span>
@@ -153,7 +153,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             {isAdmin && (
               <button
                 onClick={() => onManageUsers && onManageUsers(group)}
-                className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                className="text-xs text-orange-600 hover:text-orange-800 dark:text-orange-pastel dark:hover:text-orange-pastel-light flex items-center"
               >
                 <span>Manage Users</span>
               </button>
