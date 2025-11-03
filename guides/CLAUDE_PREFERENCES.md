@@ -5,6 +5,20 @@
 
 ---
 
+## 🚨 CRITICAL: Git Operations Policy
+
+### ❌ NEVER Do This:
+- **NEVER** commit or push to git without explicit user permission
+- **NEVER** make automated commits without asking first
+- **NEVER** assume the user wants changes committed
+
+### ✅ ALWAYS Do This:
+- **ALWAYS** ask the user before committing any changes
+- **ALWAYS** ask the user before pushing to remote
+- **ALWAYS** let the user review changes before git operations
+
+---
+
 ## 🚨 CRITICAL: AWS SDK Usage Policy
 
 ### ❌ NEVER Do This:
@@ -843,21 +857,22 @@ pm2 monit
 
 When working on the **Magooos Site** project, ALWAYS remember:
 
-1. **AWS SDK**: Forbidden in frontend, required for backend Cognito operations
-2. **TypeScript Build**: ALWAYS run `npm run build` before server deployment
-3. **Access Control**: ALWAYS use `hasRole`/`hasAnyRole` utilities
-4. **Logging**: ALWAYS include descriptive `[PREFIX]` in console.log statements
-5. **Error Handling**: ALWAYS use try-catch with appropriate HTTP status codes
-6. **Validation**: ALWAYS validate input and check for duplicates
-7. **Dark Mode**: ALWAYS support with `dark:` Tailwind classes
-8. **Responsiveness**: ALWAYS test on mobile, tablet, and desktop
-9. **Role Testing**: ALWAYS test with different user roles
-10. **Documentation**: ALWAYS update guides when adding features
+1. **Git Operations**: NEVER commit or push without explicit user permission
+2. **AWS SDK**: Forbidden in frontend, required for backend Cognito operations
+3. **TypeScript Build**: ALWAYS run `npm run build` before server deployment
+4. **Access Control**: ALWAYS use `hasRole`/`hasAnyRole` utilities
+5. **Logging**: ALWAYS include descriptive `[PREFIX]` in console.log statements
+6. **Error Handling**: ALWAYS use try-catch with appropriate HTTP status codes
+7. **Validation**: ALWAYS validate input and check for duplicates
+8. **Dark Mode**: ALWAYS support with `dark:` Tailwind classes
+9. **Responsiveness**: ALWAYS test on mobile, tablet, and desktop
+10. **Role Testing**: ALWAYS test with different user roles
+11. **Documentation**: ALWAYS update guides when adding features
 
 This project emphasizes **security**, **scalability**, and **maintainability** through role-based access control, comprehensive error handling, and clear separation of concerns. Follow these guidelines to maintain code quality and consistency across the entire application.
 
 ---
 
-**Last Updated**: October 29, 2025
+**Last Updated**: January 2025
 **Project**: Magooos Site (Huey-Magoos-IT)
 **Tech Stack**: Next.js 14, Express/TypeScript, Prisma, PostgreSQL, AWS
