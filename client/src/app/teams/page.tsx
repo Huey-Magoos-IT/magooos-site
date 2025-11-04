@@ -168,7 +168,7 @@ const TeamsPage = () => {
         <div className="mb-6 flex justify-end">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded flex items-center gap-2 hover:bg-blue-600"
+            className="px-4 py-2 bg-orange-500 text-white rounded flex items-center gap-2 hover:bg-orange-600"
           >
             <Plus size={16} />
             Create New Team
@@ -245,7 +245,7 @@ const TeamsPage = () => {
             </button>
             <button
               onClick={handleCreateTeam}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
               disabled={!newTeamName}
             >
               Create Team
@@ -283,7 +283,7 @@ const TeamsPage = () => {
               </button>
               <button
                 onClick={() => handleEditTeam(teamToEdit.id, (document.getElementById('editTeamName') as HTMLInputElement).value)}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
               >
                 Save Changes
               </button>
@@ -331,7 +331,7 @@ const TeamsPage = () => {
                 <h3 className="text-lg font-semibold dark:text-white">{team.teamName}</h3>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {team.teamRoles?.map((teamRole: any) => (
-                    <span key={teamRole.id} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-100">
+                    <span key={teamRole.id} className="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full dark:bg-orange-900/30 dark:text-orange-200">
                       {teamRole.role.name}
                     </span>
                   ))}
@@ -348,7 +348,7 @@ const TeamsPage = () => {
                     className={`px-4 py-2 rounded ${
                       authData?.userDetails?.teamId === team.id
                         ? 'bg-green-500 text-white'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                        : 'bg-orange-500 text-white hover:bg-orange-600'
                     }`}
                     disabled={authData?.userDetails?.teamId === team.id}
                   >
