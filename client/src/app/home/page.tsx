@@ -150,8 +150,8 @@ const HomePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Large Feature Card */}
-          <div className="md:col-span-2 md:row-span-2 
-                        bg-gradient-to-br from-orange-500 to-red-500 
+          <div className="md:col-span-2 md:row-span-2
+                        bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-pastel/40 dark:to-red-pastel/40
                         rounded-3xl p-8 card-lift overflow-hidden relative
                         animate-fade-in-up">
             <div className="absolute inset-0 diagonal-stripes opacity-20" />
@@ -225,22 +225,22 @@ const HomePage = () => {
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-gradient-to-br from-gold-400 to-orange-500
+          <div className="bg-gradient-to-br from-gold-400 to-orange-500 dark:from-gold-pastel/40 dark:to-orange-pastel/40
                         rounded-3xl p-6 card-lift relative overflow-hidden
                         animate-fade-in-up"
                style={{animationDelay: '400ms'}}>
             <div className="absolute inset-0 dot-grid opacity-20" />
             <div className="relative z-10">
-              <div className="text-sm font-semibold text-orange-900 mb-2 uppercase tracking-wide">
+              <div className="text-sm font-semibold text-orange-900 dark:text-orange-200 mb-2 uppercase tracking-wide">
                 This Week
               </div>
               <div className="text-5xl font-black text-white mb-2">
                 2.4K
               </div>
-              <div className="text-orange-100">
+              <div className="text-orange-100 dark:text-orange-200">
                 Total Transactions
               </div>
-              <div className="mt-4 flex items-center gap-2 text-orange-900">
+              <div className="mt-4 flex items-center gap-2 text-orange-900 dark:text-orange-200">
                 <TrendingUp className="h-4 w-4" />
                 <span className="text-sm font-semibold">+12% from last week</span>
               </div>
