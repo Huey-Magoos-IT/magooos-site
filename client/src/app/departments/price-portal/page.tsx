@@ -544,7 +544,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Selected Locations</h2>
                         <button
                             onClick={() => router.push('/departments/price-portal/location-selection')}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
                         >
                             Change Locations
                         </button>
@@ -562,7 +562,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             }`}
                         >
                             {availableLocations.map((location: LocationInfo) => (
-                                <span key={location.id} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                                <span key={location.id} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 rounded-full text-sm font-medium">
                                     {location.displayName}
                                 </span>
                             ))}
@@ -573,7 +573,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             <div className={`${!locationsExpanded ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white dark:from-gray-800 to-transparent h-8 flex items-end justify-center' : 'mt-2 flex justify-center'}`}>
                                 <button
                                     onClick={() => setLocationsExpanded(!locationsExpanded)}
-                                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-600 transition-colors"
+                                    className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 font-medium bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-orange-200 dark:border-orange-600 transition-colors"
                                 >
                                     {locationsExpanded ? `Show Less ▲` : `Show All ${availableLocations.length} ▼`}
                                 </button>
@@ -592,7 +592,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         {saucePriceInfo.length > 3 && (
                             <button
                                 onClick={() => setSaucePriceExpanded(!saucePriceExpanded)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-600 transition-colors"
+                                className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 font-medium bg-orange-50 dark:bg-orange-900/20 px-3 py-1 rounded-full border border-orange-200 dark:border-orange-600 transition-colors"
                             >
                                 {saucePriceExpanded ? `Show Less ▲` : `Show All ${saucePriceInfo.length} ▼`}
                             </button>
@@ -608,7 +608,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                 return (
                                     <div
                                         key={price}
-                                        className={`bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 transition-all duration-300 ${
+                                        className={`bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 transition-all duration-300 ${
                                             isHidden ? 'opacity-50 transform scale-95' : 'opacity-100 transform scale-100'
                                         }`}
                                     >
@@ -678,7 +678,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                     type="checkbox"
                                     checked={syncAll}
                                     onChange={(e) => handleToggleSyncAll(e.target.checked)}
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                 />
                                 <span className="text-sm text-gray-700 dark:text-gray-300">Sync All Locations</span>
                             </label>
@@ -700,7 +700,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                             type="checkbox"
                                             checked={syncAll}
                                             onChange={(e) => handleToggleSyncAll(e.target.checked)}
-                                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                             aria-label="Sync All Visible Items"
                                             title="Sync all visible items"
                                         />
@@ -728,7 +728,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                      type="checkbox"
                                                      checked={syncedItems[item.name] || syncAll}
                                                      onChange={() => handleSyncToggle(item.name)}
-                                                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                     className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                                                  />
                                                 </td>
                                                 {availableLocations.map((location, index) => {
@@ -761,9 +761,9 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                                                 handlePriceChange(priceChangeKey, value);
                                                                             }
                                                                         }}
-                                                                        className={`w-full px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                                            isSyncedFollower 
-                                                                                ? 'bg-gray-200 dark:bg-gray-600 cursor-not-allowed' 
+                                                                        className={`w-full px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
+                                                                            isSyncedFollower
+                                                                                ? 'bg-gray-200 dark:bg-gray-600 cursor-not-allowed'
                                                                                 : 'bg-white dark:bg-gray-700'
                                                                         } border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white`}
                                                                         disabled={currentPrice === undefined || isSyncedFollower}
@@ -816,7 +816,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                         disabled={Object.keys(priceChanges).length === 0}
                         className={`px-8 py-3 rounded-lg font-medium transition-colors ${
                             Object.keys(priceChanges).length > 0
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-orange-600 text-white hover:bg-orange-700'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
                         }`}
                     >
@@ -1087,15 +1087,15 @@ const PricePortalPage = () => {
           <div className="p-6">
             <Header name="Price Portal" />
             <div className="mt-6">
-              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
+              <div className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg p-6">
                 <div className="text-center mb-6">
-                  <div className="text-blue-600 dark:text-blue-400 text-xl font-bold mb-2">
+                  <div className="text-orange-600 dark:text-orange-400 text-xl font-bold mb-2">
                     Price Report In Progress
                   </div>
-                  <div className="text-blue-700 dark:text-blue-300 mb-4">
+                  <div className="text-orange-700 dark:text-orange-300 mb-4">
                     Your price changes have been submitted and are being processed.
                   </div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">
+                  <div className="text-sm text-orange-600 dark:text-orange-400">
                     You will be notified when the report is complete. Contact support for assistance: ITSUPPORT@hueymagoos.com
                   </div>
                 </div>
@@ -1106,7 +1106,7 @@ const PricePortalPage = () => {
                   
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
                     <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Report ID: <span className="font-mono text-blue-600 dark:text-blue-400">{activeReport.id}</span>
+                      Report ID: <span className="font-mono text-orange-600 dark:text-orange-400">{activeReport.id}</span>
                     </div>
                     <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Status: <span className="text-yellow-600 dark:text-yellow-400">Pending Review</span>

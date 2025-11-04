@@ -12,7 +12,7 @@ const TaskCard = ({ task }: Props) => {
     <div className="mb-3 rounded-lg bg-white p-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow dark:bg-dark-secondary dark:text-white dark:border-stroke-dark">
       {task.attachments && task.attachments.length > 0 && (
         <div className="mb-4">
-          <strong className="text-blue-600 dark:text-blue-400 font-medium">Attachments:</strong>
+          <strong className="text-orange-600 dark:text-orange-400 font-medium">Attachments:</strong>
           <div className="flex flex-wrap mt-2">
             {task.attachments && task.attachments.length > 0 && (
               <Image
@@ -89,7 +89,7 @@ const TaskCard = ({ task }: Props) => {
           <strong className="text-gray-700 dark:text-gray-200">Tags:</strong>{" "}
           <div className="flex flex-wrap gap-1 mt-1">
             {task.tags.split(',').map((tag, index) => (
-              <span key={index} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full dark:bg-blue-900/20 dark:text-blue-200">
+              <span key={index} className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-full dark:bg-orange-900/20 dark:text-orange-200">
                 {tag.trim()}
               </span>
             ))}
