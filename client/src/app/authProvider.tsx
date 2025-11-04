@@ -143,8 +143,8 @@ const AuthProvider = ({ children }: any) => {
 
   if (isAuthenticated === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 via-cream-100 to-gold-50 dark:from-dark-bg dark:via-dark-secondary dark:to-dark-tertiary">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -174,7 +174,7 @@ const AuthProvider = ({ children }: any) => {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
+            className="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
             placeholder="Enter your username"
             required
           />
@@ -194,7 +194,7 @@ const AuthProvider = ({ children }: any) => {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-12 pr-12 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
+            className="w-full pl-12 pr-12 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
             placeholder="Enter your password"
             required
           />
@@ -216,7 +216,7 @@ const AuthProvider = ({ children }: any) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-glow-orange"
       >
         {isLoading ? (
           <div className="flex items-center justify-center">
@@ -228,7 +228,7 @@ const AuthProvider = ({ children }: any) => {
         )}
       </button>
       <div className="text-center">
-        <button type="button" onClick={() => setAuthView('forgotPassword')} className="text-sm text-blue-600 hover:underline">
+        <button type="button" onClick={() => setAuthView('forgotPassword')} className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline transition-colors">
           Reset Password
         </button>
       </div>
@@ -256,7 +256,7 @@ const AuthProvider = ({ children }: any) => {
             type={showPassword ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full pl-12 pr-12 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
+            className="w-full pl-12 pr-12 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
             placeholder="Enter your new password"
             required
           />
@@ -278,7 +278,7 @@ const AuthProvider = ({ children }: any) => {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
+            className="w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
             placeholder="Confirm your new password"
             required
           />
@@ -287,7 +287,7 @@ const AuthProvider = ({ children }: any) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl"
+        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-glow-orange disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? 'Setting Password...' : 'Set New Password'}
       </button>
@@ -308,17 +308,17 @@ const AuthProvider = ({ children }: any) => {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white"
              placeholder="Enter your username"
             required
           />
         </div>
       </div>
-      <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl">
+      <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-glow-orange disabled:opacity-50 disabled:cursor-not-allowed">
         {isLoading ? 'Sending Code...' : 'Send Password Reset Code'}
       </button>
       <div className="text-center">
-        <button type="button" onClick={() => setAuthView('signIn')} className="text-sm text-blue-600 hover:underline">
+        <button type="button" onClick={() => setAuthView('signIn')} className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline transition-colors">
           Back to Sign In
         </button>
       </div>
@@ -339,7 +339,7 @@ const AuthProvider = ({ children }: any) => {
             type="text"
             value={confirmationCode}
             onChange={(e) => setConfirmationCode(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl"
+            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white"
             placeholder="Enter code from your email"
             required
            />
@@ -355,7 +355,7 @@ const AuthProvider = ({ children }: any) => {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl"
+            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white"
             placeholder="Enter new password"
             required
           />
@@ -371,17 +371,17 @@ const AuthProvider = ({ children }: any) => {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl"
+            className="w-full pl-4 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 dark:bg-dark-tertiary text-gray-900 dark:text-white"
             placeholder="Confirm new password"
             required
           />
         </div>
       </div>
-      <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl">
+      <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-glow-orange disabled:opacity-50 disabled:cursor-not-allowed">
         {isLoading ? 'Resetting Password...' : 'Reset Password'}
       </button>
        <div className="text-center">
-        <button type="button" onClick={() => setAuthView('signIn')} className="text-sm text-blue-600 hover:underline">
+        <button type="button" onClick={() => setAuthView('signIn')} className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 hover:underline transition-colors">
           Back to Sign In
         </button>
       </div>
@@ -390,15 +390,15 @@ const AuthProvider = ({ children }: any) => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-cream-100 to-gold-50 dark:from-dark-bg dark:via-dark-secondary dark:to-dark-tertiary flex items-center justify-center p-4">
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      
+      <div className="absolute inset-0 bg-noise opacity-30"></div>
+
       <div className="relative w-full max-w-md">
         {/* Main Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-dark-secondary rounded-3xl shadow-lift-lg border border-orange-100 dark:border-orange-900/30 overflow-hidden backdrop-blur-sm">
           {/* Header Section with Gradient */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-12 text-center">
+          <div className="bg-gradient-orange-red px-8 py-12 text-center relative overflow-hidden">
             <div className="flex justify-center mb-6">
               <div className="bg-white rounded-2xl p-4 shadow-lg">
                 <Image
@@ -410,10 +410,10 @@ const AuthProvider = ({ children }: any) => {
                 />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-white mb-2 relative z-10">
               Huey Magoo&apos;s Portal
             </h1>
-            <p className="text-blue-100 text-lg">
+            <p className="text-white/90 text-lg relative z-10">
               Access Your Dashboard
             </p>
           </div>
