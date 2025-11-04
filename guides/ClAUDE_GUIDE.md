@@ -588,7 +588,6 @@ export default function DataDepartmentPage() {
 
 ---
 
- 
 
 ## 🎨 Styling Guidelines
 
