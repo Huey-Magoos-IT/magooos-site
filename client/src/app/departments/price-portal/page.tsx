@@ -539,7 +539,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             <Header name={`Price Portal - ${user?.username || 'User'}`} />
             
             <div className="mt-6 space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-dark-secondary rounded-lg shadow p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Selected Locations</h2>
                         <button
@@ -573,7 +573,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             <div className={`${!locationsExpanded ? 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white dark:from-gray-800 to-transparent h-8 flex items-end justify-center' : 'mt-2 flex justify-center'}`}>
                                 <button
                                     onClick={() => setLocationsExpanded(!locationsExpanded)}
-                                    className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 font-medium bg-white dark:bg-gray-800 px-3 py-1 rounded-full border border-orange-200 dark:border-orange-600 transition-colors"
+                                    className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 font-medium bg-white dark:bg-dark-secondary px-3 py-1 rounded-full border border-orange-200 dark:border-orange-600 transition-colors"
                                 >
                                     {locationsExpanded ? `Show Less ▲` : `Show All ${availableLocations.length} ▼`}
                                 </button>
@@ -586,7 +586,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </p>
                 </div>
                 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-dark-secondary rounded-lg shadow p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sauced Tender Price Info</h3>
                         {saucePriceInfo.length > 3 && (
@@ -615,7 +615,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                         <div className="text-xs text-gray-500 dark:text-gray-400 text-center mb-3" title={locs.join(', ')}>
                                             {locs.length > 3 ? `${locs.slice(0, 3).join(', ')} & ${locs.length - 3} more` : locs.join(', ')}
                                         </div>
-                                        <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-md border">
+                                        <div className="flex justify-between items-center p-3 bg-white dark:bg-dark-secondary rounded-md border">
                                             <span className="text-xs font-medium text-gray-700 dark:text-gray-300">5 Piece Sauce:</span>
                                             <span className="text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">${price.toFixed(2)}</span>
                                         </div>
@@ -631,17 +631,17 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-dark-secondary rounded-lg shadow p-6">
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white">
                                 {categoryList.map(category => (<option key={category.value} value={category.value}>{category.label}</option>))}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort</label>
-                            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white">
                                 <option value="asc">A-Z</option>
                                 <option value="desc">Z-A</option>
                             </select>
@@ -669,7 +669,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                <div className="bg-white dark:bg-dark-secondary rounded-lg shadow overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Price Management</h3>
@@ -687,13 +687,13 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                     
                     <div className="overflow-x-auto" id="price-table-container" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
+                            <thead className="bg-gray-50 dark:bg-dark-tertiary">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item Name</th>
                                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sync</th>
                                     {availableLocations.map(location => (<th key={location.id} className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[200px]">{location.displayName.toUpperCase()}</th>))}
                                 </tr>
-                                <tr className="bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                                <tr className="bg-gray-50 dark:bg-dark-tertiary border-t border-gray-200 dark:border-gray-600">
                                     <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300"></th>
                                     <th className="px-6 py-2 text-center">
                                         <input
@@ -708,10 +708,10 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                      {availableLocations.map(location => (<th key={location.id} className="px-6 py-2"><div className="flex justify-center items-center space-x-8 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"><span className="w-24 text-center">Current</span><span className="w-24 text-center">New</span></div></th>))}
                                   </tr>
                               </thead>
-                             <tbody className="bg-white dark:bg-gray-800">
+                             <tbody className="bg-white dark:bg-dark-secondary">
                                 {Object.entries(groupedItems).map(([categoryName, itemsInCategory]) => (
                                     <React.Fragment key={categoryName}>
-                                        <tr className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
+                                        <tr className="bg-gray-100 dark:bg-dark-tertiary/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
                                             <td colSpan={2 + availableLocations.length} className="px-6 py-3 text-left">
                                                 <div className="flex items-center">
                                                     <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">{expandedCategories[categoryName] ? '▼' : '►'} {categoryName} ({itemsInCategory.length})</span>
@@ -764,7 +764,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                                                                         className={`w-full px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
                                                                             isSyncedFollower
                                                                                 ? 'bg-gray-200 dark:bg-gray-600 cursor-not-allowed'
-                                                                                : 'bg-white dark:bg-gray-700'
+                                                                                : 'bg-white dark:bg-dark-tertiary'
                                                                         } border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white`}
                                                                         disabled={currentPrice === undefined || isSyncedFollower}
                                                                     />
@@ -864,7 +864,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                 >
                     <div
                         id="sticky-horizontal-scrollbar"
-                        className="overflow-x-auto bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 pointer-events-auto"
+                        className="overflow-x-auto bg-white dark:bg-dark-secondary border-t border-gray-200 dark:border-gray-700 pointer-events-auto"
                         style={{
                             overflowY: 'hidden',
                             height: '12px'
@@ -883,7 +883,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             {/* Confirmation Modal for Warnings */}
             {confirmationModal.isOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+                    <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
                         <div className="flex items-center justify-center mb-4">
                             <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
                                 <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -898,7 +898,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                                 Please review the following large price changes. Are you sure you want to proceed?
                             </p>
-                            <div className="text-left space-y-2 text-sm text-gray-600 dark:text-gray-300 max-h-60 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md border border-gray-200 dark:border-gray-600">
+                            <div className="text-left space-y-2 text-sm text-gray-600 dark:text-gray-300 max-h-60 overflow-y-auto p-3 bg-gray-50 dark:bg-dark-tertiary/50 rounded-md border border-gray-200 dark:border-gray-600">
                                 {confirmationModal.warnings.map((warning, index) => (
                                     <div key={index} className="flex items-start">
                                         <svg className="w-4 h-4 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -933,7 +933,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             {/* Validation Error Modal */}
             {validationModal.isOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                    <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
                         <div className="flex items-center justify-center mb-4">
                             <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
                                 <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -976,7 +976,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
             {/* Submission Result Modal */}
             {submissionModal.isOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                    <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
                         <div className="flex items-center justify-center mb-4">
                             {submissionModal.success ? (
                                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
@@ -1001,7 +1001,7 @@ const PricePortalContent: React.FC<PricePortalContentProps> = ({
                             {submissionModal.success ? (
                                 <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                                     <p>Your price changes have been successfully submitted and exported to the data lake.</p>
-                                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mt-3">
+                                    <div className="bg-gray-50 dark:bg-dark-tertiary rounded-lg p-3 mt-3">
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Report Details:</div>
                                         <div className="font-mono text-xs">
                                             <div>ID: {submissionModal.reportId}</div>
@@ -1101,10 +1101,10 @@ const PricePortalPage = () => {
                 </div>
                 
                 {/* Show actual submitted report details */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mt-4">
+                <div className="bg-white dark:bg-dark-secondary rounded-lg p-4 mt-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Submitted Changes</h3>
                   
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                  <div className="bg-gray-50 dark:bg-dark-tertiary rounded-lg p-4 mb-4">
                     <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Report ID: <span className="font-mono text-orange-600 dark:text-orange-400">{activeReport.id}</span>
                     </div>

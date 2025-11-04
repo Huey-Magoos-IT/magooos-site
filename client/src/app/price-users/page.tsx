@@ -49,7 +49,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <div className="bg-white dark:bg-dark-secondary rounded-lg p-6 w-full max-w-md">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Send Report - {report.groupName}
         </h3>
@@ -63,7 +63,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white"
               placeholder="Enter email address"
             />
           </div>
@@ -85,7 +85,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                         setSelectedLocations(selectedLocations.filter(id => id !== locationId));
                       }
                     }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                     Location {locationId}
@@ -106,7 +106,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                   value="immediate"
                   checked={scheduleType === 'immediate'}
                   onChange={(e) => setScheduleType(e.target.value as 'immediate')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-orange-600 focus:ring-orange-500"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Send Immediately</span>
               </label>
@@ -116,7 +116,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                   value="scheduled"
                   checked={scheduleType === 'scheduled'}
                   onChange={(e) => setScheduleType(e.target.value as 'scheduled')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-orange-600 focus:ring-orange-500"
                 />
                 <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Schedule for Date and Time</span>
               </label>
@@ -132,7 +132,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                 type="datetime-local"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white"
               />
             </div>
           )}
@@ -450,7 +450,7 @@ const PriceUsersPage = () => {
       
       <div className="mt-6 space-y-6">
         {/* Control Panel */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -472,7 +472,7 @@ const PriceUsersPage = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   showArchived
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300'
+                    : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300'
                 }`}
               >
                 {showArchived ? 'Show Active Reports' : 'Show Archived'}
@@ -491,7 +491,7 @@ const PriceUsersPage = () => {
         </div>
 
         {/* Reports Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -525,7 +525,7 @@ const PriceUsersPage = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-dark-tertiary">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Group
@@ -556,7 +556,7 @@ const PriceUsersPage = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 ${showArchived ? 'opacity-70' : ''}`}>
+                <tbody className={`bg-white dark:bg-dark-secondary divide-y divide-gray-200 dark:divide-gray-700 ${showArchived ? 'opacity-70' : ''}`}>
                   {displayReports.map(report => (
                   <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
@@ -600,7 +600,7 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleViewReport(report)}
-                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
                         title="View changed items"
                       >
                         {report.totalChanges} items
@@ -612,7 +612,7 @@ const PriceUsersPage = () => {
                           ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                           : report.status === 'sent'
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          : 'bg-gray-100 text-gray-800 dark:bg-dark-tertiary dark:text-gray-300'
                       }`}>
                         {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                       </span>
@@ -620,7 +620,7 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleViewReport(report)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                        className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 transition-colors"
                       >
                         View Details
                       </button>
@@ -660,7 +660,7 @@ const PriceUsersPage = () => {
         </div>
 
         {/* Price User Lock/Unlock Management */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Price User Access Control
@@ -669,7 +669,7 @@ const PriceUsersPage = () => {
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-gray-50 dark:bg-dark-tertiary">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Group
@@ -685,7 +685,7 @@ const PriceUsersPage = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-dark-secondary divide-y divide-gray-200 dark:divide-gray-700">
                 {priceUsersList.map((user: PriceUser) => (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4">
@@ -765,7 +765,7 @@ const PriceUsersPage = () => {
       {/* Status Modal for Lock/Unlock actions */}
       {statusModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm">
+          <div className="bg-white dark:bg-dark-secondary rounded-lg p-6 w-full max-w-sm">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {statusModal.title}
             </h3>
@@ -775,7 +775,7 @@ const PriceUsersPage = () => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setStatusModal({ isOpen: false, title: '', message: '' })}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
               >
                 OK
               </button>
@@ -825,7 +825,7 @@ const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Price Changes: {reportGroupName}
@@ -843,7 +843,7 @@ const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
         ) : (
           <div className="overflow-y-auto flex-grow">
             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-dark-tertiary dark:text-gray-400 sticky top-0">
                 <tr>
                   <th scope="col" className="px-4 py-3">Item Name</th>
                   <th scope="col" className="px-4 py-3">Location</th>
@@ -868,7 +868,7 @@ const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
           >
             Close
           </button>
