@@ -20,7 +20,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     } else {
       document.documentElement.classList.remove("dark");
     }
-  });
+  }, [isDarkMode]);
 
   return (
     <div className="flex min-h-screen w-full bg-cream-100 dark:bg-dark-bg text-charcoal-900 dark:text-cream-100">
@@ -42,11 +42,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <StoreProvider>
-      <AuthProvider>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <AuthProvider>
           <DashboardLayout>{children}</DashboardLayout>
-        </LocalizationProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </LocalizationProvider>
     </StoreProvider>
   );
 };
