@@ -36,14 +36,17 @@ const AuthProvider = ({ children }: any) => {
 
   useEffect(() => {
     checkAuthState();
-    
+
     const listener = (data: any) => {
       switch (data.payload.event) {
         case 'signedIn':
           console.log('User signed in, resetting API state.');
           dispatch(api.util.resetApiState());
           setIsAuthenticated(true);
-          router.push('/home'); // Redirect to /home after successful login
+          // Use setTimeout to defer navigation and avoid hook inconsistency
+          setTimeout(() => {
+            router.push('/home');
+          }, 0);
           break;
         case 'signedOut':
           console.log('User signed out, resetting API state.');
