@@ -282,24 +282,7 @@ export const api = createApi({
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
     }),
-    
-    // Lambda function endpoint for data processing
-    processData: build.mutation<
-      { message: string; reportKey?: string },
-      {
-        start_date: string;
-        end_date: string;
-        output_bucket: string;
-        location_id: string;
-        discount_ids: number[];
-      }
-    >({
-      query: (data) => ({
-        url: 'data-report/generate',
-        method: 'POST',
-        body: data,
-      }),
-    }),
+
     // Use the existing joinTeam functionality for team assignment
     // This is guaranteed to work with API Gateway as it's an existing endpoint
     updateUserTeam: build.mutation<User, { userId: number; teamId: number }>({
@@ -506,7 +489,6 @@ export const {
   useJoinTeamMutation,
   useGetTasksByUserQuery,
   useGetAuthUserQuery,
-  useProcessDataMutation,
   useUpdateUserTeamMutation,
   // Groups functionality hooks
   useGetGroupsQuery,

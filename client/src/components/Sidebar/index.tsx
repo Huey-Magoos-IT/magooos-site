@@ -19,6 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
+import { S3_IMAGE_BUCKET_URL } from "@/lib/constants";
 
 const Sidebar = () => {
   const [showDepartments, setShowDepartments] = useState(true);
@@ -129,7 +130,7 @@ const Sidebar = () => {
                             border-2 border-[var(--theme-primary)]">
                 {!!currentUserDetails?.profilePictureUrl ? (
                   <Image
-                    src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
+                    src={`${S3_IMAGE_BUCKET_URL}/${currentUserDetails?.profilePictureUrl}`}
                     alt={currentUserDetails?.username || "User"}
                     width={40}
                     height={40}

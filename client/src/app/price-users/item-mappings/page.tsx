@@ -12,6 +12,7 @@ import {
     ItemMapping,
     MappedItem
 } from "@/lib/itemNameMappings";
+import { toast } from "react-hot-toast";
 
 const ItemMappingsPage = () => {
     const router = useRouter();
@@ -89,7 +90,7 @@ const ItemMappingsPage = () => {
         
         setMappings(updatedMappings);
         setEditedMappings({});
-        alert("Changes saved successfully! (Simulated)");
+        toast.success("Changes saved successfully!");
     };
 
     const categoryList = useMemo(() => {

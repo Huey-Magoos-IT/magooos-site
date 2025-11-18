@@ -7,6 +7,7 @@ import { useGetAuthUserQuery } from "@/state/api";
 import { signOut } from "aws-amplify/auth";
 import Image from "next/image";
 import ThemeSelector from "@/components/ThemeSelector";
+import { S3_IMAGE_BUCKET_URL } from "@/lib/constants";
 
 const Navbar = () => {
   const dispatch = useAppDispatch();
@@ -52,14 +53,14 @@ const Navbar = () => {
             <Link href="/home" className="flex items-center gap-3 group">
               <div className="relative">
                 <Image
-                  src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_black-01.png"
+                  src={`${S3_IMAGE_BUCKET_URL}/g_with_tm_black-01.png`}
                   alt="Logo"
                   width={36}
                   height={36}
                   className="block dark:hidden transition-transform duration-300 group-hover:scale-110"
                 />
                 <Image
-                  src="https://huey-site-images.s3.us-east-2.amazonaws.com/g_with_tm_white-01.png"
+                  src={`${S3_IMAGE_BUCKET_URL}/g_with_tm_white-01.png`}
                   alt="Logo"
                   width={36}
                   height={36}
@@ -107,7 +108,7 @@ const Navbar = () => {
                      style={{ boxShadow: 'var(--theme-glow-color)' }}>
                   {!!currentUserDetails?.profilePictureUrl ? (
                     <Image
-                      src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${currentUserDetails?.profilePictureUrl}`}
+                      src={`${S3_IMAGE_BUCKET_URL}/${currentUserDetails?.profilePictureUrl}`}
                       alt={currentUserDetails?.username || "User Profile Picture"}
                       width={100}
                       height={50}

@@ -206,7 +206,7 @@ const Users = () => {
       console.log("Cognito signUp response:", { isSignUpComplete, userId, nextStep });
 
       // Step 2: Show success message and close modal
-      alert(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created with the assigned team and locations, and they will appear in the list.`);
+      toast.success(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created with the assigned team and locations, and they will appear in the list.`);
       setIsModalOpen(false);
 
       // Step 3: No refetch needed immediately.

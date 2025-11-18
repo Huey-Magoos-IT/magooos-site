@@ -8,6 +8,7 @@ import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Dialog, D
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import { useUpdateUserLocationsMutation, useGetAuthUserQuery } from "@/state/api";
 import LocationTable, { Location } from "@/components/LocationTable";
+import { S3_IMAGE_BUCKET_URL } from "@/lib/constants";
 
 interface UserCardProps {
   user: {
@@ -295,7 +296,7 @@ const UserCard: React.FC<UserCardProps> = ({
             <div className="h-12 w-12 rounded-full overflow-hidden bg-[var(--theme-surface-hover)] flex items-center justify-center">
               {user.profilePictureUrl ? (
                 <Image
-                  src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${user.profilePictureUrl}`}
+                  src={`${S3_IMAGE_BUCKET_URL}/${user.profilePictureUrl}`}
                   alt={user.username}
                   width={48}
                   height={48}

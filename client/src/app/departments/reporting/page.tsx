@@ -39,6 +39,7 @@ import {
   DEFAULT_LOCATION_IDS
 } from "@/lib/legacyLambdaProcessing";
 import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils"; // Added import
+import { toast } from "react-hot-toast";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const REPORTING_DATA_FOLDER = process.env.NEXT_PUBLIC_REPORTING_DATA_FOLDER || "reporting-data-pool/";
@@ -166,7 +167,7 @@ const ReportingPage = () => {
   // Client-side CSV data processing
   const processCSVData = async () => {
     if (!startDate || !endDate) {
-      alert("Please select both start and end dates");
+      toast.error("Please select both start and end dates");
       return;
     }
 
