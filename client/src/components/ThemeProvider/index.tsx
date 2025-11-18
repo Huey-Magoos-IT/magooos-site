@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/app/redux";
 import { setTheme } from "@/state";
-import { applyTheme, getSavedTheme } from "@/themes";
+import { applyTheme, getSavedTheme, defaultTheme } from "@/themes";
 
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
@@ -17,7 +17,12 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Apply theme whenever it changes
   useEffect(() => {
-    applyTheme(theme);
+    // Guard against undefined theme (can happen during redux-persist rehydration)
+    if (theme) {
+      applyTheme(theme);
+    } else {
+      applyTheme(defaultTheme);
+    }
   }, [theme]);
 
   return <>{children}</>;
