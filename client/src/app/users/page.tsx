@@ -394,7 +394,7 @@ const Users = () => {
                     setConfirmEmail(params.row.email);
                     setIsEditEmailModalOpen(true);
                   }}
-                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="ml-2 p-1 rounded-full hover:bg-[var(--theme-surface-hover)]"
                 >
                   <Edit size={16} />
                 </button>
@@ -405,7 +405,7 @@ const Users = () => {
                     setUserToEdit(params.row);
                     setIsResetPasswordModalOpen(true);
                   }}
-                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="ml-2 p-1 rounded-full hover:bg-[var(--theme-surface-hover)]"
                 >
                   <KeyRound size={16} />
                 </button>
@@ -421,7 +421,7 @@ const Users = () => {
       width: 100,
       renderCell: (params) => (
         <div className="flex h-full w-full items-center justify-center">
-          <div className="h-9 w-9 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-full overflow-hidden bg-[var(--theme-surface-hover)] flex items-center justify-center">
             {params.value ? (
               <Image
                 src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${params.value}`}
@@ -431,7 +431,7 @@ const Users = () => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <UserIcon size={20} className="text-gray-500 dark:text-gray-400" /> // Use aliased UserIcon
+              <UserIcon size={20} className="text-[var(--theme-text-muted)]" /> // Use aliased UserIcon
             )}
           </div>
         </div>
@@ -458,11 +458,11 @@ const Users = () => {
         // For admins, show dropdown selector
         return (
           <div className="flex items-center w-full">
-            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+            <FormControl fullWidth size="small" className="bg-[var(--theme-surface)] rounded">
               <Select
                 value={currentTeamId || ''}
                 onChange={(e) => handleTeamChangeEvent(e, userId)}
-                className="dark:text-white"
+                sx={{ color: 'var(--theme-text)' }}
                 disabled={status === 'pending'}
                 MenuProps={{
                   PaperProps: {
@@ -514,7 +514,7 @@ const Users = () => {
         const teamRoles = userTeam?.teamRoles || [];
         
         if (teamRoles.length === 0) {
-          return <span className="text-sm text-gray-500 dark:text-gray-400">No roles</span>;
+          return <span className="text-sm text-[var(--theme-text-muted)]">No roles</span>;
         }
         
         // Show up to 2 roles with a "+X more" indicator if there are more
@@ -529,7 +529,7 @@ const Users = () => {
             ))}
             {teamRoles.length > 2 && (
               <Tooltip title={teamRoles.slice(2).map(tr => tr.role.name).join(", ")}>
-                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <span className="px-2 py-1 text-xs font-medium rounded-full bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]">
                   +{teamRoles.length - 2} more
                 </span>
               </Tooltip>
@@ -608,10 +608,10 @@ const Users = () => {
           
           {/* Team Filter Dropdown */}
           <div className="w-full md:w-64">
-            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+            <FormControl fullWidth size="small" className="bg-[var(--theme-surface)] rounded">
               <Select
                 value={teamFilter}
-                className="dark:text-white"
+                sx={{ color: 'var(--theme-text)' }}
                 onChange={(e) => setTeamFilter(e.target.value)}
               >
                 <MenuItem value="">
@@ -796,7 +796,7 @@ const Users = () => {
                         size="small"
                         onClick={() => openResendConfirmationDialog(cognitoUser.Username!)}
                         disabled={isResendingVerification}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                        className="text-[var(--theme-primary)] border-[var(--theme-primary)]/50 hover:bg-[var(--theme-primary)]/10"
                       >
                         {isResendingVerification ? (
                           <CircularProgress size={16} className="mr-1" />
@@ -810,7 +810,7 @@ const Users = () => {
                         color="error"
                         onClick={() => openDeleteCognitoConfirmationDialog(cognitoUser.Username!)}
                         disabled={isDeletingCognitoUser}
-                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
+                        className="text-[var(--theme-error)] border-[var(--theme-error)]/50 hover:bg-[var(--theme-error)]/10"
                       >
                         {isDeletingCognitoUser ? (
                           <CircularProgress size={16} className="mr-1" />
