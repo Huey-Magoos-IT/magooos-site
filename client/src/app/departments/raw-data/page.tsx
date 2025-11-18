@@ -231,14 +231,14 @@ const RawDataPage = () => {
     }
   };
 
-  if (isLoading) return <div className="m-5 p-4">Loading...</div>;
-  if (error) return <div className="m-5 p-4">Error: {error.toString()}</div>;
+  if (isLoading) return <div className="m-5 p-4 text-[var(--theme-text)]">Loading...</div>;
+  if (error) return <div className="m-5 p-4 text-[var(--theme-text)]">Error: {error.toString()}</div>;
 
   const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'RAW_DATA'));
   if (!hasAccess) {
     return (
       <div className="m-5 p-4">
-        <div className="bg-red-50 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-700 shadow-md dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+        <div className="bg-red-500/10 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-600 shadow-md">
           <p className="font-medium">Access Denied</p>
         </div>
       </div>
@@ -248,30 +248,30 @@ const RawDataPage = () => {
   return (
     <div className="m-5 p-4">
       <Header name="Raw Data Report" />
-      <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
+      <div className="mt-4 p-4 bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)]">
 
-        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark" style={{ overflow: 'visible' }}>
+        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm border-[var(--theme-border)]" style={{ overflow: 'visible' }}>
           <Grid container spacing={4} sx={{ alignItems: 'stretch', display: 'flex' }}>
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
               <div className="space-y-4 flex flex-col">
                 {/* Date Preset Dropdown */}
-                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
-                  <InputLabel className="text-gray-700 dark:text-gray-300">Date Range Preset</InputLabel>
+                <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Date Range Preset</InputLabel>
                   <Select
                     value={selectedPreset}
                     onChange={handlePresetChange}
                     label="Date Range Preset"
-                    className="border-gray-200 dark:border-stroke-dark dark:text-white"
+                    className="border-[var(--theme-border)] text-[var(--theme-text)]"
                   >
-                    <MenuItem value="" className="dark:text-gray-200"><em>Custom Range</em></MenuItem>
+                    <MenuItem value=""><em>Custom Range</em></MenuItem>
                     {datePresets.map((preset) => (
-                      <MenuItem key={preset} value={preset} className="dark:text-gray-200">
+                      <MenuItem key={preset} value={preset}>
                         {preset}
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText className="dark:text-gray-300">Select a preset or choose dates manually</FormHelperText>
+                  <FormHelperText className="text-[var(--theme-text-muted)]">Select a preset or choose dates manually</FormHelperText>
                 </FormControl>
 
                 {/* Date Pickers */}
@@ -283,16 +283,16 @@ const RawDataPage = () => {
                     setSelectedPreset('');
                   }}
                   format="MM/dd/yyyy"
-                  className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                  className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-[var(--theme-surface-hover)]"
                     }
                   }}
                 />
-                
+
                 <DatePicker
                   label="End Date"
                   value={endDate}
@@ -301,12 +301,12 @@ const RawDataPage = () => {
                     setSelectedPreset('');
                   }}
                   format="MM/dd/yyyy"
-                  className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                  className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
                   slotProps={{
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-[var(--theme-surface-hover)]"
                     }
                   }}
                 />
@@ -314,14 +314,18 @@ const RawDataPage = () => {
                 {/* Selected Locations */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    <Typography className="font-medium text-[var(--theme-text)]">Selected Locations</Typography>
                     <div className="flex gap-2">
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={handleUndo}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
                         disabled={!lastAction}
+                        sx={{
+                          color: 'var(--theme-primary)',
+                          borderColor: 'var(--theme-border)',
+                          '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                        }}
                       >
                         <span className="mr-1">Undo</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -333,8 +337,8 @@ const RawDataPage = () => {
                         size="small"
                         variant="outlined"
                         onClick={handleClearAll}
-                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                         disabled={selectedLocations.length === 0}
+                        color="error"
                       >
                         <span className="mr-1">Clear All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -349,7 +353,7 @@ const RawDataPage = () => {
                         size="small"
                         variant="outlined"
                         onClick={handleAddAllLocations}
-                        className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                        color="success"
                       >
                         <span className="mr-1">Add All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -359,9 +363,9 @@ const RawDataPage = () => {
                       </Button>
                     </div>
                   </div>
-                  <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                  <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md min-h-24 max-h-64 overflow-y-auto shadow-inner">
                     {selectedLocations.length === 0 ? (
-                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                      <Typography className="text-[var(--theme-text-muted)] text-sm italic">
                         Please select a location.
                       </Typography>
                     ) : (
@@ -372,14 +376,19 @@ const RawDataPage = () => {
                             label={`${location.name} (${location.id})`}
                             onClick={() => handleRemoveLocation(location.id)}
                             onDelete={() => handleRemoveLocation(location.id)}
-                            className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
-                            deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                            sx={{
+                              backgroundColor: 'var(--theme-primary-light)',
+                              color: 'var(--theme-primary)',
+                              border: '1px solid var(--theme-border)',
+                              cursor: 'pointer'
+                            }}
+                            deleteIcon={<X className="h-4 w-4" style={{ color: 'var(--theme-primary)' }} />}
                           />
                         ))}
                       </div>
                     )}
                   </Box>
-                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                  <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
                     {selectedLocations.length > 0
                       ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
                       : userIsAdmin
@@ -397,7 +406,18 @@ const RawDataPage = () => {
                     onClick={handleGenerateReport}
                     disabled={loading || !startDate || !endDate || selectedLocations.length === 0}
                     fullWidth
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-3 shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    sx={{
+                      background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
+                      color: 'var(--theme-text-on-primary)',
+                      py: 1.5,
+                      '&:hover': {
+                        background: 'linear-gradient(to right, var(--theme-primary-dark), var(--theme-secondary))',
+                      },
+                      '&:disabled': {
+                        background: 'var(--theme-surface-active)',
+                        color: 'var(--theme-text-muted)'
+                      }
+                    }}
                   >
                     {loading ? (
                       <div className="flex items-center justify-center">
@@ -410,26 +430,26 @@ const RawDataPage = () => {
                   {/* Enhanced Progress Display */}
                   {processingProgress && (
                     <div className="mt-4 space-y-2">
-                      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
+                      <div className="p-3 bg-[var(--theme-primary)]/10 rounded-lg border border-[var(--theme-primary)]/30 shadow-sm">
                         <div className="flex items-center justify-between mb-2">
-                          <Typography className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          <Typography className="text-sm font-medium text-[var(--theme-primary)]">
                             {processingProgress}
                           </Typography>
                           {progressPercentage > 0 && (
-                            <Typography className="text-sm font-bold text-blue-600 dark:text-blue-300">
+                            <Typography className="text-sm font-bold text-[var(--theme-primary)]">
                               {progressPercentage}%
                             </Typography>
                           )}
                         </div>
                         {progressPercentage > 0 && progressPercentage < 100 && (
-                          <LinearProgress 
-                            variant="determinate" 
+                          <LinearProgress
+                            variant="determinate"
                             value={progressPercentage}
                             className="h-2 rounded-full"
                             sx={{
-                              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                              backgroundColor: 'var(--theme-surface-hover)',
                               '& .MuiLinearProgress-bar': {
-                                backgroundColor: '#3b82f6',
+                                backgroundColor: 'var(--theme-primary)',
                                 borderRadius: '9999px',
                               }
                             }}
@@ -437,10 +457,10 @@ const RawDataPage = () => {
                         )}
                         {progressPercentage === 100 && processingProgress.includes("✅") && (
                           <div className="flex items-center mt-2">
-                            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-[var(--theme-success)] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <Typography className="text-sm text-green-600 dark:text-green-400 font-medium">
+                            <Typography className="text-sm text-[var(--theme-success)] font-medium">
                               Download started!
                             </Typography>
                           </div>
@@ -451,7 +471,7 @@ const RawDataPage = () => {
 
                   {/* Error Display */}
                   {processingError && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200 rounded-lg border-l-4 border-red-500 dark:border-red-700 shadow-sm">
+                    <div className="mt-4 p-3 bg-red-500/10 text-red-600 rounded-lg border-l-4 border-red-500 shadow-sm">
                       <div className="flex items-start">
                         <svg className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
