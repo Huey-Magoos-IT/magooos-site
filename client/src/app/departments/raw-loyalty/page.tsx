@@ -18,6 +18,7 @@ import {
   SelectChangeEvent
 } from "@mui/material";
 import { fetchFiles as fetchS3Files } from "@/lib/csvProcessing";
+import { toast } from "react-hot-toast";
 import JsonView from '@uiw/react-json-view';
 import { lightTheme } from '@uiw/react-json-view/light';
 
@@ -52,7 +53,7 @@ const RawLoyaltyPage = () => {
   // Fetch and display the content of the selected JSON file
   const processJsonFile = async () => {
     if (!selectedFile) {
-      alert("Please select a file to display.");
+      toast.error("Please select a file to display.");
       return;
     }
 

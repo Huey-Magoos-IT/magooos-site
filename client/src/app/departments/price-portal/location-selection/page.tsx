@@ -7,6 +7,7 @@ import { useGetLocationsQuery, Location } from "@/state/lambdaApi";
 import { hasAnyRole, hasLocationAccess } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import LocationTable, { Location as LocationTableLocation } from "@/components/LocationTable";
+import { toast } from "react-hot-toast";
 
 const LocationSelectionPage = () => {
   const router = useRouter();
@@ -84,7 +85,7 @@ const LocationSelectionPage = () => {
 
   const handleContinue = () => {
     if (selectedLocationIds.length === 0) {
-      alert('Please select at least one location to continue.');
+      toast.error('Please select at least one location to continue.');
       return;
     }
 

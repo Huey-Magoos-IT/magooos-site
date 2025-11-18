@@ -27,6 +27,7 @@ import LocationTable, { Location } from "@/components/LocationTable";
 import { fetchFiles as fetchS3Files } from "@/lib/csvProcessing";
 import { format } from 'date-fns';
 import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils";
+import { toast } from "react-hot-toast";
 
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const RAW_DATA_FOLDER = "raw-loyalty-pool/";
@@ -146,7 +147,7 @@ const RawDataPage = () => {
 
   const handleGenerateReport = async () => {
     if (!startDate || !endDate || selectedLocations.length === 0) {
-      alert("Please select a start date, end date, and at least one location.");
+      toast.error("Please select a start date, end date, and at least one location.");
       return;
     }
 

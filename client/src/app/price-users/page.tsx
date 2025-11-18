@@ -8,6 +8,7 @@ import { hasRole, isPriceAdmin } from "@/lib/accessControl";
 import Header from "@/components/Header";
 import { fetchFiles, fetchCSV } from "@/lib/csvProcessing";
 import { parsePriceChangeCSV, PriceChangeReport, ReportChangeDetail } from "@/lib/reportUtils";
+import { toast } from "react-hot-toast";
 import {
     PriceChangeReport as UtilPriceChangeReport,
     PriceChange as UtilPriceChange
@@ -375,7 +376,7 @@ const PriceUsersPage = () => {
           r.id === report.id ? { ...r, status: 'sent' as const } : r
         ));
 
-        alert(`Report sent successfully!\nEmail: ${email}\nLocations: ${selectedLocations.length || 'All'}\nSchedule: ${scheduleType}`);
+        toast.success(`Report sent successfully! Email: ${email}, Locations: ${selectedLocations.length || 'All'}, Schedule: ${scheduleType}`);
         
         // Log the action
         console.log('Report sent:', {
@@ -387,11 +388,11 @@ const PriceUsersPage = () => {
           uploadUrl: uploadResult.url
         });
       } else {
-        alert(`Failed to send report: ${uploadResult.error}`);
+        toast.error(`Failed to send report: ${uploadResult.error}`);
       }
     } catch (error) {
       console.error('Error sending report:', error);
-      alert('An error occurred while sending the report. Please try again.');
+      toast.error('An error occurred while sending the report. Please try again.');
     }
   };
 

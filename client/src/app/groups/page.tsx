@@ -26,6 +26,7 @@ import ModalCreateLocationUser from "@/components/ModalCreateLocationUser"; // I
 import Header from "@/components/Header";
 import { X, User as UserIcon } from "lucide-react";
 import { signUp } from 'aws-amplify/auth'; // Import signUp
+import { toast } from "react-hot-toast";
 import {
   FormControl,
   InputLabel,
@@ -316,7 +317,7 @@ const GroupsPage = () => {
         }
       });
       console.log("Cognito signUp response for location user:", { isSignUpComplete, userId, nextStep });
-      alert(`Location User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created.`);
+      toast.success(`Location User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created.`);
       setOpenLocationUserDialog(false); // Close the modal on success
       
       // Refresh the unconfirmed users list to show the newly created user
@@ -339,7 +340,7 @@ const GroupsPage = () => {
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
       throw new Error(errorMessage);
     }
   };
@@ -402,13 +403,13 @@ const GroupsPage = () => {
     try {
       console.log(`Resending verification link for: ${cognitoUserToResend}`);
       await resendVerificationLink({ username: cognitoUserToResend }).unwrap();
-      alert(`Verification link resent to ${cognitoUserToResend}`);
+      toast.success(`Verification link resent to ${cognitoUserToResend}`);
       refetchGroupCognitoUsers(); // Refresh the list
       closeResendConfirmationDialog();
     } catch (error: any) {
       console.error('Error resending verification link:', error);
       const errorMessage = error.data?.message || error.message || "Failed to resend verification link";
-      alert(errorMessage);
+      toast.error(errorMessage);
       closeResendConfirmationDialog();
     }
   };
@@ -431,14 +432,14 @@ const GroupsPage = () => {
     try {
       console.log(`Deleting unconfirmed Cognito user: ${cognitoUserToDelete}`);
       await deleteCognitoUser({ username: cognitoUserToDelete }).unwrap();
-      alert(`User ${cognitoUserToDelete} deleted successfully`);
-      
+      toast.success(`User ${cognitoUserToDelete} deleted successfully`);
+
       // Force immediate refresh of the Cognito users list
       await refetchGroupCognitoUsers();
-      
+
       // Close dialog
       closeDeleteCognitoConfirmationDialog();
-      
+
       // Also refresh after a short delay to ensure consistency
       setTimeout(() => {
         refetchGroupCognitoUsers();
@@ -446,7 +447,7 @@ const GroupsPage = () => {
     } catch (error: any) {
       console.error('Error deleting Cognito user:', error);
       const errorMessage = error.data?.message || error.message || "Failed to delete user";
-      alert(errorMessage);
+      toast.error(errorMessage);
       closeDeleteCognitoConfirmationDialog();
     }
   };

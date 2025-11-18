@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { Download, ArrowUpDown, Maximize2, Minimize2 } from 'lucide-react';
 import { downloadCSV } from '@/lib/csvProcessing';
+import { DEFAULT_DISCOUNT_IDS } from '@/lib/constants';
 
 interface CSVDataTableProps {
   data: any[];
@@ -179,15 +180,9 @@ const CSVDataTable = ({
   
   // Helper function to check if using default discount IDs
   const isDefaultDiscountSelection = (discountIds: number[]) => {
-    // This should match the logic in filterData function
-    return discountIds.length === 7 &&
-      discountIds.includes(77406) &&
-      discountIds.includes(135733) &&
-      discountIds.includes(135736) &&
-      discountIds.includes(135737) &&
-      discountIds.includes(135738) &&
-      discountIds.includes(135739) &&
-      discountIds.includes(135910);
+    // Compare against the centralized default discount IDs
+    if (discountIds.length !== DEFAULT_DISCOUNT_IDS.length) return false;
+    return DEFAULT_DISCOUNT_IDS.every(id => discountIds.includes(id));
   };
 
   if (isLoading) {

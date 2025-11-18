@@ -7,6 +7,7 @@
  */
 
 import { format } from "date-fns";
+import { toast } from "react-hot-toast";
 
 // Default values from DynamoDB - all 78 locations
 export const DEFAULT_LOCATION_IDS = [
@@ -48,7 +49,7 @@ export const generateLambdaReport = async (
   }
 ) => {
   if (!startDate || !endDate) {
-    alert("Please select both start and end dates");
+    toast.error("Please select both start and end dates");
     return;
   }
 
