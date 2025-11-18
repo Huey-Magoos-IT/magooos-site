@@ -452,18 +452,18 @@ const GroupsPage = () => {
   };
 
   if (isLoadingGroups || isLoadingUsers || !authData) {
-    return <div className="p-6">Loading...</div>; // Standard loading state
+    return <div className="p-6 text-[var(--theme-text)]">Loading...</div>; // Standard loading state
   }
 
   // Specific message for Location Admins not yet assigned to a group
   if (isLocationAdmin && !isAdmin && !currentUserGroupId) {
     return (
       <div className="flex w-full flex-col p-8 items-center justify-center text-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
-        <Typography variant="h5" className="mb-4">Group Access Pending</Typography>
-        <Typography>
+        <Typography variant="h5" className="mb-4 text-[var(--theme-text)]">Group Access Pending</Typography>
+        <Typography className="text-[var(--theme-text-secondary)]">
           You have the Location Admin role but have not yet been assigned to a specific group by an administrator.
         </Typography>
-        <Typography className="mt-2">
+        <Typography className="mt-2 text-[var(--theme-text-secondary)]">
           Once assigned, you will be able to manage users and locations for your group here.
         </Typography>
       </div>
@@ -487,19 +487,20 @@ const GroupsPage = () => {
           {isAdmin && (
             <button
               onClick={() => handleOpenDialog()}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center px-4 py-2 rounded-md transition-colors text-[var(--theme-text-on-primary)]"
+              style={{ background: `linear-gradient(to right, var(--theme-primary), var(--theme-secondary))` }}
             >
               <Plus className="mr-1" size={20} />
               Create Group
             </button>
           )}
         </div>
-        
+
         {/* Admin Instructions */}
         {isAdmin && (
-          <div className="p-4 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-100">
-            <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Group Management</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+          <div className="p-4 rounded border bg-[var(--theme-surface-hover)] border-[var(--theme-border)]">
+            <h3 className="font-medium text-[var(--theme-primary)] mb-1">Group Management</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               As an administrator, you can create, edit, and delete groups, as well as assign Location Admin users to groups.
             </p>
           </div>
@@ -507,12 +508,13 @@ const GroupsPage = () => {
       </div>
 
       {displayGroups.length === 0 && isAdmin ? (
-        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <p className="text-gray-500 dark:text-gray-400">No groups found</p>
+        <div className="bg-[var(--theme-surface)] rounded-lg shadow-sm border border-[var(--theme-border)] p-6 text-center">
+          <p className="text-[var(--theme-text-muted)]">No groups found</p>
           {isAdmin && ( // This button should only be for admins
             <button
               onClick={() => handleOpenDialog()}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="mt-4 px-4 py-2 rounded-md transition-colors text-[var(--theme-text-on-primary)]"
+              style={{ background: `linear-gradient(to right, var(--theme-primary), var(--theme-secondary))` }}
             >
               Create your first group
             </button>
@@ -520,8 +522,8 @@ const GroupsPage = () => {
         </div>
       ) : displayGroups.length === 0 && isLocationAdmin && !currentUserGroupId ? (
         // This case is handled by the redirect/message above, but as a fallback:
-        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <p className="text-gray-500 dark:text-gray-400">You are not assigned to any group.</p>
+        <div className="bg-[var(--theme-surface)] rounded-lg shadow-sm border border-[var(--theme-border)] p-6 text-center">
+          <p className="text-[var(--theme-text-muted)]">You are not assigned to any group.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -543,16 +545,16 @@ const GroupsPage = () => {
       {/* Unconfirmed Cognito Users Section - Only for Location Admins */}
       {isLocationAdmin && !isAdmin && currentUserGroupId && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-3 dark:text-white">Unconfirmed Users in Your Group</h2>
-          <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-100">
-            <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Unconfirmed Users</h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+          <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Unconfirmed Users in Your Group</h2>
+          <div className="mb-4 p-4 rounded border bg-[var(--theme-surface-hover)] border-[var(--theme-border)]">
+            <h3 className="font-medium text-[var(--theme-accent)] mb-1">Unconfirmed Users</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               These users have been created in your group but haven&apos;t verified their email addresses yet. You can resend verification links or delete them if needed.
             </p>
           </div>
           
           {isLoadingGroupCognitoUsers ? (
-            <div className="p-8 text-center">
+            <div className="p-8 text-center text-[var(--theme-text)]">
               <CircularProgress size={24} className="mr-2" />
               Loading unconfirmed users...
             </div>
@@ -561,38 +563,38 @@ const GroupsPage = () => {
               {groupCognitoUsers.users.map((cognitoUser) => (
                 <div
                   key={cognitoUser.Username}
-                  className="p-4 bg-white dark:bg-dark-secondary rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="p-4 bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <UserIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                        <div className="h-10 w-10 rounded-full bg-[var(--theme-surface-hover)] flex items-center justify-center">
+                          <UserIcon size={20} className="text-[var(--theme-text-muted)]" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">
+                          <h3 className="font-medium text-[var(--theme-text)]">
                             {cognitoUser.Username}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-[var(--theme-text-muted)]">
                             {cognitoUser.Email || 'No email available'}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[var(--theme-accent)]/20 text-[var(--theme-accent)]">
                               {cognitoUser.UserStatus}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-[var(--theme-text-muted)]">
                               Created: {cognitoUser.CreatedDate ? new Date(cognitoUser.CreatedDate).toLocaleDateString() : 'Unknown'}
                             </span>
                           </div>
                           {/* Display additional user info from Cognito custom attributes */}
                           <div className="mt-2 space-y-1">
                             {cognitoUser.TeamId && (
-                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                              <div className="text-xs text-[var(--theme-text-secondary)]">
                                 <span className="font-medium">Team ID:</span> {cognitoUser.TeamId}
                               </div>
                             )}
                             {cognitoUser.LocationIds && (
-                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                              <div className="text-xs text-[var(--theme-text-secondary)]">
                                 <span className="font-medium">Locations:</span> {
                                   (() => {
                                     try {
@@ -606,7 +608,7 @@ const GroupsPage = () => {
                               </div>
                             )}
                             {cognitoUser.GroupId && (
-                              <div className="text-xs text-gray-600 dark:text-gray-300">
+                              <div className="text-xs text-[var(--theme-text-secondary)]">
                                 <span className="font-medium">Group ID:</span> {cognitoUser.GroupId}
                               </div>
                             )}
@@ -621,21 +623,24 @@ const GroupsPage = () => {
                         size="small"
                         onClick={() => openResendConfirmationDialog(cognitoUser.Username!)}
                         disabled={isResendingVerification}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                        sx={{
+                          color: 'var(--theme-primary)',
+                          borderColor: 'var(--theme-primary)',
+                          '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                        }}
                       >
                         {isResendingVerification ? (
                           <CircularProgress size={16} className="mr-1" />
                         ) : null}
                         Resend Link
                       </Button>
-                      
+
                       <Button
                         variant="outlined"
                         size="small"
                         color="error"
                         onClick={() => openDeleteCognitoConfirmationDialog(cognitoUser.Username!)}
                         disabled={isDeletingCognitoUser}
-                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
                       >
                         {isDeletingCognitoUser ? (
                           <CircularProgress size={16} className="mr-1" />
@@ -648,9 +653,9 @@ const GroupsPage = () => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-gray-500 dark:text-gray-400 mb-2">No unconfirmed users found in your group.</div>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
+            <div className="p-8 text-center bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+              <div className="text-[var(--theme-text-muted)] mb-2">No unconfirmed users found in your group.</div>
+              <p className="text-sm text-[var(--theme-text-muted)]">
                 All created users in your group have verified their email addresses.
               </p>
             </div>
@@ -698,14 +703,18 @@ const GroupsPage = () => {
               {/* Selected Locations Display */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                  <Typography className="font-medium text-[var(--theme-text)]">Selected Locations</Typography>
                   <div className="flex gap-2">
                     <Button
                       size="small"
                       variant="outlined"
                       onClick={handleUndo}
-                      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
                       disabled={!lastAction}
+                      sx={{
+                        color: 'var(--theme-primary)',
+                        borderColor: 'var(--theme-border)',
+                        '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                      }}
                     >
                       <span className="mr-1">Undo</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
@@ -717,8 +726,8 @@ const GroupsPage = () => {
                       size="small"
                       variant="outlined"
                       onClick={handleClearAll}
-                      className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                       disabled={selectedLocations.length === 0}
+                      color="error"
                     >
                       <span className="mr-1">Clear All</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
@@ -733,7 +742,7 @@ const GroupsPage = () => {
                       size="small"
                       variant="outlined"
                       onClick={handleAddAllLocations}
-                      className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                      color="success"
                     >
                       <span className="mr-1">Add All</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
@@ -743,9 +752,9 @@ const GroupsPage = () => {
                     </Button>
                   </div>
                 </div>
-                <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md min-h-24 max-h-64 overflow-y-auto shadow-inner">
                   {selectedLocations.length === 0 ? (
-                    <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                    <Typography className="text-[var(--theme-text-muted)] text-sm italic">
                       Please select at least one location.
                     </Typography>
                   ) : (
@@ -756,14 +765,19 @@ const GroupsPage = () => {
                           label={`${location.name} (${location.id})`}
                           onClick={() => handleRemoveLocation(location.id)}
                           onDelete={() => handleRemoveLocation(location.id)}
-                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
-                          deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                          sx={{
+                            backgroundColor: 'var(--theme-primary-light)',
+                            color: 'var(--theme-primary)',
+                            border: '1px solid var(--theme-border)',
+                            cursor: 'pointer'
+                          }}
+                          deleteIcon={<X className="h-4 w-4" style={{ color: 'var(--theme-primary)' }} />}
                         />
                       ))}
                     </div>
                   )}
                 </Box>
-                <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
                   {selectedLocations.length > 0
                     ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
                     : "No locations selected"}
@@ -822,7 +836,7 @@ const GroupsPage = () => {
               </Select>
             </FormControl>
             {availableUsers.length === 0 && (
-              <p className="text-amber-600 mt-2 text-sm">
+              <p className="text-[var(--theme-accent)] mt-2 text-sm">
                 No available Location Admin users found. Users must be in a team that has the LOCATION_ADMIN role to be assigned to a group.
               </p>
             )}
