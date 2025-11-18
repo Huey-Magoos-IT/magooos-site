@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Box,
@@ -12,50 +12,102 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  // Checkbox,    // No longer needed for multi-select dropdown
-  // ListItemText,// No longer needed for multi-select dropdown
-  // OutlinedInput// No longer needed for multi-select dropdown
-  Chip // For displaying selected locations
+  Chip
 } from "@mui/material";
-import { Grid } from "@mui/material"; // Import Grid for layout
-import { Undo2, Trash2, CheckCircle, X } from "lucide-react"; // Import icons
-// import { dataGridSxStyles } from "@/lib/utils"; // Not directly used now
+import { Grid } from "@mui/material";
+import { Undo2, Trash2, CheckCircle, X } from "lucide-react";
 import { useAppSelector } from "@/app/redux";
 import { Team } from "@/state/api";
-import { useGetLocationsQuery } from "@/state/lambdaApi"; // Import the query hook from the API slice
-import LocationTable, { Location } from "@/components/LocationTable"; // Import LocationTable and Location type
+import { useGetLocationsQuery } from "@/state/lambdaApi";
+import LocationTable, { Location } from "@/components/LocationTable";
+import { useLocationSelection } from "@/hooks/useLocationSelection";
 
-interface ModalCreateUserProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (formData: {
-    username: string;
-    email: string;
-    tempPassword: string;
-    teamId: number;
-    locationIds: string[];
-  }) => Promise<void>;
-  teams: Team[];
-  // locations: Location[]; // LocationTable fetches its own data
+// Base form data shared by both variants
+interface BaseFormData {
+  username: string;
+  email: string;
+  tempPassword: string;
+  teamId: number;
+  locationIds: string[];
 }
 
-const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  teams,
-  // locations, // LocationTable fetches its own data
-}) => {
+// Extended form data for location user variant
+interface LocationUserFormData extends BaseFormData {
+  groupId: number;
+}
+
+// Props for admin variant (can select any team, all locations)
+interface AdminVariantProps {
+  variant?: 'admin';
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (formData: BaseFormData) => Promise<void>;
+  teams: Team[];
+}
+
+// Props for location user variant (auto-assigns team, restricted locations)
+interface LocationUserVariantProps {
+  variant: 'locationUser';
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (formData: LocationUserFormData) => Promise<void>;
+  teams: Team[];
+  groupLocationIds: string[];
+  groupId: number;
+}
+
+type ModalCreateUserProps = AdminVariantProps | LocationUserVariantProps;
+
+const ModalCreateUser: React.FC<ModalCreateUserProps> = (props) => {
+  const { open, onClose, teams, variant = 'admin' } = props;
+
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<number | "">("");
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previousLocationIds, setPreviousLocationIds] = useState<string[]>([]); // State for undo
-  const [lastAction, setLastAction] = useState<string>(""); // State for undo action type
+
+  // Fetch all locations
+  const { data: allLocationsData } = useGetLocationsQuery();
+
+  // Use the location selection hook
+  const {
+    selectedLocationIds,
+    lastAction,
+    handleAddLocation,
+    handleRemoveLocation,
+    handleAddAllLocations,
+    handleClearAll,
+    handleUndo,
+    reset: resetLocations,
+  } = useLocationSelection();
+
+  // Determine if this is a location user variant
+  const isLocationUserVariant = variant === 'locationUser';
+  const groupLocationIds = isLocationUserVariant ? (props as LocationUserVariantProps).groupLocationIds : [];
+  const groupId = isLocationUserVariant ? (props as LocationUserVariantProps).groupId : 0;
+
+  // Auto-assign team for location user variant
+  useEffect(() => {
+    if (open && isLocationUserVariant) {
+      const locUserTeam = teams.find(team => team.teamName?.toLowerCase() === "location user");
+      if (locUserTeam) {
+        setSelectedTeamId(locUserTeam.id);
+      } else {
+        setError("Critical: 'Location User' team not found. Please contact an administrator.");
+      }
+      // Reset fields when modal opens
+      setUsername("");
+      setEmail("");
+      setTempPassword("");
+      resetLocations();
+      if (error && !error.startsWith("Critical:")) {
+        setError(null);
+      }
+    }
+  }, [open, teams, isLocationUserVariant, error, resetLocations]);
 
   const modalStyle = {
     position: "absolute" as "absolute",
@@ -78,22 +130,44 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+
     if (selectedTeamId === "") {
-        setError("Please select a team.");
-        setIsLoading(false);
-        return;
+      const errorMsg = isLocationUserVariant
+        ? "The 'Location User' team is not configured correctly. Please contact an administrator."
+        : "Please select a team.";
+      setError(errorMsg);
+      setIsLoading(false);
+      return;
     }
+
+    if (selectedLocationIds.length === 0) {
+      setError("Please select at least one location for the user.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      await onSubmit({
-        username, // Pass username
-        email,
-        tempPassword,
-        teamId: selectedTeamId as number,
-        locationIds: selectedLocationIds,
-      });
+      if (isLocationUserVariant) {
+        await (props as LocationUserVariantProps).onSubmit({
+          username,
+          email,
+          tempPassword,
+          teamId: selectedTeamId as number,
+          locationIds: selectedLocationIds,
+          groupId: groupId,
+        });
+      } else {
+        await (props as AdminVariantProps).onSubmit({
+          username,
+          email,
+          tempPassword,
+          teamId: selectedTeamId as number,
+          locationIds: selectedLocationIds,
+        });
+      }
       // Let parent handle close/clear
     } catch (err: any) {
-      setError(err.message || "Failed to create user.");
+      setError(err.message || `Failed to create ${isLocationUserVariant ? 'location ' : ''}user.`);
     } finally {
       setIsLoading(false);
     }
@@ -101,82 +175,48 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
 
   const handleClose = () => {
     if (!isLoading) {
-      setUsername(""); // Reset username state
+      setUsername("");
       setEmail("");
       setTempPassword("");
       setSelectedTeamId("");
-      setSelectedLocationIds([]);
-      setPreviousLocationIds([]); // Reset undo state
-      setLastAction(""); // Reset undo state
+      resetLocations();
       setError(null);
       onClose();
     }
   };
 
-  const handleLocationSelect = (locationToAdd: Location) => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("add");
-
-    setSelectedLocationIds((prevIds) => {
-      if (!prevIds.includes(locationToAdd.id)) {
-        return [...prevIds, locationToAdd.id];
-      }
-      return prevIds;
-    });
-  };
-
-  const handleLocationDeselect = (locationIdToRemove: string) => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("remove");
-
-    setSelectedLocationIds((prevIds) => prevIds.filter(id => id !== locationIdToRemove));
-  };
-
-  // Handle adding all available locations (requires fetching all locations first)
-  // This will need to be implemented carefully, possibly by getting all locations from the table component or a separate query.
-  // For now, let's assume we have access to all locations (e.g., passed as a prop or fetched here).
-  // Since LocationTable fetches its own, we might need to adjust its props or fetch here.
-  // Let's fetch locations here for simplicity in this modal.
-  const { data: allLocationsData } = useGetLocationsQuery(); // Use the query hook directly
-
-  const handleAddAllLocations = () => {
+  // Wrapper to add all locations (respects group restrictions for location user variant)
+  const onAddAllLocations = () => {
     if (allLocationsData?.locations) {
-      // Save current state for undo
-      setPreviousLocationIds([...selectedLocationIds]);
-      setLastAction("addAll");
-      setSelectedLocationIds(allLocationsData.locations.map((loc: Location) => loc.id)); // Explicitly type loc
+      if (isLocationUserVariant) {
+        const groupLocations = allLocationsData.locations.filter((loc: Location) =>
+          groupLocationIds.includes(loc.id)
+        );
+        handleAddAllLocations(groupLocations);
+      } else {
+        handleAddAllLocations(allLocationsData.locations);
+      }
     }
   };
 
-  const handleClearAll = () => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("clearAll");
-    setSelectedLocationIds([]);
-  };
+  // Determine available locations for the LocationTable
+  const availableLocationIds = isLocationUserVariant ? groupLocationIds : undefined;
 
-  const handleUndo = () => {
-    if (lastAction) {
-      // Restore previous state
-      setSelectedLocationIds(previousLocationIds);
-      // Reset last action (optional, depending on desired undo depth)
-      setLastAction("");
-    }
-  };
-
+  // Determine Add All button text and disabled state
+  const addAllButtonText = isLocationUserVariant ? "Add All Group Locations" : "Add All";
+  const addAllButtonDisabled = isLocationUserVariant
+    ? groupLocationIds.length === 0
+    : !allLocationsData?.locations || allLocationsData.locations.length === 0;
 
   return (
     <Modal
       open={open}
       onClose={handleClose}
       aria-labelledby="create-user-modal-title"
-      aria-describedby="create-user-modal-description"
     >
       <Box sx={modalStyle}>
         <Typography id="create-user-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
-          Create New User
+          {isLocationUserVariant ? "Create New Location User" : "Create New User"}
         </Typography>
         <form onSubmit={handleSubmit}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -237,32 +277,34 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             }}
           />
 
-          {/* Team Select */}
-          <FormControl fullWidth margin="normal" required disabled={isLoading}>
-            <InputLabel id="team-select-label" sx={{ color: 'var(--theme-text-secondary)' }}>Team</InputLabel>
-            <Select
-              labelId="team-select-label"
-              id="team-select"
-              value={selectedTeamId}
-              label="Team"
-              onChange={(e) => setSelectedTeamId(e.target.value as number | "")}
-              sx={{ color: 'var(--theme-text)' }}
-            >
-              <MenuItem value="">
-                <em>Select a team</em>
-              </MenuItem>
-              {teams.map((team) => (
-                <MenuItem key={team.id} value={team.id}>
-                  {team.teamName}
+          {/* Team Select - only shown for admin variant */}
+          {!isLocationUserVariant && (
+            <FormControl fullWidth margin="normal" required disabled={isLoading}>
+              <InputLabel id="team-select-label" sx={{ color: 'var(--theme-text-secondary)' }}>Team</InputLabel>
+              <Select
+                labelId="team-select-label"
+                id="team-select"
+                value={selectedTeamId}
+                label="Team"
+                onChange={(e) => setSelectedTeamId(e.target.value as number | "")}
+                sx={{ color: 'var(--theme-text)' }}
+              >
+                <MenuItem value="">
+                  <em>Select a team</em>
                 </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                {teams.map((team) => (
+                  <MenuItem key={team.id} value={team.id}>
+                    {team.teamName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           {/* Location Selection Section */}
           <Box sx={{ mt: 3, mb: 2 }}>
             <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
-              Assign Locations
+              {isLocationUserVariant ? "Assign Locations (from your group)" : "Assign Locations"}
             </Typography>
             <Grid container spacing={3}>
               {/* Left column - Selected Locations */}
@@ -294,11 +336,11 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={handleAddAllLocations}
+                        onClick={onAddAllLocations}
                         className="text-[var(--theme-success)] border-[var(--theme-success)]/30 hover:bg-[var(--theme-success)]/10 py-1 min-w-0 px-2"
-                        disabled={!allLocationsData?.locations || allLocationsData.locations.length === 0}
+                        disabled={addAllButtonDisabled}
                       >
-                        <span className="mr-1">Add All</span>
+                        <span className="mr-1">{addAllButtonText}</span>
                         <CheckCircle size={16} />
                       </Button>
                     </div>
@@ -316,8 +358,8 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                             <Chip
                               key={id}
                               label={location ? `${location.name} (${location.id})` : id}
-                              onClick={() => handleLocationDeselect(id)}
-                              onDelete={() => handleLocationDeselect(id)}
+                              onClick={() => handleRemoveLocation(id)}
+                              onDelete={() => handleRemoveLocation(id)}
                               className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 cursor-pointer"
                               deleteIcon={<X className="h-4 w-4 text-[var(--theme-primary)]" />}
                             />
@@ -338,13 +380,12 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
               <Grid item xs={12} md={6}>
                 <LocationTable
                   selectedLocationIds={selectedLocationIds}
-                  onLocationSelect={handleLocationSelect}
-                  // userLocationIds={[]} // Not applicable for create user mode
+                  onLocationSelect={handleAddLocation}
+                  userLocationIds={availableLocationIds}
                 />
               </Grid>
             </Grid>
           </Box>
-
 
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
             <Button onClick={handleClose} disabled={isLoading} color="secondary">
@@ -353,10 +394,10 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             <Button
               type="submit"
               variant="contained"
-              disabled={isLoading || !username || !email || !tempPassword || selectedTeamId === "" || selectedLocationIds.length === 0} // Require at least one location
+              disabled={isLoading || !username || !email || !tempPassword || selectedTeamId === "" || selectedLocationIds.length === 0}
               startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              {isLoading ? "Creating..." : "Create User"}
+              {isLoading ? "Creating..." : (isLocationUserVariant ? "Create Location User" : "Create User")}
             </Button>
           </Box>
         </form>

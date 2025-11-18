@@ -22,7 +22,7 @@ import { useGetAuthUserQuery } from "@/state/api";
 import { hasRole } from "@/lib/accessControl";
 import GroupCard from "@/components/GroupCard";
 import LocationTable, { Location } from "@/components/LocationTable";
-import ModalCreateLocationUser from "@/components/ModalCreateLocationUser"; // Import new modal
+import ModalCreateUser from "@/components/ModalCreateUser"; // Unified modal for both admin and location user creation
 import Header from "@/components/Header";
 import { X, User as UserIcon } from "lucide-react";
 import { signUp } from 'aws-amplify/auth'; // Import signUp
@@ -860,13 +860,14 @@ const GroupsPage = () => {
 
       {/* Create Location User Dialog - For Admins or Assigned Location Admins for the current group */}
       {currentGroup && (isAdmin || (isLocationAdmin && currentUserGroupId === currentGroup.id)) && (
-        <ModalCreateLocationUser
+        <ModalCreateUser
+          variant="locationUser"
           open={openLocationUserDialog}
           onClose={() => setOpenLocationUserDialog(false)}
           onSubmit={handleSubmitLocationUser}
+          teams={allTeams}
           groupLocationIds={currentGroup.locationIds || []}
           groupId={currentGroup.id}
-          allTeams={allTeams}
         />
       )}
 
