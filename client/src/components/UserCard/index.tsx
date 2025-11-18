@@ -288,11 +288,11 @@ const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-dark-secondary rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4 ${user.isDisabled ? 'opacity-70' : ''}`}>
+    <div className={`bg-[var(--theme-surface)] rounded-lg shadow-sm border border-[var(--theme-border)] overflow-hidden mb-4 ${user.isDisabled ? 'opacity-70' : ''}`}>
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full overflow-hidden bg-[var(--theme-surface-hover)] flex items-center justify-center">
               {user.profilePictureUrl ? (
                 <Image
                   src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${user.profilePictureUrl}`}
@@ -302,12 +302,12 @@ const UserCard: React.FC<UserCardProps> = ({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <User size={24} className="text-gray-500 dark:text-gray-400" />
+                <User size={24} className="text-[var(--theme-text-muted)]" />
               )}
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">{user.username}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className="font-medium text-[var(--theme-text)]">{user.username}</h3>
+              <p className="text-sm text-[var(--theme-text-muted)]">
                 {user.email || `ID: ${user.userId}`}
               </p>
             </div>
@@ -316,7 +316,7 @@ const UserCard: React.FC<UserCardProps> = ({
             {isAdmin && onEditEmail && (
               <button
                 onClick={() => onEditEmail(user)}
-                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="p-1 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]"
                 aria-label="Edit Email"
               >
                 <Edit size={18} />
@@ -325,7 +325,7 @@ const UserCard: React.FC<UserCardProps> = ({
             {isAdmin && onResetPassword && (
               <button
                 onClick={() => onResetPassword(user)}
-                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="p-1 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]"
                 aria-label="Reset Password"
               >
                 <KeyRound size={18} />
@@ -334,7 +334,7 @@ const UserCard: React.FC<UserCardProps> = ({
             {isAdmin && !user.isDisabled && onDisableUser && (
               <button
                 onClick={openDeleteConfirmModal}
-                className="p-1 rounded-full hover:bg-yellow-100 dark:hover:bg-yellow-800/50 text-yellow-600 dark:text-yellow-500"
+                className="p-1 rounded-full hover:bg-[var(--theme-accent)]/20 text-[var(--theme-accent)]"
                 aria-label="Disable User"
               >
                 <UserX size={18} />
@@ -353,7 +353,7 @@ const UserCard: React.FC<UserCardProps> = ({
             )}
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-1 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]"
               aria-label={expanded ? "Collapse" : "Expand"}
             >
               {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -371,18 +371,18 @@ const UserCard: React.FC<UserCardProps> = ({
               />
             ))
           ) : (
-            <span className="text-sm text-gray-500 dark:text-gray-400">No roles assigned</span>
+            <span className="text-sm text-[var(--theme-text-muted)]">No roles assigned</span>
           )}
         </div>
 
         <div className="mt-4">
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Team</div>
+          <div className="text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Team</div>
           {isAdmin ? (
-            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+            <FormControl fullWidth size="small" className="bg-[var(--theme-surface-hover)] rounded">
               <Select
                 value={user.teamId || ''}
                 onChange={handleTeamChange}
-                className="dark:text-white"
+                className="text-[var(--theme-text)]"
                 disabled={updateStatus[user.userId] === 'pending'}
               >
                 <MenuItem value="">
@@ -396,7 +396,7 @@ const UserCard: React.FC<UserCardProps> = ({
               </Select>
             </FormControl>
           ) : (
-            <div className="text-sm text-gray-800 dark:text-gray-200">
+            <div className="text-sm text-[var(--theme-text)]">
               {currentTeam ? currentTeam.teamName : "No Team"}
             </div>
           )}
@@ -404,42 +404,42 @@ const UserCard: React.FC<UserCardProps> = ({
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Information</h4>
+        <div className="border-t border-[var(--theme-border)] p-4 bg-[var(--theme-surface-hover)]">
+          <h4 className="text-sm font-medium text-[var(--theme-text-secondary)] mb-2">Additional Information</h4>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Team Roles:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm text-[var(--theme-text-muted)]">Team Roles:</span>
+              <span className="text-sm text-[var(--theme-text)]">
                 {userRoles.map(r => r.name).join(", ") || "None"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Admin Access:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm text-[var(--theme-text-muted)]">Admin Access:</span>
+              <span className="text-sm text-[var(--theme-text)]">
                 {userRoles.some(r => r.name === "ADMIN") ? "Yes" : "No"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Data Access:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm text-[var(--theme-text-muted)]">Data Access:</span>
+              <span className="text-sm text-[var(--theme-text)]">
                 {userRoles.some(r => r.name === "DATA" || r.name === "ADMIN") ? "Yes" : "No"}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Reporting Access:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm text-[var(--theme-text-muted)]">Reporting Access:</span>
+              <span className="text-sm text-[var(--theme-text)]">
                 {userRoles.some(r => r.name === "REPORTING" || r.name === "ADMIN") ? "Yes" : "No"}
               </span>
             </div>
 
             {/* Locations Section */}
-            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+            <div className="mt-4 pt-3 border-t border-[var(--theme-border)]">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Locations:</span>
+                <span className="text-sm font-medium text-[var(--theme-text-secondary)]">Assigned Locations:</span>
                 {isAdmin && (
                   <button
                     onClick={handleOpenLocationDialog}
-                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800 px-2 py-1 rounded"
+                    className="text-xs bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] px-2 py-1 rounded"
                   >
                     Edit
                   </button>
@@ -451,19 +451,19 @@ const UserCard: React.FC<UserCardProps> = ({
                   userLocations.map(location => (
                     <span
                       key={location.id}
-                      className="px-2 py-1 text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full"
+                      className="px-2 py-1 text-xs bg-[var(--theme-surface-active)] text-[var(--theme-text)] rounded-full"
                     >
                       {location.name}
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">No locations assigned</span>
+                  <span className="text-sm text-[var(--theme-text-muted)]">No locations assigned</span>
                 )}
               </div>
             </div>
             {/* Action buttons in expanded view */}
             {isAdmin && (
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+              <div className="mt-6 pt-4 border-t border-[var(--theme-border)] flex justify-end space-x-2">
                 {!user.isDisabled && onDisableUser && (
                   <Button
                     variant="outlined"
@@ -519,14 +519,18 @@ const UserCard: React.FC<UserCardProps> = ({
               {/* Selected Locations Display */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                  <Typography className="font-medium text-[var(--theme-text)]">Selected Locations</Typography>
                   <div className="flex gap-2">
                     <Button
                       size="small"
                       variant="outlined"
                       onClick={handleUndo}
-                      className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
                       disabled={!lastAction}
+                      sx={{
+                        color: 'var(--theme-primary)',
+                        borderColor: 'var(--theme-border)',
+                        '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                      }}
                     >
                       <span className="mr-1">Undo</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
@@ -538,8 +542,8 @@ const UserCard: React.FC<UserCardProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={handleClearAll}
-                      className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                       disabled={selectedLocations.length === 0}
+                      color="error"
                     >
                       <span className="mr-1">Clear All</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2">
@@ -554,7 +558,7 @@ const UserCard: React.FC<UserCardProps> = ({
                       size="small"
                       variant="outlined"
                       onClick={handleAddAllLocations}
-                      className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                      color="success"
                     >
                       <span className="mr-1">Add All</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
@@ -564,9 +568,9 @@ const UserCard: React.FC<UserCardProps> = ({
                     </Button>
                   </div>
                 </div>
-                <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md min-h-24 max-h-64 overflow-y-auto shadow-inner">
                   {selectedLocations.length === 0 ? (
-                    <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                    <Typography className="text-[var(--theme-text-muted)] text-sm italic">
                       Please select at least one location.
                     </Typography>
                   ) : (
@@ -577,14 +581,19 @@ const UserCard: React.FC<UserCardProps> = ({
                           label={`${location.name} (${location.id})`}
                           onClick={() => handleRemoveLocation(location.id)}
                           onDelete={() => handleRemoveLocation(location.id)}
-                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
-                          deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                          sx={{
+                            backgroundColor: 'var(--theme-primary-light)',
+                            color: 'var(--theme-primary)',
+                            border: '1px solid var(--theme-border)',
+                            cursor: 'pointer'
+                          }}
+                          deleteIcon={<X className="h-4 w-4" style={{ color: 'var(--theme-primary)' }} />}
                         />
                       ))}
                     </div>
                   )}
                 </Box>
-                <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
                   {selectedLocations.length > 0
                     ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
                     : "No locations selected"}
@@ -592,17 +601,17 @@ const UserCard: React.FC<UserCardProps> = ({
 
                 {/* Status Messages */}
                 {locationUpdateStatus === "success" && (
-                  <div className="mt-2 p-2 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 rounded text-sm">
+                  <div className="mt-2 p-2 bg-[var(--theme-success)]/10 text-[var(--theme-success)] rounded text-sm">
                     Locations updated successfully!
                   </div>
                 )}
                 {locationUpdateStatus === "error" && (
-                  <div className="mt-2 p-2 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 rounded text-sm">
+                  <div className="mt-2 p-2 bg-red-500/10 text-red-500 rounded text-sm">
                     Error updating locations. Please try again.
                   </div>
                 )}
                 {locationUpdateStatus === "pending" && (
-                  <div className="mt-2 p-2 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 rounded text-sm">
+                  <div className="mt-2 p-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded text-sm">
                     Updating locations...
                   </div>
                 )}

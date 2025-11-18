@@ -49,27 +49,27 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-dark-secondary rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="bg-[var(--theme-surface)] rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-semibold text-[var(--theme-text)] mb-4">
           Send Report - {report.groupName}
         </h3>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">
               Email Address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
               placeholder="Enter email address"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">
               Locations
             </label>
             <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -85,9 +85,9 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                         setSelectedLocations(selectedLocations.filter(id => id !== locationId));
                       }
                     }}
-                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    className="rounded border-[var(--theme-border)] text-[var(--theme-primary)] focus:ring-[var(--theme-primary)]"
                   />
-                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  <span className="ml-2 text-sm text-[var(--theme-text-secondary)]">
                     Location {locationId}
                   </span>
                 </label>
@@ -96,7 +96,7 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-2">
               Schedule Type
             </label>
             <div className="space-y-2">
@@ -106,9 +106,9 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                   value="immediate"
                   checked={scheduleType === 'immediate'}
                   onChange={(e) => setScheduleType(e.target.value as 'immediate')}
-                  className="text-orange-600 focus:ring-orange-500"
+                  className="text-[var(--theme-primary)] focus:ring-[var(--theme-primary)]"
                 />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Send Immediately</span>
+                <span className="ml-2 text-sm text-[var(--theme-text-secondary)]">Send Immediately</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -116,23 +116,23 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
                   value="scheduled"
                   checked={scheduleType === 'scheduled'}
                   onChange={(e) => setScheduleType(e.target.value as 'scheduled')}
-                  className="text-orange-600 focus:ring-orange-500"
+                  className="text-[var(--theme-primary)] focus:ring-[var(--theme-primary)]"
                 />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Schedule for Date and Time</span>
+                <span className="ml-2 text-sm text-[var(--theme-text-secondary)]">Schedule for Date and Time</span>
               </label>
             </div>
           </div>
 
           {scheduleType === 'scheduled' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">
                 Scheduled Date & Time
               </label>
               <input
                 type="datetime-local"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-tertiary text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
               />
             </div>
           )}
@@ -141,13 +141,13 @@ const SendReportModal: React.FC<SendReportModalProps> = ({ isOpen, onClose, repo
         <div className="flex justify-end space-x-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+            className="px-4 py-2 text-[var(--theme-text-secondary)] bg-[var(--theme-surface-hover)] rounded-md hover:bg-[var(--theme-surface-active)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSendReport}
-            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+            className="px-4 py-2 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded-md hover:opacity-90 transition-colors"
           >
             Send Report
           </button>
@@ -437,7 +437,7 @@ const PriceUsersPage = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-xl font-semibold text-red-600">Access Denied</div>
-        <div className="text-gray-600">
+        <div className="text-[var(--theme-text-secondary)]">
           You need PRICE_ADMIN or ADMIN role access to manage Price Users.
         </div>
       </div>
@@ -450,20 +450,20 @@ const PriceUsersPage = () => {
       
       <div className="mt-6 space-y-6">
         {/* Control Panel */}
-        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow p-6">
+        <div className="bg-[var(--theme-surface)] rounded-lg shadow p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-[var(--theme-text)]">
                 Price Change Reports
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              <p className="text-sm text-[var(--theme-text-secondary)] mt-1">
                 Review and manage submitted price change reports from franchisees
               </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/price-users/item-mappings">
-                  <button className="px-4 py-2 rounded-lg font-medium transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300">
+                  <button className="px-4 py-2 rounded-lg font-medium transition-colors bg-[var(--theme-secondary)]/20 text-[var(--theme-secondary)] hover:bg-[var(--theme-secondary)]/30">
                       Manage Item Mappings
                   </button>
               </Link>
@@ -471,8 +471,8 @@ const PriceUsersPage = () => {
                 onClick={() => setShowArchived(!showArchived)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   showArchived
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300'
-                    : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300'
+                    ? 'bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface-active)]'
+                    : 'bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/30'
                 }`}
               >
                 {showArchived ? 'Show Active Reports' : 'Show Archived'}
@@ -491,14 +491,14 @@ const PriceUsersPage = () => {
         </div>
 
         {/* Reports Table */}
-        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-[var(--theme-surface)] rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--theme-border)]">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium text-[var(--theme-text)]">
                 {showArchived ? 'Archived Reports' : 'Active Reports'} ({displayReports.length})
               </h3>
               {isLoadingReports && (
-                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center text-sm text-[var(--theme-text-muted)]">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -511,96 +511,96 @@ const PriceUsersPage = () => {
           
           {isLoadingReports ? (
             <div className="px-6 py-12 text-center">
-              <div className="text-gray-500 dark:text-gray-400">Loading price change reports...</div>
+              <div className="text-[var(--theme-text-muted)]">Loading price change reports...</div>
             </div>
           ) : displayReports.length === 0 ? (
             <div className="px-6 py-12 text-center">
-              <div className="text-gray-500 dark:text-gray-400">
+              <div className="text-[var(--theme-text-muted)]">
                 {showArchived ? 'No archived reports found.' : 'No active price change reports found.'}
               </div>
-              <div className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+              <div className="text-sm text-[var(--theme-text-muted)] mt-2">
                 Reports will appear here when franchisees submit price changes.
               </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-dark-tertiary">
+                <thead className="bg-[var(--theme-surface-hover)]">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Group
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Uploaded By
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Locations
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Submitted
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Changes
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       View Report
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Send Report
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                       Archive
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`bg-white dark:bg-dark-secondary divide-y divide-gray-200 dark:divide-gray-700 ${showArchived ? 'opacity-70' : ''}`}>
+                <tbody className={`bg-[var(--theme-surface)] divide-y divide-[var(--theme-border)] ${showArchived ? 'opacity-70' : ''}`}>
                   {displayReports.map(report => (
-                  <tr key={report.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={report.id} className="hover:bg-[var(--theme-surface-hover)]">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-[var(--theme-text)]">
                           {report.franchiseeName}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-[var(--theme-text-muted)]">
                           {report.groupName}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-[var(--theme-text)]">
                           {report.username || 'Unknown User'}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-[var(--theme-text-muted)]">
                           ID: {report.userId || 'unknown'}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white max-w-xs">
+                      <div className="text-sm text-[var(--theme-text)] max-w-xs">
                         <div className="truncate" title={getLocationNames(report.locationIds)}>
                           {getLocationNames(report.locationIds)}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-[var(--theme-text-muted)]">
                           {report.locationIds.length} location{report.locationIds.length !== 1 ? 's' : ''}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                      <div className="text-sm text-[var(--theme-text)]">
                         {new Date(report.submittedDate).toLocaleDateString()}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-[var(--theme-text-muted)]">
                         {new Date(report.submittedDate).toLocaleTimeString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleViewReport(report)}
-                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/30 transition-colors"
                         title="View changed items"
                       >
                         {report.totalChanges} items
@@ -609,10 +609,10 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         report.status === 'pending' 
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          ? 'bg-[var(--theme-warning)]/20 text-[var(--theme-warning)]'
                           : report.status === 'sent'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-dark-tertiary dark:text-gray-300'
+                          ? 'bg-[var(--theme-success)]/20 text-[var(--theme-success)]'
+                          : 'bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]'
                       }`}>
                         {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                       </span>
@@ -645,7 +645,7 @@ const PriceUsersPage = () => {
                       ) : (
                         <button
                           onClick={() => handleArchiveReport(report.id)}
-                          className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                          className="px-3 py-1 bg-[var(--theme-text-secondary)] text-[var(--theme-surface)] text-sm rounded hover:opacity-90 transition-colors"
                         >
                           Archive
                         </button>
@@ -660,50 +660,50 @@ const PriceUsersPage = () => {
         </div>
 
         {/* Price User Lock/Unlock Management */}
-        <div className="bg-white dark:bg-dark-secondary rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        <div className="bg-[var(--theme-surface)] rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--theme-border)]">
+            <h3 className="text-lg font-medium text-[var(--theme-text)]">
               Price User Access Control
             </h3>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-dark-tertiary">
+              <thead className="bg-[var(--theme-surface-hover)]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                     Group
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                     Locations
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                     Lock/Unlock
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-dark-secondary divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-[var(--theme-surface)] divide-y divide-[var(--theme-border)]">
                 {priceUsersList.map((user: PriceUser) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={user.id} className="hover:bg-[var(--theme-surface-hover)]">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-[var(--theme-text)]">
                           {user.username}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-[var(--theme-text-muted)]">
                           {user.groupName} • {user.email}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white max-w-xs">
+                      <div className="text-sm text-[var(--theme-text)] max-w-xs">
                         <div className="truncate" title={getLocationNames(user.locationIds)}>
                           {getLocationNames(user.locationIds)}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-[var(--theme-text-muted)]">
                           {user.locationIds.length} location{user.locationIds.length !== 1 ? 's' : ''}
                         </div>
                       </div>
@@ -711,8 +711,8 @@ const PriceUsersPage = () => {
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.isLocked
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          ? 'bg-[var(--theme-error)]/20 text-[var(--theme-error)]'
+                          : 'bg-[var(--theme-success)]/20 text-[var(--theme-success)]'
                       }`}>
                         {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                       </span>
@@ -723,7 +723,7 @@ const PriceUsersPage = () => {
                         className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                           user.status === 'locked'
                             ? 'bg-red-500 text-white hover:bg-red-600'
-                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300'
+                            : 'bg-[var(--theme-surface-hover)] text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface-active)]'
                         }`}
                       >
                         {user.status === 'locked' ? (
@@ -765,11 +765,11 @@ const PriceUsersPage = () => {
       {/* Status Modal for Lock/Unlock actions */}
       {statusModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-dark-secondary rounded-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-[var(--theme-surface)] rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-[var(--theme-text)] mb-4">
               {statusModal.title}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               {statusModal.message}
             </p>
             <div className="flex justify-end mt-6">
@@ -825,25 +825,25 @@ const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-[var(--theme-surface)] rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-semibold text-[var(--theme-text)]">
             Price Changes: {reportGroupName}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
         
         {changes.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No specific item changes found in this report.</p>
+          <p className="text-[var(--theme-text-muted)]">No specific item changes found in this report.</p>
         ) : (
           <div className="overflow-y-auto flex-grow">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-dark-tertiary dark:text-gray-400 sticky top-0">
+            <table className="w-full text-sm text-left text-[var(--theme-text-muted)]">
+              <thead className="text-xs text-[var(--theme-text-secondary)] uppercase bg-[var(--theme-surface-hover)] sticky top-0">
                 <tr>
                   <th scope="col" className="px-4 py-3">Item Name</th>
                   <th scope="col" className="px-4 py-3">Location</th>
@@ -851,13 +851,13 @@ const ReportChangesModal: React.FC<ReportChangesModalProps> = ({
                   <th scope="col" className="px-4 py-3 text-right">New Price</th>
                 </tr>
               </thead>
-              <tbody className="divide-y dark:divide-gray-700">
+              <tbody className="divide-y divide-[var(--theme-border)]">
                 {changes.map((change, index) => (
-                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-600/50">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">{change.itemName}</td>
+                  <tr key={index} className="hover:bg-[var(--theme-surface-hover)]">
+                    <td className="px-4 py-3 font-medium text-[var(--theme-text)] whitespace-nowrap">{change.itemName}</td>
                     <td className="px-4 py-3">{getLocationName(change.locationId)}</td>
                     <td className="px-4 py-3 text-right">${change.oldPrice.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400">${change.newPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-[var(--theme-success)]">${change.newPrice.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>

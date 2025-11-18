@@ -8,15 +8,15 @@ const Settings = () => {
   const { data: authData, isLoading } = useGetAuthUserQuery({});
   const userDetails = authData?.userDetails;
 
-  const labelStyles = "block text-sm font-medium dark:text-white";
+  const labelStyles = "block text-sm font-medium text-[var(--theme-text-secondary)]";
   const textStyles =
-    "mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 dark:text-white";
+    "mt-1 block w-full border border-[var(--theme-border)] rounded-md shadow-sm p-2 text-[var(--theme-text)] bg-[var(--theme-surface-hover)]";
 
   if (isLoading) {
     return (
       <div className="p-8">
         <Header name="Settings" />
-        <div>Loading...</div>
+        <div className="text-[var(--theme-text)]">Loading...</div>
       </div>
     );
   }

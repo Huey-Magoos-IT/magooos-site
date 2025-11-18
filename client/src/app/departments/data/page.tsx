@@ -306,11 +306,11 @@ const DataPage = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="m-5 p-4">Loading...</div>;
+    return <div className="m-5 p-4 text-[var(--theme-text)]">Loading...</div>;
   }
 
   if (error) {
-    return <div className="m-5 p-4">Error: {error.toString()}</div>;
+    return <div className="m-5 p-4 text-[var(--theme-text)]">Error: {error.toString()}</div>;
   }
 
   // Check if user's team has DATA role access
@@ -324,9 +324,9 @@ const DataPage = () => {
   if (!hasAccess) {
     return (
       <div className="m-5 p-4">
-        <div className="bg-red-50 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-700 shadow-md dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+        <div className="bg-red-500/10 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-600 shadow-md">
           <p className="font-medium">Access Denied: This page is only accessible to teams with DATA role access.</p>
-          <Link href="/teams" className="text-blue-500 hover:text-blue-600 hover:underline mt-2 inline-block dark:text-blue-300 dark:hover:text-blue-200 font-medium">
+          <Link href="/teams" className="text-[var(--theme-primary)] hover:text-[var(--theme-primary-dark)] hover:underline mt-2 inline-block font-medium">
             Go to Teams Page
           </Link>
         </div>
@@ -337,15 +337,15 @@ const DataPage = () => {
   return (
     <div className="m-5 p-4">
       <Header name="Data Department" />
-      <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-        <div className="bg-emerald-50 p-5 rounded-lg mb-6 border-l-4 border-emerald-500 dark:bg-emerald-900/20 dark:border-emerald-700 shadow-sm">
-          <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">DATA Access Successful</h3>
-          <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
+      <div className="mt-4 p-4 bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)]">
+        <div className="bg-[var(--theme-success)]/10 p-5 rounded-lg mb-6 border-l-4 border-[var(--theme-success)] shadow-sm">
+          <h3 className="font-semibold mb-2 text-[var(--theme-success)]">DATA Access Successful</h3>
+          <p className="text-[var(--theme-text-secondary)]">Team: {userTeam.teamName}</p>
           <div className="mt-2">
-            <p className="text-green-600 dark:text-green-300">Roles:</p>
+            <p className="text-[var(--theme-success)]">Roles:</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {userTeam.teamRoles?.map(tr => (
-                <span key={tr.id} className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full dark:bg-green-800 dark:text-green-100 shadow-sm">
+                <span key={tr.id} className="px-2 py-0.5 bg-[var(--theme-success)]/20 text-[var(--theme-success)] text-xs rounded-full shadow-sm">
                   {tr.role.name}
                 </span>
               ))}
@@ -354,8 +354,8 @@ const DataPage = () => {
         </div>
 
         {/* Data Generation Form */}
-        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Generate Data Report</h3>
+        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm border-[var(--theme-border)]">
+          <h3 className="text-lg font-semibold mb-4 text-[var(--theme-text)] border-b pb-2 border-[var(--theme-border)]">Generate Data Report</h3>
           
           <Grid container spacing={4}>
             {/* Left column - Form inputs */}
@@ -364,40 +364,40 @@ const DataPage = () => {
                 {/* Removed Department Page Selector */}
 
                 {/* Data Type Selector (Original - specific to this page) */}
-                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
-                  <InputLabel className="text-gray-700 dark:text-gray-300">Data Type</InputLabel> {/* Reverted Label */}
+                <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Data Type</InputLabel>
                   <Select
                     value={dataType}
                     onChange={(e) => setDataType(e.target.value as string)}
-                    label="Data Type" // Reverted Label
-                    className="border-gray-200 dark:border-stroke-dark dark:text-white"
+                    label="Data Type"
+                    className="border-[var(--theme-border)] text-[var(--theme-text)]"
                   >
                     {DATA_TYPES.map((type) => (
-                      <MenuItem key={type.value} value={type.value} className="dark:text-gray-200">
+                      <MenuItem key={type.value} value={type.value}>
                         {type.label}
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText className="dark:text-gray-300">Select the type of data to generate</FormHelperText> {/* Reverted Helper Text */}
+                  <FormHelperText className="text-[var(--theme-text-muted)]">Select the type of data to generate</FormHelperText>
                 </FormControl>
 
                 {/* Date Preset Dropdown */}
-                <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark">
-                  <InputLabel className="text-gray-700 dark:text-gray-300">Date Range Preset</InputLabel>
+                <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Date Range Preset</InputLabel>
                   <Select
                     value={selectedPreset}
                     onChange={handlePresetChange}
                     label="Date Range Preset"
-                    className="border-gray-200 dark:border-stroke-dark dark:text-white"
+                    className="border-[var(--theme-border)] text-[var(--theme-text)]"
                   >
-                    <MenuItem value="" className="dark:text-gray-200"><em>Custom Range</em></MenuItem>
+                    <MenuItem value=""><em>Custom Range</em></MenuItem>
                     {datePresets.map((preset) => (
-                      <MenuItem key={preset} value={preset} className="dark:text-gray-200">
+                      <MenuItem key={preset} value={preset}>
                         {preset}
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText className="dark:text-gray-300">Select a preset or choose dates manually</FormHelperText>
+                  <FormHelperText className="text-[var(--theme-text-muted)]">Select a preset or choose dates manually</FormHelperText>
                 </FormControl>
 
                 <DatePicker
@@ -412,7 +412,7 @@ const DataPage = () => {
                       }
                   }}
                   format="MMddyyyy"
-                  className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                  className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
                   minDate={new Date(new Date().getFullYear(), 0, 13, 12, 0, 0)} // Jan 13 of current year at noon
                   // Max date is either yesterday or the end date (if set), whichever is earlier
                   maxDate={(() => {
@@ -433,11 +433,11 @@ const DataPage = () => {
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-[var(--theme-surface-hover)]"
                     }
                   }}
                 />
-                
+
                 <DatePicker
                   label="End Date"
                   value={endDate}
@@ -446,7 +446,7 @@ const DataPage = () => {
                       setSelectedPreset(''); // Clear preset on manual change
                   }}
                   format="MMddyyyy"
-                  className="bg-white dark:bg-dark-tertiary w-full rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                  className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
                   // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
                   minDate={(() => {
                     const minAllowedDate = new Date(new Date().getFullYear(), 0, 13, 12, 0, 0);
@@ -471,21 +471,25 @@ const DataPage = () => {
                     textField: {
                       variant: "outlined",
                       fullWidth: true,
-                      className: "bg-white dark:bg-dark-tertiary"
+                      className: "bg-[var(--theme-surface-hover)]"
                     }
                   }}
                 />
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    <Typography className="font-medium text-[var(--theme-text)]">Selected Locations</Typography>
                     <div className="flex gap-2">
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={handleUndo}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
                         disabled={!lastAction}
+                        sx={{
+                          color: 'var(--theme-primary)',
+                          borderColor: 'var(--theme-border)',
+                          '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                        }}
                       >
                         <span className="mr-1">Undo</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-undo-2">
@@ -497,8 +501,8 @@ const DataPage = () => {
                         size="small"
                         variant="outlined"
                         onClick={handleClearAll}
-                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
                         disabled={selectedLocations.length === 0}
+                        color="error"
                       >
                         <span className="mr-1">Clear All</span>
                         <X className="h-4 w-4" />
@@ -507,7 +511,7 @@ const DataPage = () => {
                         size="small"
                         variant="outlined"
                         onClick={handleAddAllLocations}
-                        className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
+                        color="success"
                       >
                         <span className="mr-1">Add All</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle">
@@ -517,9 +521,9 @@ const DataPage = () => {
                       </Button>
                     </div>
                   </div>
-                  <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                  <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md min-h-24 max-h-64 overflow-y-auto shadow-inner">
                     {selectedLocations.length === 0 ? (
-                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                      <Typography className="text-[var(--theme-text-muted)] text-sm italic">
                         Please select a location.
                       </Typography>
                     ) : (
@@ -529,14 +533,18 @@ const DataPage = () => {
                             key={location.id}
                             label={`${location.name} (${location.id})`}
                             onDelete={() => handleRemoveLocation(location.id)}
-                            className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
-                            deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                            sx={{
+                              backgroundColor: 'var(--theme-primary-light)',
+                              color: 'var(--theme-primary)',
+                              border: '1px solid var(--theme-border)'
+                            }}
+                            deleteIcon={<X className="h-4 w-4" style={{ color: 'var(--theme-primary)' }} />}
                           />
                         ))}
                       </div>
                     )}
                   </Box>
-                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                  <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
                     {selectedLocations.length > 0
                       ? `${selectedLocations.length} location${selectedLocations.length !== 1 ? 's' : ''} selected`
                       : userIsAdmin
@@ -556,12 +564,12 @@ const DataPage = () => {
                         onChange={(e) => setNewDiscountId(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddDiscountId()}
                         variant="outlined"
-                        className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+                        className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]"
                         InputProps={{
-                          className: "dark:text-white"
+                          className: "text-[var(--theme-text)]"
                         }}
                         InputLabelProps={{
-                          className: "dark:text-gray-300"
+                          className: "text-[var(--theme-text-secondary)]"
                         }}
                         fullWidth
                       />
@@ -572,8 +580,12 @@ const DataPage = () => {
                           key={id}
                           label={id}
                           onDelete={() => handleRemoveDiscountId(id)}
-                          className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30"
-                          deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                          sx={{
+                            backgroundColor: 'var(--theme-primary-light)',
+                            color: 'var(--theme-primary)',
+                            border: '1px solid var(--theme-border)'
+                          }}
+                          deleteIcon={<X className="h-4 w-4" style={{ color: 'var(--theme-primary)' }} />}
                         />
                       ))}
                     </div>
@@ -586,7 +598,18 @@ const DataPage = () => {
                     onClick={processCSVData}
                     disabled={csvLoading || !startDate || !endDate || selectedLocations.length === 0}
                     fullWidth
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-3 shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    sx={{
+                      background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
+                      color: 'var(--theme-text-on-primary)',
+                      py: 1.5,
+                      '&:hover': {
+                        background: 'linear-gradient(to right, var(--theme-primary-dark), var(--theme-secondary))',
+                      },
+                      '&:disabled': {
+                        background: 'var(--theme-surface-active)',
+                        color: 'var(--theme-text-muted)'
+                      }
+                    }}
                   >
                     {csvLoading ? (
                       <div className="flex items-center justify-center">
@@ -595,17 +618,17 @@ const DataPage = () => {
                       </div>
                     ) : "Process Data"}
                   </Button>
-                  
+
                   {/* Progress message for processing */}
                   {processingProgress && (
-                    <div className="mt-2 p-2 bg-blue-50 text-blue-700 rounded-md border border-blue-100 text-sm shadow-sm dark:bg-blue-900/10 dark:text-blue-300 dark:border-blue-900/30">
+                    <div className="mt-2 p-2 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-md border border-[var(--theme-primary)]/30 text-sm shadow-sm">
                       {processingProgress}
                     </div>
                   )}
-                  
+
                   {/* Processing errors */}
                   {csvError && (
-                    <div className="mt-2 p-3 bg-red-50 text-red-700 rounded-md border-l-4 border-red-500 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+                    <div className="mt-2 p-3 bg-red-500/10 text-red-600 rounded-md border-l-4 border-red-500">
                       <p className="font-semibold">Error Processing CSV Data:</p>
                       <p className="text-sm overflow-auto max-h-24">{csvError}</p>
                     </div>

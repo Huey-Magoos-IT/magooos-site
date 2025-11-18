@@ -19,13 +19,13 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({
     const roleUpper = role.toUpperCase();
     switch (roleUpper) {
       case "ADMIN":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200";
+        return "bg-[var(--theme-error)]/20 text-[var(--theme-error)]";
       case "DATA":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200";
+        return "bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]";
       case "REPORTING":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200";
+        return "bg-[var(--theme-success)]/20 text-[var(--theme-success)]";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+        return "bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]";
     }
   };
 

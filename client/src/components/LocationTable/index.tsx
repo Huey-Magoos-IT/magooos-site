@@ -111,16 +111,16 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
   return (
     <Paper
       elevation={2}
-      className="rounded-lg overflow-hidden dark:bg-dark-secondary border border-gray-100 dark:border-stroke-dark"
+      className="rounded-lg overflow-hidden bg-[var(--theme-surface)] border border-[var(--theme-border)]"
       sx={{
-        flexGrow: 1, // Changed from height: '100%'
+        flexGrow: 1,
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       }}
     >
-      <div className="p-4 bg-blue-50 dark:bg-dark-tertiary border-b border-blue-100 dark:border-blue-900/30">
-        <Typography variant="h6" className="font-semibold dark:text-white mb-2">
+      <div className="p-4 bg-[var(--theme-primary)]/10 border-b border-[var(--theme-primary)]/20">
+        <Typography variant="h6" className="font-semibold text-[var(--theme-text)] mb-2">
           Available Locations
         </Typography>
         <TextField
@@ -130,14 +130,14 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
           variant="outlined"
           size="small"
           fullWidth
-          className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm border border-gray-200 dark:border-stroke-dark"
+          className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <Search className="h-4 w-4 text-[var(--theme-text-muted)]" />
               </InputAdornment>
             ),
-            className: "dark:text-white"
+            className: "text-[var(--theme-text)]"
           }}
         />
       </div>
@@ -155,7 +155,7 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
           <TableHead>
             <TableRow>
               <TableCell
-                className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
+                className="cursor-pointer font-semibold bg-[var(--theme-surface-hover)] text-[var(--theme-text)] border-b-2 border-[var(--theme-primary)]/30"
                 onClick={() => handleRequestSort('name')}
               >
                 <TableSortLabel
@@ -163,15 +163,14 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
                   direction={orderBy === 'name' ? order : 'asc'}
                   onClick={() => handleRequestSort('name')}
                   IconComponent={() => (
-                    <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
+                    <ArrowUpDown className="h-4 w-4 ml-1 text-[var(--theme-primary)]" />
                   )}
-                  className="dark:text-white"
                 >
-                  <span className="dark:text-white">Location Name</span>
+                  <span className="text-[var(--theme-text)]">Location Name</span>
                 </TableSortLabel>
               </TableCell>
               <TableCell
-                className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
+                className="cursor-pointer font-semibold bg-[var(--theme-surface-hover)] text-[var(--theme-text)] border-b-2 border-[var(--theme-primary)]/30"
                 onClick={() => handleRequestSort('id')}
               >
                 <TableSortLabel
@@ -179,11 +178,10 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
                   direction={orderBy === 'id' ? order : 'asc'}
                   onClick={() => handleRequestSort('id')}
                   IconComponent={() => (
-                    <ArrowUpDown className="h-4 w-4 ml-1 text-blue-500 dark:text-blue-400" />
+                    <ArrowUpDown className="h-4 w-4 ml-1 text-[var(--theme-primary)]" />
                   )}
-                  className="dark:text-white"
                 >
-                  <span className="dark:text-white">ID</span>
+                  <span className="text-[var(--theme-text)]">ID</span>
                 </TableSortLabel>
               </TableCell>
             </TableRow>
@@ -192,8 +190,8 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={2} className="text-center py-8">
-                  <CircularProgress size={24} />
-                  <Typography className="ml-2 text-gray-500 dark:text-neutral-400">
+                  <CircularProgress size={24} sx={{ color: 'var(--theme-primary)' }} />
+                  <Typography className="ml-2 text-[var(--theme-text-muted)]">
                     Loading locations...
                   </Typography>
                 </TableCell>
@@ -201,26 +199,29 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
             ) : error ? (
               <TableRow>
                 <TableCell colSpan={2} className="text-center py-4">
-                  <div className="text-red-500 dark:text-red-400 mb-2">
+                  <div className="text-[var(--theme-error)] mb-2">
                     Error loading locations from DynamoDB.
                   </div>
                   {errorDetails && (
-                    <div className="text-xs overflow-auto max-h-24 bg-gray-100 dark:bg-dark-tertiary p-2 rounded mb-2">
+                    <div className="text-xs overflow-auto max-h-24 bg-[var(--theme-surface-hover)] p-2 rounded mb-2">
                       {errorDetails}
                     </div>
                   )}
                   <div className="flex gap-2 justify-center mt-2">
-                    <Button 
-                      variant="outlined" 
-                      color="primary" 
+                    <Button
+                      variant="outlined"
                       size="small"
                       onClick={() => refetch()}
                       startIcon={<RefreshCw className="h-4 w-4" />}
+                      sx={{
+                        color: 'var(--theme-primary)',
+                        borderColor: 'var(--theme-primary)'
+                      }}
                     >
                       Try Again
                     </Button>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
+                  <div className="text-xs text-[var(--theme-text-muted)] mt-2">
                     Note: The API Gateway requires proper authentication and permissions to access DynamoDB.
                   </div>
                 </TableCell>
@@ -232,28 +233,28 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
                   hover
                   className={`
                     cursor-pointer transition-colors duration-200
-                    ${index % 2 === 0 ? 'bg-white dark:bg-dark-secondary' : 'bg-gray-50 dark:bg-dark-tertiary/50'}
+                    ${index % 2 === 0 ? 'bg-[var(--theme-surface)]' : 'bg-[var(--theme-surface-hover)]'}
                   `}
                   onClick={() => onLocationSelect(location)}
                   onMouseEnter={() => setHoveredRow(location.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                   sx={{
-                    backgroundColor: hoveredRow === location.id ? 'rgba(59, 130, 246, 0.08)' : 'inherit',
+                    backgroundColor: hoveredRow === location.id ? 'var(--theme-primary-light)' : 'inherit',
                     '&:hover': {
-                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      backgroundColor: 'var(--theme-primary-light)',
                     },
                     '&:active': {
-                      backgroundColor: 'rgba(59, 130, 246, 0.16)',
+                      backgroundColor: 'var(--theme-primary-light)',
                     },
                   }}
                 >
-                  <TableCell className="dark:text-white">{location.name}</TableCell>
-                  <TableCell className="dark:text-white">{location.id}</TableCell>
+                  <TableCell className="text-[var(--theme-text)]">{location.name}</TableCell>
+                  <TableCell className="text-[var(--theme-text)]">{location.id}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={2} className="text-center py-4 text-gray-500 dark:text-neutral-400">
+                <TableCell colSpan={2} className="text-center py-4 text-[var(--theme-text-muted)]">
                   All locations have been selected
                 </TableCell>
               </TableRow>
@@ -262,13 +263,13 @@ const LocationTable = ({ selectedLocationIds, onLocationSelect, userLocationIds 
         </Table>
       </TableContainer>
       
-      <Box className="p-3 bg-blue-50 border-t border-blue-100 flex justify-between items-center dark:bg-dark-tertiary dark:border-blue-900/30 dark:text-white">
+      <Box className="p-3 bg-[var(--theme-primary)]/10 border-t border-[var(--theme-primary)]/20 flex justify-between items-center">
         {searchQuery.trim() && data?.locations && (
-          <Typography variant="body2" className="text-sm text-blue-700 dark:text-blue-300">
+          <Typography variant="body2" className="text-sm text-[var(--theme-primary)]">
             {`Showing ${sortedLocations.length} of ${data.locations.filter(location => !selectedLocationIds.includes(location.id)).length} locations`}
           </Typography>
         )}
-        <Typography variant="body2" className="text-sm font-medium text-blue-700 dark:text-blue-300 ml-auto">
+        <Typography variant="body2" className="text-sm font-medium text-[var(--theme-primary)] ml-auto">
           {isLoading ? 'Loading...' : `${sortedLocations.length} location${sortedLocations.length !== 1 ? 's' : ''} available`}
         </Typography>
       </Box>

@@ -394,7 +394,7 @@ const Users = () => {
                     setConfirmEmail(params.row.email);
                     setIsEditEmailModalOpen(true);
                   }}
-                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="ml-2 p-1 rounded-full hover:bg-[var(--theme-surface-hover)]"
                 >
                   <Edit size={16} />
                 </button>
@@ -405,7 +405,7 @@ const Users = () => {
                     setUserToEdit(params.row);
                     setIsResetPasswordModalOpen(true);
                   }}
-                  className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="ml-2 p-1 rounded-full hover:bg-[var(--theme-surface-hover)]"
                 >
                   <KeyRound size={16} />
                 </button>
@@ -421,7 +421,7 @@ const Users = () => {
       width: 100,
       renderCell: (params) => (
         <div className="flex h-full w-full items-center justify-center">
-          <div className="h-9 w-9 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+          <div className="h-9 w-9 rounded-full overflow-hidden bg-[var(--theme-surface-hover)] flex items-center justify-center">
             {params.value ? (
               <Image
                 src={`https://huey-site-images.s3.us-east-2.amazonaws.com/${params.value}`}
@@ -431,7 +431,7 @@ const Users = () => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <UserIcon size={20} className="text-gray-500 dark:text-gray-400" /> // Use aliased UserIcon
+              <UserIcon size={20} className="text-[var(--theme-text-muted)]" /> // Use aliased UserIcon
             )}
           </div>
         </div>
@@ -458,11 +458,11 @@ const Users = () => {
         // For admins, show dropdown selector
         return (
           <div className="flex items-center w-full">
-            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+            <FormControl fullWidth size="small" className="bg-[var(--theme-surface)] rounded">
               <Select
                 value={currentTeamId || ''}
                 onChange={(e) => handleTeamChangeEvent(e, userId)}
-                className="dark:text-white"
+                sx={{ color: 'var(--theme-text)' }}
                 disabled={status === 'pending'}
                 MenuProps={{
                   PaperProps: {
@@ -514,7 +514,7 @@ const Users = () => {
         const teamRoles = userTeam?.teamRoles || [];
         
         if (teamRoles.length === 0) {
-          return <span className="text-sm text-gray-500 dark:text-gray-400">No roles</span>;
+          return <span className="text-sm text-[var(--theme-text-muted)]">No roles</span>;
         }
         
         // Show up to 2 roles with a "+X more" indicator if there are more
@@ -529,7 +529,7 @@ const Users = () => {
             ))}
             {teamRoles.length > 2 && (
               <Tooltip title={teamRoles.slice(2).map(tr => tr.role.name).join(", ")}>
-                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                <span className="px-2 py-1 text-xs font-medium rounded-full bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]">
                   +{teamRoles.length - 2} more
                 </span>
               </Tooltip>
@@ -595,11 +595,11 @@ const Users = () => {
             <input
               type="text"
               placeholder="Search users by name..."
-              className="w-full p-2 pl-10 border rounded-md dark:bg-dark-tertiary dark:border-gray-700 dark:text-white"
+              className="w-full p-2 pl-10 border rounded-md bg-[var(--theme-surface)] border-[var(--theme-border)] text-[var(--theme-text)]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <div className="absolute left-3 top-2.5 text-gray-400">
+            <div className="absolute left-3 top-2.5 text-[var(--theme-text-muted)]">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -608,10 +608,10 @@ const Users = () => {
           
           {/* Team Filter Dropdown */}
           <div className="w-full md:w-64">
-            <FormControl fullWidth size="small" className="dark:bg-dark-tertiary rounded">
+            <FormControl fullWidth size="small" className="bg-[var(--theme-surface)] rounded">
               <Select
                 value={teamFilter}
-                className="dark:text-white"
+                sx={{ color: 'var(--theme-text)' }}
                 onChange={(e) => setTeamFilter(e.target.value)}
               >
                 <MenuItem value="">
@@ -630,9 +630,9 @@ const Users = () => {
         
         {/* Team Assignment Instructions (for admins only) */}
         {isUserAdmin && (
-          <div className="p-4 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-100">
-            <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Team Assignment</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+          <div className="p-4 bg-[var(--theme-primary)]/10 rounded border border-[var(--theme-primary)]/30">
+            <h3 className="font-medium text-[var(--theme-primary)] mb-1">Team Assignment</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               As an administrator, you can assign users to teams using the dropdown selector in the Team column.
             </p>
           </div>
@@ -640,16 +640,16 @@ const Users = () => {
       </div>
       
       {/* Active Users Section */}
-      <h2 className="text-xl font-semibold mb-3 dark:text-white">Active Users</h2>
+      <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Active Users</h2>
       {activeUsers.length === 0 ? (
-        <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="text-gray-500 dark:text-gray-400 mb-2">No active users found matching your search criteria.</div>
+        <div className="p-8 text-center bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+          <div className="text-[var(--theme-text-muted)] mb-2">No active users found matching your search criteria.</div>
           <button
             onClick={() => {
               setSearchQuery("");
               setTeamFilter("");
             }}
-            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="text-[var(--theme-primary)] hover:opacity-80 font-medium"
           >
             Clear filters
           </button>
@@ -711,7 +711,7 @@ const Users = () => {
       {/* Disabled Users Section */}
       {disabledUsers.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-3 dark:text-white">Disabled Users</h2>
+          <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Disabled Users</h2>
           {/* Placeholder for how disabled users might be displayed. For now, identical to active. */}
           {/* Consider a different card or reduced info for disabled users later. */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -745,10 +745,10 @@ const Users = () => {
       {/* Unconfirmed Cognito Users Section */}
       {isUserAdmin && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-3 dark:text-white">Unconfirmed Cognito Users</h2>
-          <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-100">
-            <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Unconfirmed Users</h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+          <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Unconfirmed Cognito Users</h2>
+          <div className="mb-4 p-4 bg-[var(--theme-warning)]/10 rounded border border-[var(--theme-warning)]/30">
+            <h3 className="font-medium text-[var(--theme-warning)] mb-1">Unconfirmed Users</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               These users have been created in Cognito but haven&apos;t verified their email addresses yet. You can resend verification links or delete them if needed.
             </p>
           </div>
@@ -763,26 +763,26 @@ const Users = () => {
               {cognitoUsersData.users.map((cognitoUser) => (
                 <div
                   key={cognitoUser.Username}
-                  className="p-4 bg-white dark:bg-dark-secondary rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="p-4 bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <UserIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                        <div className="h-10 w-10 rounded-full bg-[var(--theme-surface-hover)] flex items-center justify-center">
+                          <UserIcon size={20} className="text-[var(--theme-text-muted)]" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">
+                          <h3 className="font-medium text-[var(--theme-text)]">
                             {cognitoUser.Username}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-[var(--theme-text-muted)]">
                             {cognitoUser.Email || 'No email available'}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[var(--theme-warning)]/20 text-[var(--theme-warning)]">
                               {cognitoUser.UserStatus}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-[var(--theme-text-muted)]">
                               Created: {cognitoUser.CreatedDate ? new Date(cognitoUser.CreatedDate).toLocaleDateString() : 'Unknown'}
                             </span>
                           </div>
@@ -796,7 +796,7 @@ const Users = () => {
                         size="small"
                         onClick={() => openResendConfirmationDialog(cognitoUser.Username!)}
                         disabled={isResendingVerification}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                        className="text-[var(--theme-primary)] border-[var(--theme-primary)]/50 hover:bg-[var(--theme-primary)]/10"
                       >
                         {isResendingVerification ? (
                           <CircularProgress size={16} className="mr-1" />
@@ -810,7 +810,7 @@ const Users = () => {
                         color="error"
                         onClick={() => openDeleteCognitoConfirmationDialog(cognitoUser.Username!)}
                         disabled={isDeletingCognitoUser}
-                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20"
+                        className="text-[var(--theme-error)] border-[var(--theme-error)]/50 hover:bg-[var(--theme-error)]/10"
                       >
                         {isDeletingCognitoUser ? (
                           <CircularProgress size={16} className="mr-1" />
@@ -823,9 +823,9 @@ const Users = () => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-gray-500 dark:text-gray-400 mb-2">No unconfirmed users found.</div>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
+            <div className="p-8 text-center bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+              <div className="text-[var(--theme-text-muted)] mb-2">No unconfirmed users found.</div>
+              <p className="text-sm text-[var(--theme-text-muted)]">
                 All created users have verified their email addresses.
               </p>
             </div>

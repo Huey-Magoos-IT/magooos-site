@@ -158,7 +158,7 @@ const ItemMappingsPage = () => {
         return (
             <div className="flex flex-col items-center justify-center h-64 space-y-4">
                 <div className="text-xl font-semibold text-red-600">Access Denied</div>
-                <div className="text-gray-600">
+                <div className="text-[var(--theme-text-secondary)]">
                     You need PRICE_ADMIN or ADMIN role access to manage Item Mappings.
                 </div>
             </div>
@@ -170,33 +170,33 @@ const ItemMappingsPage = () => {
             <Header name="Item Name Mappings" />
             
             <div className="mt-6 space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow p-6">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            <h2 className="text-lg font-semibold text-[var(--theme-text)]">
                                 Manage Friendly Names for Price Portal Items
                             </h2>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            <p className="text-sm text-[var(--theme-text-secondary)] mt-1">
                                 Here you can define user-friendly names for items that appear in the price portal.
                             </p>
                         </div>
                         <button
                             onClick={() => router.back()}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            className="px-3 py-1 text-sm bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded hover:opacity-90 transition-colors"
                         >
                             Back
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow p-6">
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Category</label>
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
                             >
                                 {categoryList.map(category => (
                                     <option key={category.value} value={category.value}>{category.label}</option>
@@ -204,21 +204,21 @@ const ItemMappingsPage = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Sort</label>
                             <select
                                 value={sortOrder}
                                 onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
                             >
                                 <option value="asc">A-Z</option>
                                 <option value="desc">Z-A</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categories</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Categories</label>
                             <button
                                 onClick={toggleAllCategories}
-                                className="px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200 flex items-center space-x-2"
+                                className="px-4 py-2 bg-[var(--theme-surface-hover)] text-[var(--theme-text)] rounded-md hover:bg-[var(--theme-surface-active)] transition-colors duration-200 flex items-center space-x-2"
                                 aria-label={allExpanded ? "Collapse all categories" : "Expand all categories"}
                             >
                                 <span className="text-sm font-medium">
@@ -237,11 +237,11 @@ const ItemMappingsPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[var(--theme-border)]">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item Name Management</h3>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                            <h3 className="text-lg font-semibold text-[var(--theme-text)]">Item Name Management</h3>
+                            <span className="text-sm text-[var(--theme-text-muted)]">
                                 {sortedItems.length} items
                             </span>
                         </div>
@@ -249,20 +249,20 @@ const ItemMappingsPage = () => {
                     
                     <div className="overflow-x-auto" id="item-table-container" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
+                            <thead className="bg-[var(--theme-surface-hover)]">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                                         Original Item Name
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--theme-text-muted)] uppercase tracking-wider">
                                         Friendly Name
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white dark:bg-gray-800">
+                            <tbody className="bg-[var(--theme-surface)]">
                                 {Object.entries(groupedMappings).map(([categoryName, itemsInCategory]) => (
                                     <React.Fragment key={categoryName}>
-                                        <tr className="bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600/50 cursor-pointer border-t border-b border-gray-300 dark:border-gray-600" onClick={() => toggleCategoryExpansion(categoryName)}>
+                                        <tr className="bg-[var(--theme-surface-hover)] hover:bg-[var(--theme-surface-active)] cursor-pointer border-t border-b border-[var(--theme-border)]" onClick={() => toggleCategoryExpansion(categoryName)}>
                                             <td colSpan={2} className="px-6 py-3 text-left">
                                                 <div className="flex items-center">
                                                     <svg
@@ -273,16 +273,16 @@ const ItemMappingsPage = () => {
                                                     >
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                     </svg>
-                                                    <span className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+                                                    <span className="font-semibold text-sm text-[var(--theme-text)]">
                                                         {categoryName} ({itemsInCategory.length})
                                                     </span>
                                                 </div>
                                             </td>
                                         </tr>
                                         {expandedCategories[categoryName] && itemsInCategory.map((mapping: any, index: number) => (
-                                            <tr key={`${categoryName}-${index}`} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700/50 last:border-b-0">
+                                            <tr key={`${categoryName}-${index}`} className="hover:bg-[var(--theme-surface-hover)] border-b border-[var(--theme-border)] last:border-b-0">
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                                    <div className="text-sm font-medium text-[var(--theme-text)]">
                                                         {mapping.originalName}
                                                     </div>
                                                 </td>
@@ -291,11 +291,11 @@ const ItemMappingsPage = () => {
                                                         type="text"
                                                         value={editedMappings[mapping.originalName] ?? mapping.friendlyName}
                                                         onChange={(e) => handleMappingChange(mapping.originalName, e.target.value)}
-                                                        className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                        className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-[var(--theme-primary)] ${
                                                             editedMappings[mapping.originalName] !== undefined
-                                                                ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-400 ring-2 ring-yellow-200 dark:ring-yellow-800'
-                                                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600'
-                                                        } text-gray-900 dark:text-white`}
+                                                                ? 'bg-[var(--theme-warning)]/10 border-[var(--theme-warning)] ring-2 ring-[var(--theme-warning)]/30'
+                                                                : 'bg-[var(--theme-surface)] border-[var(--theme-border)]'
+                                                        } text-[var(--theme-text)]`}
                                                         placeholder={mapping.originalName}
                                                     />
                                                 </td>
@@ -310,19 +310,19 @@ const ItemMappingsPage = () => {
 
                 {/* Pending Changes Summary */}
                 {Object.keys(editedMappings).length > 0 && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <div className="bg-[var(--theme-warning)]/10 border border-[var(--theme-warning)]/30 rounded-lg p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                <h4 className="text-sm font-medium text-[var(--theme-warning)]">
                                     Pending Changes
                                 </h4>
-                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                <p className="text-sm text-[var(--theme-text-secondary)]">
                                     {Object.keys(editedMappings).length} item{Object.keys(editedMappings).length !== 1 ? 's' : ''} modified
                                 </p>
                             </div>
                             <button
                                 onClick={() => setEditedMappings({})}
-                                className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200 underline"
+                                className="text-sm text-[var(--theme-warning)] hover:opacity-80 underline"
                             >
                                 Clear All Changes
                             </button>
@@ -336,8 +336,8 @@ const ItemMappingsPage = () => {
                         disabled={Object.keys(editedMappings).length === 0}
                         className={`px-8 py-3 rounded-lg font-medium transition-colors ${
                             Object.keys(editedMappings).length > 0
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                                ? 'bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:opacity-90'
+                                : 'bg-[var(--theme-surface-active)] text-[var(--theme-text-muted)] cursor-not-allowed'
                         }`}
                     >
                         Save Changes {Object.keys(editedMappings).length > 0 && `(${Object.keys(editedMappings).length})`}
@@ -350,7 +350,7 @@ const ItemMappingsPage = () => {
                 <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
                     <button
                         onClick={scrollToTop}
-                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        className="bg-[var(--theme-text-secondary)] hover:bg-[var(--theme-text)] text-[var(--theme-surface)] rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
                         aria-label="Scroll to top"
                         title="Back to top"
                     >
@@ -360,7 +360,7 @@ const ItemMappingsPage = () => {
                     </button>
                     <button
                         onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
-                        className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
+                        className="bg-[var(--theme-text-secondary)] hover:bg-[var(--theme-text)] text-[var(--theme-surface)] rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110"
                         aria-label="Scroll to bottom"
                         title="Go to bottom"
                     >
