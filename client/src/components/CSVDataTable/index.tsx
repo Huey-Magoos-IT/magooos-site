@@ -55,29 +55,29 @@ const CSVDataTable = ({
     if (value === null || value === undefined) {
       return '';
     }
-    
+
     const stringValue = String(value);
-    
+
     // Check if the value is an Excel-style hyperlink formula
     // Format: =HYPERLINK("URL","text")
     const hyperlinkMatch = stringValue.match(/=HYPERLINK\("([^"]+)","([^"]+)"\)/);
-    
+
     if (hyperlinkMatch) {
       const url = hyperlinkMatch[1];
       const text = hyperlinkMatch[2];
-      
+
       return (
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+          className="text-[var(--theme-primary)] hover:opacity-80 hover:underline"
         >
           {text}
         </a>
       );
     }
-    
+
     return stringValue;
   };
 
@@ -193,8 +193,8 @@ const CSVDataTable = ({
   if (isLoading) {
     return (
       <Box className="flex items-center justify-center p-8">
-        <CircularProgress size={40} />
-        <Typography className="ml-4 text-gray-600 dark:text-gray-300">
+        <CircularProgress size={40} sx={{ color: 'var(--theme-primary)' }} />
+        <Typography className="ml-4 text-[var(--theme-text-secondary)]">
           Loading CSV data...
         </Typography>
       </Box>
@@ -203,7 +203,7 @@ const CSVDataTable = ({
 
   if (error) {
     return (
-      <Box className="p-4 text-center text-red-600 dark:text-red-400">
+      <Box className="p-4 text-center text-[var(--theme-error)]">
         <Typography variant="h6">Error loading data</Typography>
         <Typography className="mt-2">{error}</Typography>
       </Box>
@@ -212,7 +212,7 @@ const CSVDataTable = ({
 
   if (!data.length) {
     return (
-      <Box className="p-4 text-center text-gray-600 dark:text-gray-300">
+      <Box className="p-4 text-center text-[var(--theme-text-secondary)]">
         <Typography>No data available. Please select a different date range or report type.</Typography>
       </Box>
     );
@@ -236,13 +236,13 @@ const CSVDataTable = ({
   };
 
   return (
-    <Paper className="overflow-hidden rounded-lg border border-gray-100 shadow-md dark:bg-dark-secondary dark:border-stroke-dark">
-      <Box className="flex items-center justify-between bg-blue-50 p-3 border-b border-blue-100 dark:bg-dark-tertiary dark:border-blue-900/30">
+    <Paper className="overflow-hidden rounded-lg border border-[var(--theme-border)] shadow-md bg-[var(--theme-surface)]">
+      <Box className="flex items-center justify-between bg-[var(--theme-primary)]/10 p-3 border-b border-[var(--theme-primary)]/20">
         <div>
-          <Typography variant="h6" className="font-semibold text-gray-800 dark:text-white">
+          <Typography variant="h6" className="font-semibold text-[var(--theme-text)]">
             Data Preview
           </Typography>
-          <Typography variant="body2" className="text-blue-700 dark:text-blue-300 font-medium">
+          <Typography variant="body2" className="text-[var(--theme-primary)] font-medium">
             {getFilterInfoText()}
           </Typography>
         </div>
@@ -250,13 +250,20 @@ const CSVDataTable = ({
           <Button
             variant="outlined"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="border-blue-400 text-blue-600 hover:bg-blue-50 hover:border-blue-500 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/10"
             size="small"
             startIcon={isExpanded ? (
-              <Minimize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Minimize2 className="h-4 w-4" />
             ) : (
-              <Maximize2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Maximize2 className="h-4 w-4" />
             )}
+            sx={{
+              color: 'var(--theme-primary)',
+              borderColor: 'var(--theme-primary)',
+              '&:hover': {
+                backgroundColor: 'var(--theme-primary-light)',
+                borderColor: 'var(--theme-primary)'
+              }
+            }}
           >
             {isExpanded ? "Collapse Table" : "Show All Rows"}
           </Button>
@@ -264,7 +271,14 @@ const CSVDataTable = ({
             variant="contained"
             startIcon={<Download className="h-4 w-4" />}
             onClick={handleDownload}
-            className="bg-blue-500 hover:bg-blue-600 text-white py-2 shadow-md hover:shadow-lg transition-all duration-200"
+            sx={{
+              background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
+              color: 'var(--theme-text-on-primary)',
+              py: 1,
+              '&:hover': {
+                boxShadow: 4
+              }
+            }}
           >
             Download CSV
           </Button>
@@ -283,17 +297,16 @@ const CSVDataTable = ({
               {columns.map((column) => (
                 <TableCell
                   key={column}
-                  className="cursor-pointer font-semibold bg-gray-100 dark:bg-dark-tertiary dark:text-white border-b-2 border-blue-200 dark:border-blue-900/30"
+                  className="cursor-pointer font-semibold bg-[var(--theme-surface-hover)] text-[var(--theme-text)] border-b-2 border-[var(--theme-primary)]/30"
                   onClick={() => handleSort(column)}
                 >
                   <TableSortLabel
                     active={orderBy === column}
                     direction={orderBy === column ? orderDirection : 'asc'}
                     onClick={() => handleSort(column)}
-                    IconComponent={() => <ArrowUpDown className="ml-1 h-4 w-4 text-blue-500 dark:text-blue-400" />}
-                    className="dark:text-white"
+                    IconComponent={() => <ArrowUpDown className="ml-1 h-4 w-4 text-[var(--theme-primary)]" />}
                   >
-                    <span className="dark:text-white">{column}</span>
+                    <span className="text-[var(--theme-text)]">{column}</span>
                   </TableSortLabel>
                 </TableCell>
               ))}
@@ -306,12 +319,16 @@ const CSVDataTable = ({
                 hover
                 className={`
                   transition-colors duration-200
-                  ${rowIndex % 2 === 0 ? 'bg-white dark:bg-dark-secondary' : 'bg-gray-50 dark:bg-dark-tertiary/50'}
-                  hover:bg-blue-50 dark:hover:bg-blue-900/10
+                  ${rowIndex % 2 === 0 ? 'bg-[var(--theme-surface)]' : 'bg-[var(--theme-surface-hover)]'}
                 `}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'var(--theme-primary-light) !important'
+                  }
+                }}
               >
                 {columns.map((column) => (
-                  <TableCell key={`${rowIndex}-${column}`} className="dark:text-white">
+                  <TableCell key={`${rowIndex}-${column}`} className="text-[var(--theme-text)]">
                     {renderCellContent(row[column])}
                   </TableCell>
                 ))}
@@ -321,7 +338,7 @@ const CSVDataTable = ({
         </Table>
       </TableContainer>
 
-      <div className="border-t border-gray-200 dark:border-stroke-dark">
+      <div className="border-t border-[var(--theme-border)]">
         <div className="flex items-center justify-between px-2">
           <TablePagination
             rowsPerPageOptions={[10, 25, 50, 100]}
@@ -331,17 +348,28 @@ const CSVDataTable = ({
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            className="dark:bg-dark-secondary dark:text-white"
-            labelRowsPerPage={<span className="dark:text-white">Rows per page:</span>}
-            backIconButtonProps={{
-              className: "dark:text-white"
+            sx={{
+              color: 'var(--theme-text)',
+              '& .MuiTablePagination-selectLabel': {
+                color: 'var(--theme-text)'
+              },
+              '& .MuiTablePagination-displayedRows': {
+                color: 'var(--theme-text)'
+              },
+              '& .MuiTablePagination-select': {
+                color: 'var(--theme-text)'
+              },
+              '& .MuiTablePagination-selectIcon': {
+                color: 'var(--theme-text)'
+              },
+              '& .MuiIconButton-root': {
+                color: 'var(--theme-text)'
+              }
             }}
-            nextIconButtonProps={{
-              className: "dark:text-white"
-            }}
+            labelRowsPerPage={<span className="text-[var(--theme-text)]">Rows per page:</span>}
           />
           {isExpanded && (
-            <Typography variant="caption" className="pr-4 text-blue-600 dark:text-blue-400 flex items-center font-medium">
+            <Typography variant="caption" className="pr-4 text-[var(--theme-primary)] flex items-center font-medium">
               <Maximize2 className="h-3 w-3 mr-1" /> Showing all rows
             </Typography>
           )}

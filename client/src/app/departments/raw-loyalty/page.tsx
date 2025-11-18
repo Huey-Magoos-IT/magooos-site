@@ -91,11 +91,11 @@ const RawLoyaltyPage = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="m-5 p-4">Loading...</div>;
+    return <div className="m-5 p-4 text-[var(--theme-text)]">Loading...</div>;
   }
 
   if (error) {
-    return <div className="m-5 p-4">Error: {error.toString()}</div>;
+    return <div className="m-5 p-4 text-[var(--theme-error)]">Error: {error.toString()}</div>;
   }
 
   const hasAccess = userTeam && (userTeam.isAdmin || hasRole(userTeam.teamRoles, 'RAW_LOYALTY_REPORTING'));
@@ -103,9 +103,9 @@ const RawLoyaltyPage = () => {
   if (!hasAccess) {
     return (
       <div className="m-5 p-4">
-        <div className="bg-red-50 p-4 rounded-md mb-4 border-l-4 border-red-500 text-red-700 shadow-md dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+        <div className="bg-[var(--theme-error)]/10 p-4 rounded-md mb-4 border-l-4 border-[var(--theme-error)] text-[var(--theme-error)] shadow-md">
           <p className="font-medium">Access Denied: This page is only accessible to teams with RAW_LOYALTY_REPORTING role access.</p>
-          <Link href="/teams" className="text-blue-500 hover:text-blue-600 hover:underline mt-2 inline-block dark:text-blue-300 dark:hover:text-blue-200 font-medium">
+          <Link href="/teams" className="text-[var(--theme-primary)] hover:opacity-80 hover:underline mt-2 inline-block font-medium">
             Go to Teams Page
           </Link>
         </div>
@@ -116,45 +116,54 @@ const RawLoyaltyPage = () => {
   return (
     <div className="m-5 p-4">
       <Header name="Raw Loyalty Data" />
-      <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Raw Loyalty Data Viewer</h2>
-        <div className="bg-green-50 p-4 rounded-md mb-4 border-l-4 border-green-500 dark:bg-green-900/20 dark:border-green-700 dark:text-green-100">
-          <h3 className="font-semibold mb-2 text-green-800 dark:text-green-200">RAW_LOYALTY_REPORTING Access Granted</h3>
-          <p className="dark:text-green-300">Team: {userTeam.teamName}</p>
+      <div className="mt-4 p-4 bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)]">
+        <h2 className="text-xl font-bold mb-4 text-[var(--theme-text)] border-b pb-2 border-[var(--theme-border)]">Raw Loyalty Data Viewer</h2>
+        <div className="bg-[var(--theme-success)]/10 p-4 rounded-md mb-4 border-l-4 border-[var(--theme-success)]">
+          <h3 className="font-semibold mb-2 text-[var(--theme-success)]">RAW_LOYALTY_REPORTING Access Granted</h3>
+          <p className="text-[var(--theme-text-secondary)]">Team: {userTeam.teamName}</p>
         </div>
 
         {/* File Selection Form */}
-        <div className="mt-4 mb-8 p-4 border rounded-md shadow-sm dark:border-stroke-dark">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white border-b pb-2 border-gray-200 dark:border-stroke-dark">Select Raw Data File</h3>
+        <div className="mt-4 mb-8 p-4 border border-[var(--theme-border)] rounded-md shadow-sm">
+          <h3 className="text-lg font-semibold mb-4 text-[var(--theme-text)] border-b pb-2 border-[var(--theme-border)]">Select Raw Data File</h3>
           <div className="flex items-center gap-4">
-            <FormControl fullWidth variant="outlined" className="bg-white dark:bg-dark-tertiary rounded-md shadow-sm">
-              <InputLabel className="text-gray-700 dark:text-gray-300">Data File</InputLabel>
+            <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm">
+              <InputLabel className="text-[var(--theme-text-secondary)]">Data File</InputLabel>
               <Select
                 value={selectedFile}
                 onChange={handleFileChange}
                 label="Data File"
-                className="dark:text-white"
+                className="text-[var(--theme-text)]"
                 disabled={allS3Files.length === 0}
               >
                 {allS3Files.map((file) => (
-                  <MenuItem key={file} value={file} className="dark:text-gray-200">
+                  <MenuItem key={file} value={file}>
                     {file}
                   </MenuItem>
                 ))}
               </Select>
-              <FormHelperText className="dark:text-gray-300">Select the raw data file to display.</FormHelperText>
+              <FormHelperText className="text-[var(--theme-text-muted)]">Select the raw data file to display.</FormHelperText>
             </FormControl>
             <Button
               variant="contained"
               onClick={processJsonFile}
               disabled={jsonLoading || !selectedFile}
-              className="bg-blue-500 hover:bg-blue-600 text-white py-3 shadow-md h-14"
+              sx={{
+                background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
+                color: 'var(--theme-text-on-primary)',
+                py: 1.5,
+                height: 56,
+                '&:disabled': {
+                  background: 'var(--theme-surface-active)',
+                  color: 'var(--theme-text-muted)'
+                }
+              }}
             >
-              {jsonLoading ? <CircularProgress size={24} color="inherit" /> : "View JSON"}
+              {jsonLoading ? <CircularProgress size={24} sx={{ color: 'var(--theme-text-on-primary)' }} /> : "View JSON"}
             </Button>
           </div>
           {jsonError && (
-            <div className="mt-2 p-3 bg-red-50 text-red-700 rounded-md border-l-4 border-red-500 dark:bg-red-900/20 dark:border-red-700 dark:text-red-200">
+            <div className="mt-2 p-3 bg-[var(--theme-error)]/10 text-[var(--theme-error)] rounded-md border-l-4 border-[var(--theme-error)]">
               <p>{jsonError}</p>
             </div>
           )}
@@ -162,7 +171,7 @@ const RawLoyaltyPage = () => {
 
         {/* JSON Data Viewer */}
         <div className="mt-8 mb-8">
-            {jsonLoading && <CircularProgress />}
+            {jsonLoading && <CircularProgress sx={{ color: 'var(--theme-primary)' }} />}
             {jsonData && (
                 <Box sx={{
                   "& .w-rjv-code": {
