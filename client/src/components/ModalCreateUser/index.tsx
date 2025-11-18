@@ -24,6 +24,7 @@ import { useAppSelector } from "@/app/redux";
 import { Team } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi"; // Import the query hook from the API slice
 import LocationTable, { Location } from "@/components/LocationTable"; // Import LocationTable and Location type
+import { useLocationSelection } from "@/hooks/useLocationSelection";
 
 interface ModalCreateUserProps {
   open: boolean;
@@ -51,11 +52,23 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<number | "">("");
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previousLocationIds, setPreviousLocationIds] = useState<string[]>([]); // State for undo
-  const [lastAction, setLastAction] = useState<string>(""); // State for undo action type
+
+  // Fetch all locations for the hook
+  const { data: allLocationsData } = useGetLocationsQuery();
+
+  // Use the location selection hook
+  const {
+    selectedLocationIds,
+    lastAction,
+    handleAddLocation,
+    handleRemoveLocation,
+    handleAddAllLocations,
+    handleClearAll,
+    handleUndo,
+    reset: resetLocations,
+  } = useLocationSelection();
 
   const modalStyle = {
     position: "absolute" as "absolute",
@@ -101,68 +114,20 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
 
   const handleClose = () => {
     if (!isLoading) {
-      setUsername(""); // Reset username state
+      setUsername("");
       setEmail("");
       setTempPassword("");
       setSelectedTeamId("");
-      setSelectedLocationIds([]);
-      setPreviousLocationIds([]); // Reset undo state
-      setLastAction(""); // Reset undo state
+      resetLocations();
       setError(null);
       onClose();
     }
   };
 
-  const handleLocationSelect = (locationToAdd: Location) => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("add");
-
-    setSelectedLocationIds((prevIds) => {
-      if (!prevIds.includes(locationToAdd.id)) {
-        return [...prevIds, locationToAdd.id];
-      }
-      return prevIds;
-    });
-  };
-
-  const handleLocationDeselect = (locationIdToRemove: string) => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("remove");
-
-    setSelectedLocationIds((prevIds) => prevIds.filter(id => id !== locationIdToRemove));
-  };
-
-  // Handle adding all available locations (requires fetching all locations first)
-  // This will need to be implemented carefully, possibly by getting all locations from the table component or a separate query.
-  // For now, let's assume we have access to all locations (e.g., passed as a prop or fetched here).
-  // Since LocationTable fetches its own, we might need to adjust its props or fetch here.
-  // Let's fetch locations here for simplicity in this modal.
-  const { data: allLocationsData } = useGetLocationsQuery(); // Use the query hook directly
-
-  const handleAddAllLocations = () => {
+  // Wrapper to add all locations
+  const onAddAllLocations = () => {
     if (allLocationsData?.locations) {
-      // Save current state for undo
-      setPreviousLocationIds([...selectedLocationIds]);
-      setLastAction("addAll");
-      setSelectedLocationIds(allLocationsData.locations.map((loc: Location) => loc.id)); // Explicitly type loc
-    }
-  };
-
-  const handleClearAll = () => {
-    // Save current state for undo
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("clearAll");
-    setSelectedLocationIds([]);
-  };
-
-  const handleUndo = () => {
-    if (lastAction) {
-      // Restore previous state
-      setSelectedLocationIds(previousLocationIds);
-      // Reset last action (optional, depending on desired undo depth)
-      setLastAction("");
+      handleAddAllLocations(allLocationsData.locations);
     }
   };
 
@@ -294,7 +259,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={handleAddAllLocations}
+                        onClick={onAddAllLocations}
                         className="text-[var(--theme-success)] border-[var(--theme-success)]/30 hover:bg-[var(--theme-success)]/10 py-1 min-w-0 px-2"
                         disabled={!allLocationsData?.locations || allLocationsData.locations.length === 0}
                       >
@@ -316,8 +281,8 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                             <Chip
                               key={id}
                               label={location ? `${location.name} (${location.id})` : id}
-                              onClick={() => handleLocationDeselect(id)}
-                              onDelete={() => handleLocationDeselect(id)}
+                              onClick={() => handleRemoveLocation(id)}
+                              onDelete={() => handleRemoveLocation(id)}
                               className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 cursor-pointer"
                               deleteIcon={<X className="h-4 w-4 text-[var(--theme-primary)]" />}
                             />
@@ -338,7 +303,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
               <Grid item xs={12} md={6}>
                 <LocationTable
                   selectedLocationIds={selectedLocationIds}
-                  onLocationSelect={handleLocationSelect}
+                  onLocationSelect={handleAddLocation}
                   // userLocationIds={[]} // Not applicable for create user mode
                 />
               </Grid>

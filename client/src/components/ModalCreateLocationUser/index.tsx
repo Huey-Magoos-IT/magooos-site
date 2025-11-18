@@ -20,6 +20,7 @@ import { useAppSelector } from "@/app/redux";
 import { Team, useGetTeamsQuery } from "@/state/api"; // Keep Team type, import useGetTeamsQuery from main api
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import LocationTable, { Location } from "@/components/LocationTable";
+import { useLocationSelection } from "@/hooks/useLocationSelection";
 
 interface ModalCreateLocationUserProps {
   open: boolean;
@@ -50,13 +51,22 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [locationUserTeamId, setLocationUserTeamId] = useState<number | "">("");
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [previousLocationIds, setPreviousLocationIds] = useState<string[]>([]);
-  const [lastAction, setLastAction] = useState<string>("");
 
   const { data: allLocationsData } = useGetLocationsQuery(); // For "Add All" and displaying names
+
+  // Use the location selection hook
+  const {
+    selectedLocationIds,
+    lastAction,
+    handleAddLocation,
+    handleRemoveLocation,
+    handleAddAllLocations,
+    handleClearAll,
+    handleUndo,
+    reset: resetLocations,
+  } = useLocationSelection();
 
   useEffect(() => {
     if (open) {
@@ -71,15 +81,13 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
       setUsername("");
       setEmail("");
       setTempPassword("");
-      setSelectedLocationIds([]);
-      setPreviousLocationIds([]);
-      setLastAction("");
+      resetLocations();
       // Error related to team finding is set above, other errors cleared
       if (error && !error.startsWith("Critical:")) {
           setError(null);
       }
     }
-  }, [open, allTeams, error]); // Add error to dependency array to avoid stale closure
+  }, [open, allTeams, error, resetLocations]); // Add error to dependency array to avoid stale closure
 
   const modalStyle = {
     position: "absolute" as "absolute",
@@ -138,39 +146,13 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
     }
   };
 
-  const handleLocationSelect = (locationToAdd: Location) => {
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("add");
-    setSelectedLocationIds((prevIds) => {
-      if (!prevIds.includes(locationToAdd.id)) {
-        return [...prevIds, locationToAdd.id];
-      }
-      return prevIds;
-    });
-  };
-
-  const handleLocationDeselect = (locationIdToRemove: string) => {
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("remove");
-    setSelectedLocationIds((prevIds) => prevIds.filter(id => id !== locationIdToRemove));
-  };
-
-  const handleAddAllGroupLocations = () => {
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("addAllGroup");
-    setSelectedLocationIds([...groupLocationIds]); // Add all locations from the LA's group
-  };
-
-  const handleClearAll = () => {
-    setPreviousLocationIds([...selectedLocationIds]);
-    setLastAction("clearAll");
-    setSelectedLocationIds([]);
-  };
-
-  const handleUndo = () => {
-    if (lastAction) {
-      setSelectedLocationIds(previousLocationIds);
-      setLastAction("");
+  // Wrapper to add all group locations
+  const onAddAllGroupLocations = () => {
+    if (allLocationsData?.locations) {
+      const groupLocations = allLocationsData.locations.filter((loc: Location) =>
+        groupLocationIds.includes(loc.id)
+      );
+      handleAddAllLocations(groupLocations);
     }
   };
 
@@ -249,7 +231,7 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
                       <Button size="small" variant="outlined" onClick={handleClearAll} className="text-[var(--theme-error)] border-[var(--theme-error)]/30 hover:bg-[var(--theme-error)]/10 py-1 min-w-0 px-2" disabled={selectedLocationIds.length === 0}>
                         <span className="mr-1">Clear All</span> <Trash2 size={16} />
                       </Button>
-                      <Button size="small" variant="outlined" onClick={handleAddAllGroupLocations} className="text-[var(--theme-success)] border-[var(--theme-success)]/30 hover:bg-[var(--theme-success)]/10 py-1 min-w-0 px-2" disabled={groupLocationIds.length === 0}>
+                      <Button size="small" variant="outlined" onClick={onAddAllGroupLocations} className="text-[var(--theme-success)] border-[var(--theme-success)]/30 hover:bg-[var(--theme-success)]/10 py-1 min-w-0 px-2" disabled={groupLocationIds.length === 0}>
                         <span className="mr-1">Add All Group Locations</span> <CheckCircle size={16} />
                       </Button>
                     </div>
@@ -267,8 +249,8 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
                             <Chip
                               key={id}
                               label={location ? `${location.name} (${location.id})` : id}
-                              onClick={() => handleLocationDeselect(id)}
-                              onDelete={() => handleLocationDeselect(id)}
+                              onClick={() => handleRemoveLocation(id)}
+                              onDelete={() => handleRemoveLocation(id)}
                               className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 cursor-pointer"
                               deleteIcon={<X className="h-4 w-4 text-[var(--theme-primary)]" />}
                             />
@@ -285,7 +267,7 @@ const ModalCreateLocationUser: React.FC<ModalCreateLocationUserProps> = ({
               <Grid item xs={12} md={6}>
                 <LocationTable
                   selectedLocationIds={selectedLocationIds}
-                  onLocationSelect={handleLocationSelect}
+                  onLocationSelect={handleAddLocation}
                   userLocationIds={groupLocationIds} // Restrict to LA's group locations
                 />
               </Grid>
