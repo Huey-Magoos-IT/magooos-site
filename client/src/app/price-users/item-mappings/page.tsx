@@ -170,33 +170,33 @@ const ItemMappingsPage = () => {
             <Header name="Item Name Mappings" />
             
             <div className="mt-6 space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow p-6">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            <h2 className="text-lg font-semibold text-[var(--theme-text)]">
                                 Manage Friendly Names for Price Portal Items
                             </h2>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            <p className="text-sm text-[var(--theme-text-secondary)] mt-1">
                                 Here you can define user-friendly names for items that appear in the price portal.
                             </p>
                         </div>
                         <button
                             onClick={() => router.back()}
-                            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            className="px-3 py-1 text-sm bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] rounded hover:opacity-90 transition-colors"
                         >
                             Back
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow p-6">
                     <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Category</label>
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
                             >
                                 {categoryList.map(category => (
                                     <option key={category.value} value={category.value}>{category.label}</option>
@@ -204,21 +204,21 @@ const ItemMappingsPage = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Sort</label>
                             <select
                                 value={sortOrder}
                                 onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="px-3 py-2 border border-[var(--theme-border)] rounded-md bg-[var(--theme-surface)] text-[var(--theme-text)]"
                             >
                                 <option value="asc">A-Z</option>
                                 <option value="desc">Z-A</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categories</label>
+                            <label className="block text-sm font-medium text-[var(--theme-text-secondary)] mb-1">Categories</label>
                             <button
                                 onClick={toggleAllCategories}
-                                className="px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200 flex items-center space-x-2"
+                                className="px-4 py-2 bg-[var(--theme-surface-hover)] text-[var(--theme-text)] rounded-md hover:bg-[var(--theme-surface-active)] transition-colors duration-200 flex items-center space-x-2"
                                 aria-label={allExpanded ? "Collapse all categories" : "Expand all categories"}
                             >
                                 <span className="text-sm font-medium">
@@ -237,11 +237,11 @@ const ItemMappingsPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="bg-[var(--theme-surface)] rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[var(--theme-border)]">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Item Name Management</h3>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                            <h3 className="text-lg font-semibold text-[var(--theme-text)]">Item Name Management</h3>
+                            <span className="text-sm text-[var(--theme-text-muted)]">
                                 {sortedItems.length} items
                             </span>
                         </div>
@@ -336,8 +336,8 @@ const ItemMappingsPage = () => {
                         disabled={Object.keys(editedMappings).length === 0}
                         className={`px-8 py-3 rounded-lg font-medium transition-colors ${
                             Object.keys(editedMappings).length > 0
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                                ? 'bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] hover:opacity-90'
+                                : 'bg-[var(--theme-surface-active)] text-[var(--theme-text-muted)] cursor-not-allowed'
                         }`}
                     >
                         Save Changes {Object.keys(editedMappings).length > 0 && `(${Object.keys(editedMappings).length})`}

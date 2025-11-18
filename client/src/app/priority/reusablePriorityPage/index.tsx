@@ -34,7 +34,7 @@ const columns: GridColDef[] = [
     headerName: "Status",
     width: 130,
     renderCell: (params) => (
-      <span className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
+      <span className="inline-flex rounded-full bg-[var(--theme-success)]/20 px-2 text-xs font-semibold leading-5 text-[var(--theme-success)]">
         {params.value}
       </span>
     ),
@@ -105,7 +105,7 @@ const ReusablePriorityPage = ({ priority }: Props) => {
         name="Priority Page"
         buttonComponent={
           <button
-            className="mr-3 rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+            className="mr-3 rounded bg-[var(--theme-primary)] px-4 py-2 font-bold text-[var(--theme-text-on-primary)] hover:opacity-90"
             onClick={() => setIsModalNewTaskOpen(true)}
           >
             Add Task
@@ -115,16 +115,16 @@ const ReusablePriorityPage = ({ priority }: Props) => {
       <div className="mb-4 flex justify-start">
         <button
           className={`px-4 py-2 ${
-            view === "list" ? "bg-gray-300" : "bg-white"
-          } rounded-l`}
+            view === "list" ? "bg-[var(--theme-surface-active)]" : "bg-[var(--theme-surface)]"
+          } rounded-l text-[var(--theme-text)]`}
           onClick={() => setView("list")}
         >
           List
         </button>
         <button
           className={`px-4 py-2 ${
-            view === "table" ? "bg-gray-300" : "bg-white"
-          } rounded-l`}
+            view === "table" ? "bg-[var(--theme-surface-active)]" : "bg-[var(--theme-surface)]"
+          } rounded-r text-[var(--theme-text)]`}
           onClick={() => setView("table")}
         >
           Table

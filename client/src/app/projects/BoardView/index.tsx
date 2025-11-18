@@ -82,7 +82,7 @@ const TaskColumn = ({
         drop(instance);
       }}
       className={`sl:py-4 rounded-lg py-2 xl:px-2 transition-colors duration-200 ${
-        isOver ? "bg-blue-50 dark:bg-blue-900/10" : ""
+        isOver ? "bg-[var(--theme-primary)]/10" : ""
       }`}
     >
       <div className="mb-3 flex w-full shadow-sm">
@@ -90,22 +90,22 @@ const TaskColumn = ({
           className={`w-2 !bg-[${statusColor[status]}] rounded-s-lg`}
           style={{ backgroundColor: statusColor[status] }}
         />
-        <div className="flex w-full items-center justify-between rounded-e-lg bg-white px-5 py-4 border border-gray-100 dark:bg-dark-secondary dark:border-stroke-dark">
-          <h3 className="flex items-center text-lg font-semibold text-gray-800 dark:text-white">
+        <div className="flex w-full items-center justify-between rounded-e-lg bg-[var(--theme-surface)] px-5 py-4 border border-[var(--theme-border)]">
+          <h3 className="flex items-center text-lg font-semibold text-[var(--theme-text)]">
             {status}{" "}
             <span
-              className="ml-2 inline-block rounded-full bg-blue-50 text-blue-700 p-1 text-center text-sm leading-none font-bold border border-blue-100 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-900/30"
+              className="ml-2 inline-block rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] p-1 text-center text-sm leading-none font-bold border border-[var(--theme-primary)]/30"
               style={{ width: "1.5rem", height: "1.5rem" }}
             >
               {tasksCount}
             </span>
           </h3>
           <div className="flex items-center gap-2">
-            <button className="flex h-6 w-5 items-center justify-center text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors">
+            <button className="flex h-6 w-5 items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] transition-colors">
               <EllipsisVertical size={26} />
             </button>
             <button
-              className="flex h-6 w-6 items-center justify-center rounded bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/30 transition-colors"
               onClick={() => setIsModalNewTaskOpen(true)}
             >
               <Plus size={16} />
@@ -151,14 +151,14 @@ const Task = ({ task }: TaskProps) => {
     <div
       className={`rounded-full px-2 py-1 text-xs font-semibold shadow-sm ${
         priority === "Urgent"
-          ? "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-900/30"
+          ? "bg-[var(--theme-error)]/20 text-[var(--theme-error)] border border-[var(--theme-error)]/30"
           : priority === "High"
-            ? "bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-200 dark:border-orange-900/30"
+            ? "bg-[var(--theme-warning)]/20 text-[var(--theme-warning)] border border-[var(--theme-warning)]/30"
             : priority === "Medium"
-              ? "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-200 dark:border-yellow-900/30"
+              ? "bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30"
               : priority === "Low"
-                ? "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-200 dark:border-green-900/30"
-                : "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+                ? "bg-[var(--theme-success)]/20 text-[var(--theme-success)] border border-[var(--theme-success)]/30"
+                : "bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)] border border-[var(--theme-border)]"
       }`}
     >
       {priority}
@@ -170,7 +170,7 @@ const Task = ({ task }: TaskProps) => {
       ref={(instance) => {
         drag(instance);
       }}
-      className={`mb-4 rounded-lg bg-white shadow-md border border-gray-100 hover:shadow-lg transition-all dark:bg-dark-secondary dark:border-stroke-dark ${
+      className={`mb-4 rounded-lg bg-[var(--theme-surface)] shadow-md border border-[var(--theme-border)] hover:shadow-lg transition-all ${
         isDragging ? "opacity-50" : "opacity-100"
       }`}
     >
@@ -191,36 +191,36 @@ const Task = ({ task }: TaskProps) => {
               {taskTagsSplit.map((tag) => (
                 <div
                   key={tag}
-                  className="rounded-full bg-blue-50 text-blue-700 px-2 py-1 text-xs border border-blue-100 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-900/30"
+                  className="rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] px-2 py-1 text-xs border border-[var(--theme-primary)]/30"
                 >
                   {tag.trim()}
                 </div>
               ))}
             </div>
           </div>
-          <button className="flex h-6 w-4 flex-shrink-0 items-center justify-center text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors">
+          <button className="flex h-6 w-4 flex-shrink-0 items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] transition-colors">
             <EllipsisVertical size={26} />
           </button>
         </div>
 
         <div className="my-3 flex justify-between">
-          <h4 className="text-md font-bold text-gray-800 dark:text-white">{task.title}</h4>
+          <h4 className="text-md font-bold text-[var(--theme-text)]">{task.title}</h4>
           {typeof task.points === "number" && (
-            <div className="text-xs font-semibold bg-blue-50 text-blue-700 px-2 py-1 rounded-full dark:bg-blue-900/20 dark:text-blue-200">
+            <div className="text-xs font-semibold bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] px-2 py-1 rounded-full">
               {task.points} pts
             </div>
           )}
         </div>
 
-        <div className="text-xs text-gray-500 dark:text-neutral-400 mb-2 font-medium">
+        <div className="text-xs text-[var(--theme-text-muted)] mb-2 font-medium">
           {formattedStartDate && <span>{formattedStartDate}</span>}
           {formattedStartDate && formattedDueDate && <span> - </span>}
           {formattedDueDate && <span>{formattedDueDate}</span>}
         </div>
-        <p className="text-sm text-gray-600 dark:text-neutral-400 line-clamp-2">
+        <p className="text-sm text-[var(--theme-text-secondary)] line-clamp-2">
           {task.description}
         </p>
-        <div className="mt-4 border-t border-gray-200 dark:border-stroke-dark" />
+        <div className="mt-4 border-t border-[var(--theme-border)]" />
 
         {/* Users */}
         <div className="mt-3 flex items-center justify-between">
@@ -232,7 +232,7 @@ const Task = ({ task }: TaskProps) => {
                 alt={task.assignee.username}
                 width={30}
                 height={30}
-                className="h-8 w-8 rounded-full border-2 border-white object-cover shadow-sm dark:border-dark-secondary"
+                className="h-8 w-8 rounded-full border-2 border-[var(--theme-surface)] object-cover shadow-sm"
               />
             )}
             {task.author && (
@@ -242,11 +242,11 @@ const Task = ({ task }: TaskProps) => {
                 alt={task.author.username}
                 width={30}
                 height={30}
-                className="h-8 w-8 rounded-full border-2 border-white object-cover shadow-sm dark:border-dark-secondary"
+                className="h-8 w-8 rounded-full border-2 border-[var(--theme-surface)] object-cover shadow-sm"
               />
             )}
           </div>
-          <div className="flex items-center text-blue-500 dark:text-blue-400">
+          <div className="flex items-center text-[var(--theme-primary)]">
             <MessageSquareMore size={20} />
             <span className="ml-1 text-sm font-medium">
               {numberOfComments}

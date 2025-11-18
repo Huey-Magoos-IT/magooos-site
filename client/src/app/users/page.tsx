@@ -595,11 +595,11 @@ const Users = () => {
             <input
               type="text"
               placeholder="Search users by name..."
-              className="w-full p-2 pl-10 border rounded-md dark:bg-dark-tertiary dark:border-gray-700 dark:text-white"
+              className="w-full p-2 pl-10 border rounded-md bg-[var(--theme-surface)] border-[var(--theme-border)] text-[var(--theme-text)]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <div className="absolute left-3 top-2.5 text-gray-400">
+            <div className="absolute left-3 top-2.5 text-[var(--theme-text-muted)]">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -630,9 +630,9 @@ const Users = () => {
         
         {/* Team Assignment Instructions (for admins only) */}
         {isUserAdmin && (
-          <div className="p-4 bg-blue-50 rounded border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-100">
-            <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Team Assignment</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
+          <div className="p-4 bg-[var(--theme-primary)]/10 rounded border border-[var(--theme-primary)]/30">
+            <h3 className="font-medium text-[var(--theme-primary)] mb-1">Team Assignment</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               As an administrator, you can assign users to teams using the dropdown selector in the Team column.
             </p>
           </div>
@@ -640,16 +640,16 @@ const Users = () => {
       </div>
       
       {/* Active Users Section */}
-      <h2 className="text-xl font-semibold mb-3 dark:text-white">Active Users</h2>
+      <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Active Users</h2>
       {activeUsers.length === 0 ? (
-        <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="text-gray-500 dark:text-gray-400 mb-2">No active users found matching your search criteria.</div>
+        <div className="p-8 text-center bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+          <div className="text-[var(--theme-text-muted)] mb-2">No active users found matching your search criteria.</div>
           <button
             onClick={() => {
               setSearchQuery("");
               setTeamFilter("");
             }}
-            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="text-[var(--theme-primary)] hover:opacity-80 font-medium"
           >
             Clear filters
           </button>
@@ -711,7 +711,7 @@ const Users = () => {
       {/* Disabled Users Section */}
       {disabledUsers.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-3 dark:text-white">Disabled Users</h2>
+          <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Disabled Users</h2>
           {/* Placeholder for how disabled users might be displayed. For now, identical to active. */}
           {/* Consider a different card or reduced info for disabled users later. */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -745,10 +745,10 @@ const Users = () => {
       {/* Unconfirmed Cognito Users Section */}
       {isUserAdmin && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-3 dark:text-white">Unconfirmed Cognito Users</h2>
-          <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-100">
-            <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Unconfirmed Users</h3>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+          <h2 className="text-xl font-semibold mb-3 text-[var(--theme-text)]">Unconfirmed Cognito Users</h2>
+          <div className="mb-4 p-4 bg-[var(--theme-warning)]/10 rounded border border-[var(--theme-warning)]/30">
+            <h3 className="font-medium text-[var(--theme-warning)] mb-1">Unconfirmed Users</h3>
+            <p className="text-sm text-[var(--theme-text-secondary)]">
               These users have been created in Cognito but haven&apos;t verified their email addresses yet. You can resend verification links or delete them if needed.
             </p>
           </div>
@@ -763,26 +763,26 @@ const Users = () => {
               {cognitoUsersData.users.map((cognitoUser) => (
                 <div
                   key={cognitoUser.Username}
-                  className="p-4 bg-white dark:bg-dark-secondary rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="p-4 bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <UserIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                        <div className="h-10 w-10 rounded-full bg-[var(--theme-surface-hover)] flex items-center justify-center">
+                          <UserIcon size={20} className="text-[var(--theme-text-muted)]" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">
+                          <h3 className="font-medium text-[var(--theme-text)]">
                             {cognitoUser.Username}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-[var(--theme-text-muted)]">
                             {cognitoUser.Email || 'No email available'}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[var(--theme-warning)]/20 text-[var(--theme-warning)]">
                               {cognitoUser.UserStatus}
                             </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-[var(--theme-text-muted)]">
                               Created: {cognitoUser.CreatedDate ? new Date(cognitoUser.CreatedDate).toLocaleDateString() : 'Unknown'}
                             </span>
                           </div>
@@ -823,9 +823,9 @@ const Users = () => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="text-gray-500 dark:text-gray-400 mb-2">No unconfirmed users found.</div>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
+            <div className="p-8 text-center bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+              <div className="text-[var(--theme-text-muted)] mb-2">No unconfirmed users found.</div>
+              <p className="text-sm text-[var(--theme-text-muted)]">
                 All created users have verified their email addresses.
               </p>
             </div>

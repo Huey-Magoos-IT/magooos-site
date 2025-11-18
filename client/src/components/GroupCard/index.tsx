@@ -54,16 +54,16 @@ const GroupCard: React.FC<GroupCardProps> = ({
   };
   
   return (
-    <div className="bg-white dark:bg-dark-secondary rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 transition-all hover:shadow-lg">
+    <div className="bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)] overflow-hidden mb-6 transition-all hover:shadow-lg">
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-5">
-            <div className="h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-pastel dark:to-red-pastel text-white flex items-center justify-center shadow-md">
+            <div className="h-16 w-16 rounded-full overflow-hidden text-[var(--theme-text-on-primary)] flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(to bottom right, var(--theme-primary), var(--theme-secondary))' }}>
               <span className="font-bold text-xl">{getInitials(group.name)}</span>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{group.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">ID: {group.id}</p>
+              <h3 className="text-xl font-semibold text-[var(--theme-text)]">{group.name}</h3>
+              <p className="text-sm text-[var(--theme-text-muted)]">ID: {group.id}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -72,7 +72,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 {onEdit && (
                   <button
                     onClick={() => onEdit(group)}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+                    className="p-2 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-text-secondary)]"
                     aria-label="Edit Group"
                     title="Edit Group"
                   >
@@ -82,7 +82,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 {onDelete && (
                   <button
                     onClick={() => onDelete(group.id)}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400"
+                    className="p-2 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-error)]"
                     aria-label="Delete Group"
                     title="Delete Group"
                   >
@@ -92,7 +92,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 {onManageUsers && (
                   <button
                     onClick={() => onManageUsers(group)}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-orange-600 dark:text-orange-pastel"
+                    className="p-2 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-primary)]"
                     aria-label="Manage Users"
                     title="Manage Users"
                   >
@@ -104,7 +104,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             {isLocationAdmin && !isAdmin && onCreateLocationUser && (
               <button
                 onClick={() => onCreateLocationUser(group)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-green-600 dark:text-green-400"
+                className="p-2 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-success)]"
                 aria-label="Create Location User"
                 title="Create Location User"
               >
@@ -113,7 +113,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             )}
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-1 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--theme-text)]"
               aria-label={expanded ? "Collapse" : "Expand"}
             >
               {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -123,37 +123,37 @@ const GroupCard: React.FC<GroupCardProps> = ({
         
         {group.description && (
           <div className="mt-3">
-            <p className="text-sm text-gray-600 dark:text-gray-300">{group.description}</p>
+            <p className="text-sm text-[var(--theme-text-secondary)]">{group.description}</p>
           </div>
         )}
-        
+
         <div className="mt-5">
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Locations</div>
+          <div className="text-sm font-medium text-[var(--theme-text-secondary)] mb-2">Locations</div>
           <div className="flex flex-wrap gap-2">
             {group.locationIds.length > 0 ? (
               group.locationIds.map((locationId) => (
                 <span
                   key={locationId}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-pastel shadow-sm"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] shadow-sm"
                 >
                   {locationId}
                 </span>
               ))
             ) : (
-              <span className="text-sm text-gray-500 dark:text-gray-400">No locations assigned</span>
+              <span className="text-sm text-[var(--theme-text-muted)]">No locations assigned</span>
             )}
           </div>
         </div>
       </div>
-      
+
       {expanded && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-800">
+        <div className="border-t border-[var(--theme-border)] p-6 bg-[var(--theme-surface-hover)]">
           <div className="flex justify-between items-center mb-3">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Users</h4>
+            <h4 className="text-sm font-medium text-[var(--theme-text-secondary)]">Users</h4>
             {isAdmin && (
               <button
                 onClick={() => onManageUsers && onManageUsers(group)}
-                className="text-xs text-orange-600 hover:text-orange-800 dark:text-orange-pastel dark:hover:text-orange-pastel-light flex items-center"
+                className="text-xs text-[var(--theme-primary)] hover:opacity-80 flex items-center"
               >
                 <span>Manage Users</span>
               </button>
@@ -161,7 +161,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             {isLocationAdmin && !isAdmin && onCreateLocationUser && (
                  <button
                 onClick={() => onCreateLocationUser(group)}
-                className="text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 flex items-center"
+                className="text-xs text-[var(--theme-success)] hover:opacity-80 flex items-center"
               >
                 <UserPlus size={14} className="mr-1" />
                 <span>Create Location User</span>
@@ -173,19 +173,19 @@ const GroupCard: React.FC<GroupCardProps> = ({
               {group.users.map((user: User) => (
                 <div key={user.userId} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-sm">
-                      <span className="text-xs font-medium">
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-[var(--theme-surface-active)] flex items-center justify-center shadow-sm">
+                      <span className="text-xs font-medium text-[var(--theme-text)]">
                         {user.username ? getInitials(user.username) : '?'}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <span className="text-sm font-medium text-[var(--theme-text)]">
                       {user.username}
                     </span>
                   </div>
                   {isAdmin && (
                     <button
                       onClick={() => handleRemoveUser(user.userId)}
-                      className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      className="text-xs text-[var(--theme-error)] hover:opacity-80"
                     >
                       Remove
                     </button>
@@ -194,7 +194,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
               ))}
             </div>
           ) : (
-            <span className="text-sm text-gray-500 dark:text-gray-400">No users assigned</span>
+            <span className="text-sm text-[var(--theme-text-muted)]">No users assigned</span>
           )}
         </div>
       )}

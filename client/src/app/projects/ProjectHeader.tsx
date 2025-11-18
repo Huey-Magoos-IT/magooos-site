@@ -30,7 +30,7 @@ const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
           name="Product Design Development"
           buttonComponent={
             <button
-              className="flex items-center rounded-md bg-blue-primary px-3 py-2 text-white hover:bg-blue-600"
+              className="flex items-center rounded-md bg-[var(--theme-primary)] px-3 py-2 text-[var(--theme-text-on-primary)] hover:opacity-90"
               onClick={() => setIsModalNewProjectOpen(true)}
             >
               <PlusSquare className="mr-2 h-5 w-5" /> New Boards
@@ -40,7 +40,7 @@ const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
       </div>
 
       {/* TABS */}
-      <div className="flex flex-wrap-reverse gap-2 border-y border-gray-200 pb-[8px] pt-2 dark:border-stroke-dark md:items-center">
+      <div className="flex flex-wrap-reverse gap-2 border-y border-[var(--theme-border)] pb-[8px] pt-2 md:items-center">
         <div className="flex flex-1 items-center gap-2 md:gap-4">
           <TabButton
             name="Board"
@@ -68,19 +68,19 @@ const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
           />
         </div>
         <div className="flex items-center gap-2">
-          <button className="text-gray-500 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300">
+          <button className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">
             <Filter className="h-5 w-5" />
           </button>
-          <button className="text-gray-500 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300">
+          <button className="text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">
             <Share2 className="h-5 w-5" />
           </button>
           <div className="relative">
             <input
               type="text"
               placeholder="Search Task"
-              className="rounded-md border py-1 pl-10 pr-4 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
+              className="rounded-md border border-[var(--theme-border)] py-1 pl-10 pr-4 focus:outline-none bg-[var(--theme-surface)] text-[var(--theme-text)]"
             />
-            <Grid3x3 className="absolute left-3 top-2 h-4 w-4 text-gray-400 dark:text-neutral-500" />
+            <Grid3x3 className="absolute left-3 top-2 h-4 w-4 text-[var(--theme-text-muted)]" />
           </div>
         </div>
       </div>
@@ -100,8 +100,8 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
 
   return (
     <button
-      className={`relative flex items-center gap-2 px-1 py-2 text-gray-500 after:absolute after:-bottom-[9px] after:left-0 after:h-[1px] after:w-full hover:text-blue-600 dark:text-neutral-500 dark:hover:text-white sm:px-2 lg:px-4 ${
-        isActive ? "text-blue-600 after:bg-blue-600 dark:text-white" : ""
+      className={`relative flex items-center gap-2 px-1 py-2 text-[var(--theme-text-muted)] after:absolute after:-bottom-[9px] after:left-0 after:h-[1px] after:w-full hover:text-[var(--theme-primary)] sm:px-2 lg:px-4 ${
+        isActive ? "text-[var(--theme-primary)] after:bg-[var(--theme-primary)]" : ""
       }`}
       onClick={() => setActiveTab(name)}
     >

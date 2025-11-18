@@ -22,8 +22,8 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
         onClick={() => onChange("grid")}
         className={`p-2 rounded-md transition-colors ${
           currentView === "grid"
-            ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-            : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            ? "bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]"
+            : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface-hover)]"
         }`}
         aria-label="Table View"
         title="Table View"
@@ -34,8 +34,8 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
         onClick={() => onChange("list")}
         className={`p-2 rounded-md transition-colors ${
           currentView === "list"
-            ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-            : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            ? "bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]"
+            : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface-hover)]"
         }`}
         aria-label="Card View"
         title="Card View"

@@ -62,16 +62,16 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: 900, // Increased width for the split layout
-    maxWidth: '95vw', // Ensure it doesn't exceed viewport width
-    maxHeight: '90vh', // Add maxHeight to prevent overflow
-    overflowY: 'auto', // Allow modal content to scroll if needed
-    bgcolor: isDarkMode ? "rgb(31 41 55)" : "background.paper",
-    border: "2px solid #000",
+    width: 900,
+    maxWidth: '95vw',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    bgcolor: 'var(--theme-surface)',
+    border: '2px solid var(--theme-border)',
     boxShadow: 24,
     p: 4,
-    color: isDarkMode ? "white" : "black",
-    borderRadius: '8px', // Added border radius
+    color: 'var(--theme-text)',
+    borderRadius: '8px',
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -193,10 +193,10 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             onChange={(e) => setUsername(e.target.value)}
             disabled={isLoading}
             InputLabelProps={{
-              style: { color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined },
+              style: { color: 'var(--theme-text-secondary)' },
             }}
             InputProps={{
-              style: { color: isDarkMode ? 'white' : undefined },
+              style: { color: 'var(--theme-text)' },
             }}
           />
           <TextField
@@ -211,10 +211,10 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
             InputLabelProps={{
-              style: { color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined },
+              style: { color: 'var(--theme-text-secondary)' },
             }}
             InputProps={{
-              style: { color: isDarkMode ? 'white' : undefined },
+              style: { color: 'var(--theme-text)' },
             }}
           />
           <TextField
@@ -230,23 +230,23 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
             onChange={(e) => setTempPassword(e.target.value)}
             disabled={isLoading}
             InputLabelProps={{
-              style: { color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined },
+              style: { color: 'var(--theme-text-secondary)' },
             }}
             InputProps={{
-              style: { color: isDarkMode ? 'white' : undefined },
+              style: { color: 'var(--theme-text)' },
             }}
           />
 
           {/* Team Select */}
           <FormControl fullWidth margin="normal" required disabled={isLoading}>
-            <InputLabel id="team-select-label" sx={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : undefined }}>Team</InputLabel>
+            <InputLabel id="team-select-label" sx={{ color: 'var(--theme-text-secondary)' }}>Team</InputLabel>
             <Select
               labelId="team-select-label"
               id="team-select"
               value={selectedTeamId}
               label="Team"
               onChange={(e) => setSelectedTeamId(e.target.value as number | "")}
-              sx={{ color: isDarkMode ? 'white' : undefined }}
+              sx={{ color: 'var(--theme-text)' }}
             >
               <MenuItem value="">
                 <em>Select a team</em>
@@ -269,13 +269,13 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
               <Grid item xs={12} md={6}>
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Typography className="font-medium text-gray-800 dark:text-white">Selected Locations</Typography>
+                    <Typography className="font-medium text-[var(--theme-text)]">Selected Locations</Typography>
                     <div className="flex gap-2">
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={handleUndo}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/10 py-1 min-w-0 px-2"
+                        className="text-[var(--theme-primary)] border-[var(--theme-primary)]/30 hover:bg-[var(--theme-primary)]/10 py-1 min-w-0 px-2"
                         disabled={!lastAction}
                       >
                         <span className="mr-1">Undo</span>
@@ -285,7 +285,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                         size="small"
                         variant="outlined"
                         onClick={handleClearAll}
-                        className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/10 py-1 min-w-0 px-2"
+                        className="text-[var(--theme-error)] border-[var(--theme-error)]/30 hover:bg-[var(--theme-error)]/10 py-1 min-w-0 px-2"
                         disabled={selectedLocationIds.length === 0}
                       >
                         <span className="mr-1">Clear All</span>
@@ -295,39 +295,38 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = ({
                         size="small"
                         variant="outlined"
                         onClick={handleAddAllLocations}
-                        className="text-green-600 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/10 py-1 min-w-0 px-2"
-                        disabled={!allLocationsData?.locations || allLocationsData.locations.length === 0} // Disable if no locations to add
+                        className="text-[var(--theme-success)] border-[var(--theme-success)]/30 hover:bg-[var(--theme-success)]/10 py-1 min-w-0 px-2"
+                        disabled={!allLocationsData?.locations || allLocationsData.locations.length === 0}
                       >
                         <span className="mr-1">Add All</span>
                         <CheckCircle size={16} />
                       </Button>
                     </div>
                   </div>
-                  <Box className="p-3 bg-gray-50 border border-gray-200 rounded-md min-h-24 max-h-64 overflow-y-auto dark:bg-dark-tertiary dark:border-stroke-dark shadow-inner">
+                  <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md min-h-24 max-h-64 overflow-y-auto shadow-inner">
                     {selectedLocationIds.length === 0 ? (
-                      <Typography className="text-gray-500 dark:text-neutral-400 text-sm italic">
+                      <Typography className="text-[var(--theme-text-muted)] text-sm italic">
                         Please select at least one location.
                       </Typography>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {selectedLocationIds.map((id) => {
-                          // Find the full location object to display name and ID
-                          const location = allLocationsData?.locations?.find((loc: Location) => loc.id === id); // Explicitly type loc
+                          const location = allLocationsData?.locations?.find((loc: Location) => loc.id === id);
                           return (
                             <Chip
                               key={id}
-                              label={location ? `${location.name} (${location.id})` : id} // Display name and ID if found
+                              label={location ? `${location.name} (${location.id})` : id}
                               onClick={() => handleLocationDeselect(id)}
                               onDelete={() => handleLocationDeselect(id)}
-                              className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-200 border border-blue-100 dark:border-blue-900/30 cursor-pointer"
-                              deleteIcon={<X className="h-4 w-4 text-blue-500 dark:text-blue-300" />}
+                              className="bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 cursor-pointer"
+                              deleteIcon={<X className="h-4 w-4 text-[var(--theme-primary)]" />}
                             />
                           );
                         })}
                       </div>
                     )}
                   </Box>
-                  <Typography className="text-xs text-gray-500 mt-1 dark:text-neutral-500">
+                  <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
                     {selectedLocationIds.length > 0
                       ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''} selected`
                       : "No locations selected"}

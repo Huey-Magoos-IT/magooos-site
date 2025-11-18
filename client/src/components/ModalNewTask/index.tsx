@@ -51,10 +51,10 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
   };
 
   const selectStyles =
-    "mb-4 block w-full rounded border border-gray-300 px-3 py-2 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
+    "mb-4 block w-full rounded border border-[var(--theme-border)] px-3 py-2 bg-[var(--theme-surface)] text-[var(--theme-text)] focus:outline-none focus:border-[var(--theme-primary)]";
 
   const inputStyles =
-    "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
+    "w-full rounded border border-[var(--theme-border)] p-2 shadow-sm bg-[var(--theme-surface)] text-[var(--theme-text)] focus:outline-none focus:border-[var(--theme-primary)]";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} name="Create New Task">
@@ -154,7 +154,7 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
         )}
         <button
           type="submit"
-          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-orange-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+          className={`focus-offset-2 mt-4 flex w-full justify-center rounded-md border border-transparent bg-[var(--theme-primary)] px-4 py-2 text-base font-medium text-[var(--theme-text-on-primary)] shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] ${
             !isFormValid() || isLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
           disabled={!isFormValid() || isLoading}
