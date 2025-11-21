@@ -9,6 +9,7 @@ import LoginForm from "@/components/LoginForm";
 import StoreProvider, { useAppSelector } from "./redux";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { Toaster } from "react-hot-toast";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isSidebarCollapsed = useAppSelector(
@@ -55,6 +56,29 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <AuthProvider>
             <DashboardLayout>{children}</DashboardLayout>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: 'var(--theme-surface)',
+                  color: 'var(--theme-text)',
+                  border: '1px solid var(--theme-border)',
+                },
+                success: {
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#ffffff',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#ffffff',
+                  },
+                },
+              }}
+            />
           </AuthProvider>
         </LocalizationProvider>
       </ThemeProvider>

@@ -20,6 +20,7 @@ import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast"; // Added for error notifications
 import { useAppSelector } from "../redux";
 import { signUp } from 'aws-amplify/auth'; // Revert back to signUp
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import {
   DataGrid,
@@ -128,15 +129,15 @@ const Users = () => {
   
   const isLocationAdmin = authData?.userDetails?.team?.teamRoles?.some(tr => tr.role.name === 'LOCATION_ADMIN') || false;
   
+  const router = useRouter();
+
   // Redirect if user is not a true admin
   useEffect(() => {
     if (authData && !isUserAdmin) { // Only allow if isUserAdmin (true ADMIN)
       // Redirect non-admins to home page or another appropriate page
-      if (typeof window !== "undefined") {
-        window.location.href = '/home';
-      }
+      router.push('/home');
     }
-  }, [authData, isUserAdmin]);
+  }, [authData, isUserAdmin, router]);
   
   // Extract teams, roles, and locations using useMemo to prevent re-renders
   const teams = useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
@@ -154,12 +155,12 @@ const Users = () => {
       // Set success status
       setUpdateStatus(prev => ({ ...prev, [userId]: 'success' }));
       
-      // Clear success status and reload the page almost immediately
+      // Clear success status and refresh data almost immediately
       setTimeout(() => {
         setUpdateStatus(prev => ({ ...prev, [userId]: null }));
-        // Reload the page to reflect the updated user team assignment
-        window.location.reload();
-      }, 300); // Reduced to 300ms for almost immediate reload while still showing success indicator
+        // Refresh the page to reflect the updated user team assignment
+        router.refresh();
+      }, 300); // Reduced to 300ms for almost immediate refresh while still showing success indicator
     } catch (error) {
       console.error('Error updating user team:', error);
       // Set error status

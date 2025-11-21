@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
 import {
   useGetGroupsQuery,
@@ -50,6 +51,7 @@ import {
 import { Plus } from "lucide-react";
 
 const GroupsPage = () => {
+  const router = useRouter();
   const { data: authData } = useGetAuthUserQuery({});
   const { data: groups = [], isLoading: isLoadingGroups } = useGetGroupsQuery();
   const { data: users = [], isLoading: isLoadingUsers } = useGetUsersQuery();
@@ -303,7 +305,6 @@ const GroupsPage = () => {
     groupId: number;
   }) => {
     try {
-      console.log("Creating location user via Amplify signUp:", formData.username, formData.email);
       const { isSignUpComplete, userId, nextStep } = await signUp({
         username: formData.username,
         password: formData.tempPassword,
@@ -316,7 +317,6 @@ const GroupsPage = () => {
           },
         }
       });
-      console.log("Cognito signUp response for location user:", { isSignUpComplete, userId, nextStep });
       toast.success(`Location User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created.`);
       setOpenLocationUserDialog(false); // Close the modal on success
       
@@ -355,35 +355,19 @@ const GroupsPage = () => {
       tr.role.name.toUpperCase() === "LOCATION_ADMIN"
     )
   ) || [];
-  
-  console.log("Teams with LOCATION_ADMIN role:", teamsWithLocationAdminRole.map((team: Team) => ({
-    id: team.id,
-    name: team.teamName,
-    roles: team.teamRoles?.map((tr: TeamRole) => tr.role.name)
-  })));
-  
+
   // Get all users from teams with LOCATION_ADMIN role
   const locationAdminUsers = teamsWithLocationAdminRole.flatMap((team: Team) => {
     // Based on the JSON you provided, the property might be called 'user' in the API response
     // but TypeScript expects a different property name
     return (team as any).user || [];
   });
-  
-  console.log("Users from teams with LOCATION_ADMIN role:", locationAdminUsers.map((user: any) => ({
-    userId: user.userId,
-    username: user.username
-  })));
-  
+
   // Filter out users already assigned to the current group
   const availableUsers = locationAdminUsers.filter((user: any) => {
     const fullUser = users.find((u: User) => u.userId === user.userId);
     return fullUser?.groupId !== currentGroup?.id;
   });
-  
-  console.log("Available users for group assignment:", availableUsers.map((user: any) => ({
-    userId: user.userId,
-    username: user.username
-  })));
 
   // Handle opening resend confirmation dialog
   const openResendConfirmationDialog = (username: string) => {
@@ -399,9 +383,8 @@ const GroupsPage = () => {
   // Handle resending verification link
   const handleResendVerification = async () => {
     if (!cognitoUserToResend) return;
-    
+
     try {
-      console.log(`Resending verification link for: ${cognitoUserToResend}`);
       await resendVerificationLink({ username: cognitoUserToResend }).unwrap();
       toast.success(`Verification link resent to ${cognitoUserToResend}`);
       refetchGroupCognitoUsers(); // Refresh the list
@@ -428,9 +411,8 @@ const GroupsPage = () => {
   // Handle deleting unconfirmed Cognito user
   const handleDeleteCognitoUser = async () => {
     if (!cognitoUserToDelete) return;
-    
+
     try {
-      console.log(`Deleting unconfirmed Cognito user: ${cognitoUserToDelete}`);
       await deleteCognitoUser({ username: cognitoUserToDelete }).unwrap();
       toast.success(`User ${cognitoUserToDelete} deleted successfully`);
 
@@ -473,9 +455,7 @@ const GroupsPage = () => {
 
   // General redirection if user does not meet criteria to view any groups content
   if (!canViewThisPage) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/home"; // Or another default page
-    }
+    router.push("/home");
     return <div className="p-6">Redirecting...</div>; // Fallback
   }
   
