@@ -146,8 +146,35 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
       return;
   }
   console.log("[POST /groups] Authenticated User ID:", authUserId);
-  // TODO: Add permission check - only admins should create groups
-  
+
+  // Authorization check: Only admins can create groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[POST /groups] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[POST /groups] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   // Validate input
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     console.error("[POST /groups] Invalid group name");
@@ -241,8 +268,35 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
       return;
   }
   console.log("[PUT /groups/:id] Authenticated User ID:", authUserId);
-  // TODO: Add permission check - only admins should update groups
-  
+
+  // Authorization check: Only admins can update groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[PUT /groups/:id] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[PUT /groups/:id] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   try {
     // Check if group exists
     const group = await prisma.group.findUnique({
@@ -353,8 +407,35 @@ export const assignGroupToUser = async (req: Request, res: Response): Promise<vo
       return;
   }
   console.log("[POST /groups/assign] Authenticated User ID:", authUserId);
-  // TODO: Add permission check - only admins should assign groups
-  
+
+  // Authorization check: Only admins can assign groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[POST /groups/assign] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[POST /groups/assign] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   try {
     // Check if target user exists
     const targetUser = await prisma.user.findUnique({
@@ -460,8 +541,35 @@ export const removeUserFromGroup = async (req: Request, res: Response): Promise<
       return;
   }
   console.log("[POST /groups/remove-user] Authenticated User ID:", authUserId);
-  // TODO: Add permission check - only admins should remove users from groups
-  
+
+  // Authorization check: Only admins can remove users from groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[POST /groups/remove-user] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[POST /groups/remove-user] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   try {
     // Check if target user exists
     const targetUser = await prisma.user.findUnique({
@@ -633,8 +741,35 @@ export const deleteGroup = async (req: Request, res: Response): Promise<void> =>
       return;
   }
   console.log(`[DELETE /groups/${groupId}] Authenticated User ID:`, authUserId);
-  // TODO: Add permission check - only admins should delete groups
-  
+
+  // Authorization check: Only admins can delete groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[DELETE /groups/${groupId}] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error(`[DELETE /groups/${groupId}] Error checking permissions:`, error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   try {
     // Check if group exists
     const group = await prisma.group.findUnique({
@@ -729,8 +864,35 @@ export const deleteGroupPost = async (req: Request, res: Response): Promise<void
       return;
   }
   console.log("[POST /groups/delete-group] Authenticated User ID:", authUserId);
-  // TODO: Add permission check - only admins should delete groups
-  
+
+  // Authorization check: Only admins can delete groups
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: parseInt(authUserId) },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[POST /groups/delete-group] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[POST /groups/delete-group] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
+
   if (!groupId) {
     if (!res.headersSent) {
       res.status(400).json({ message: "Group ID is required" });
