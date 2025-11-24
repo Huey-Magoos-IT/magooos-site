@@ -590,13 +590,40 @@ export const disableUser = async (req: Request, res: Response): Promise<void> =>
   const { userId: targetUserIdString } = req.params;
   const targetUserId = parseInt(targetUserIdString);
 
-  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
-  // For example, check req.user or a similar mechanism established by your auth middleware.
-  // const requestingUser = req.user; // Placeholder
-  // if (!requestingUser || !requestingUser.isAdmin) { // Replace with actual admin check
-  //   res.status(403).json({ message: "Forbidden: Administrator access required." });
-  //   return;
-  // }
+  // Authorization check: Only admins can disable users
+  const requestingUserId = req.user?.userId;
+  if (!requestingUserId) {
+    console.error("[PATCH /users/:userId/disable] No user ID in request");
+    res.status(401).json({ message: "Unauthorized: Authentication required." });
+    return;
+  }
+
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: requestingUserId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[PATCH /users/:userId/disable] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[PATCH /users/:userId/disable] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
 
   if (isNaN(targetUserId)) {
     console.error(`[PATCH /users/${targetUserIdString}/disable] Invalid user ID format.`);
@@ -682,8 +709,40 @@ export const enableUser = async (req: Request, res: Response): Promise<void> => 
   const { userId: targetUserIdString } = req.params;
   const targetUserId = parseInt(targetUserIdString);
 
-  // TODO: Implement robust authentication and authorization
-  // Similar to disableUser, this should be restricted to admins.
+  // Authorization check: Only admins can enable users
+  const requestingUserId = req.user?.userId;
+  if (!requestingUserId) {
+    console.error("[PATCH /users/:userId/enable] No user ID in request");
+    res.status(401).json({ message: "Unauthorized: Authentication required." });
+    return;
+  }
+
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: requestingUserId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[PATCH /users/:userId/enable] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[PATCH /users/:userId/enable] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
 
   if (isNaN(targetUserId)) {
     console.error(`[PATCH /users/${targetUserIdString}/enable] Invalid user ID format.`);
@@ -771,13 +830,40 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   const { userId: targetUserIdString } = req.params;
   const targetUserId = parseInt(targetUserIdString);
 
-  // TODO: Implement robust authentication and authorization to ensure only admins can perform this action.
-  // This action is destructive and should be heavily guarded.
-  // const requestingUser = req.user; // Placeholder
-  // if (!requestingUser || !requestingUser.isSuperAdmin) { // Ensure only super admins can delete
-  //   res.status(403).json({ message: "Forbidden: Super administrator access required for deletion." });
-  //   return;
-  // }
+  // Authorization check: Only admins can delete users
+  const requestingUserId = req.user?.userId;
+  if (!requestingUserId) {
+    console.error("[DELETE /users/:userId] No user ID in request");
+    res.status(401).json({ message: "Unauthorized: Authentication required." });
+    return;
+  }
+
+  try {
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: requestingUserId },
+      include: {
+        team: {
+          include: {
+            teamRoles: {
+              include: { role: true }
+            }
+          }
+        }
+      }
+    });
+
+    const isAdmin = requestingUser?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
+
+    if (!isAdmin) {
+      console.error(`[DELETE /users/:userId] User ${requestingUser?.username} is not an admin`);
+      res.status(403).json({ message: "Forbidden: Administrator access required." });
+      return;
+    }
+  } catch (error: any) {
+    console.error("[DELETE /users/:userId] Error checking permissions:", error);
+    res.status(500).json({ message: "Error checking permissions" });
+    return;
+  }
 
   if (isNaN(targetUserId)) {
     console.error(`[DELETE /users/${targetUserIdString}] Invalid user ID format.`);
