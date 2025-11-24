@@ -81,10 +81,11 @@ const AuthProvider = ({ children }: any) => {
         case 'signedIn':
           console.log('User signed in, resetting API state.');
           dispatch(api.util.resetApiState());
-          setIsAuthenticated(true);
+          // Delay auth state change to allow API reset to complete
           setTimeout(() => {
+            setIsAuthenticated(true);
             router.push('/home');
-          }, 0);
+          }, 100);
           break;
         case 'signedOut':
           console.log('User signed out, resetting API state.');
@@ -107,9 +108,8 @@ const AuthProvider = ({ children }: any) => {
       const { nextStep } = await signIn({ username, password });
       if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
         setAuthView('newPasswordRequired');
-      } else {
-        setIsAuthenticated(true);
       }
+      // Note: Auth state will be updated by the Hub listener
     } catch (error: any) {
       console.error('Error signing in:', error);
       setError(error.message || 'Failed to sign in. Please check your credentials.');
@@ -129,7 +129,7 @@ const AuthProvider = ({ children }: any) => {
 
     try {
       await confirmSignIn({ challengeResponse: newPassword });
-      setIsAuthenticated(true);
+      // Note: Auth state will be updated by the Hub listener
     } catch (error: any) {
       console.error('Error setting new password:', error);
       setError(error.message || 'Failed to set new password.');
