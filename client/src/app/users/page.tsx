@@ -12,6 +12,7 @@ import {
   useDeleteCognitoUserMutation,
   useUpdateUserEmailMutation,
   useAdminResetUserPasswordMutation,
+  useCheckEmailAvailabilityMutation,
   type User as ApiUser, // Alias the User interface from API
   type CognitoUser,
 } from "@/state/api";
@@ -78,6 +79,7 @@ const Users = () => {
   const [deleteCognitoUser, { isLoading: isDeletingCognitoUser }] = useDeleteCognitoUserMutation();
   const [updateUserEmail, { isLoading: isUpdatingEmail }] = useUpdateUserEmailMutation();
   const [adminResetUserPassword, { isLoading: isResettingPassword }] = useAdminResetUserPasswordMutation();
+  const [checkEmailAvailability] = useCheckEmailAvailabilityMutation();
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   
   const [updateStatus, setUpdateStatus] = useState<{[key: number]: 'success' | 'error' | 'pending' | null}>({});
@@ -190,7 +192,16 @@ const Users = () => {
     try {
       console.log("Creating user via Amplify signUp:", formData.username, formData.email);
 
-      // Step 1: Create the user in Cognito using signUp
+      // Step 1: Check if email is already in use
+      console.log("Checking email availability:", formData.email);
+      const emailCheck = await checkEmailAvailability({ email: formData.email }).unwrap();
+
+      if (!emailCheck.available) {
+        throw new Error(emailCheck.message || "This email is already registered to another user");
+      }
+      console.log("Email is available, proceeding with user creation");
+
+      // Step 2: Create the user in Cognito using signUp
       const { isSignUpComplete, userId, nextStep } = await signUp({
         username: formData.username,
         password: formData.tempPassword,
@@ -200,23 +211,19 @@ const Users = () => {
             'custom:teamId': String(formData.teamId),
             'custom:locationIds': JSON.stringify(formData.locationIds || [])
           },
-          // autoSignIn: false // Let user sign in after confirmation
         }
       });
       console.log("Cognito signUp response:", { isSignUpComplete, userId, nextStep });
 
-      // Step 2: Show success message and close modal
+      // Step 3: Show success message and close modal
       toast.success(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created with the assigned team and locations, and they will appear in the list.`);
       setIsModalOpen(false);
 
-      // Step 3: No refetch needed immediately.
-
     } catch (error: any) {
       console.error("Error creating user via Amplify signUp:", error);
-      // localStorage.removeItem(`pending-user-${formData.username}`); // Clean up stored data on error - No longer needed
       throw new Error(error.message || "Failed to initiate user creation");
     }
-  }, []);
+  }, [checkEmailAvailability]);
 
   const handleDisableUser = useCallback(async (userId: number) => {
     setUpdateStatus(prev => ({ ...prev, [userId]: 'pending' }));
