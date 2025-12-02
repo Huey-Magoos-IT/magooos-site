@@ -468,6 +468,14 @@ export const api = createApi({
         body: { newPassword },
       }),
     }),
+    // Check email availability before user creation
+    checkEmailAvailability: build.mutation<{ available: boolean; message: string }, { email: string }>({
+      query: ({ email }) => ({
+        url: 'users/check-email',
+        method: 'POST',
+        body: { email },
+      }),
+    }),
   }),
 });
 
@@ -510,4 +518,6 @@ export const {
   useToggleUserStatusMutation,
   useUpdateUserEmailMutation,
   useAdminResetUserPasswordMutation,
+  // Email availability check
+  useCheckEmailAvailabilityMutation,
 } = api;

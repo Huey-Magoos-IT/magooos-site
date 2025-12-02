@@ -17,6 +17,7 @@ import {
   toggleUserStatus,
   updateUserEmail,
   adminResetUserPassword,
+  checkEmailAvailability,
 } from "../controllers/userController";
 
 const router = Router();
@@ -25,6 +26,7 @@ const router = Router();
 
 router.get("/", getUsers); // GET all users from local DB
 router.post("/", postUser); // POST a new user (typically called by Cognito post-confirmation Lambda)
+router.post("/check-email", checkEmailAvailability); // POST to check if email is already in use
 router.get("/:cognitoId", getUser); // GET a specific user by cognitoId from local DB
 router.patch("/:userId/team", updateUserTeam); // PATCH to update a user's team
 router.patch("/:id/locations", updateUserLocations); // PATCH to update a user's assigned locations

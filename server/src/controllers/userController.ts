@@ -1548,6 +1548,61 @@ export const deleteCognitoUser = async (req: Request, res: Response): Promise<vo
     });
   }
 };
+
+/**
+ * Check if an email is already in use in Cognito
+ * Used to prevent duplicate email registrations
+ */
+export const checkEmailAvailability = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: "Email is required" });
+      return;
+    }
+
+    console.log(`[POST /users/check-email] Checking email availability: ${email}`);
+
+    if (!COGNITO_USER_POOL_ID) {
+      console.error("[POST /users/check-email] COGNITO_USER_POOL_ID not set");
+      res.status(500).json({ message: "Server configuration error" });
+      return;
+    }
+
+    // Query Cognito for users with this email
+    const command = new ListUsersCommand({
+      UserPoolId: COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+      Limit: 1
+    });
+
+    const result = await cognitoClient.send(command);
+    const emailExists = result.Users && result.Users.length > 0;
+
+    if (emailExists) {
+      const existingUser = result.Users![0];
+      console.log(`[POST /users/check-email] Email already in use by: ${existingUser.Username}`);
+      res.status(200).json({
+        available: false,
+        message: "This email is already registered to another user"
+      });
+    } else {
+      console.log(`[POST /users/check-email] Email is available: ${email}`);
+      res.status(200).json({
+        available: true,
+        message: "Email is available"
+      });
+    }
+  } catch (error: any) {
+    console.error("[POST /users/check-email] Error:", error);
+    res.status(500).json({
+      message: "Error checking email availability",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export const adminResetUserPassword = async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
   const { newPassword } = req.body;
