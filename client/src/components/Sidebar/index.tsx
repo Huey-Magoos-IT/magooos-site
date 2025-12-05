@@ -107,7 +107,7 @@ const Sidebar = () => {
                 )}
 
                 {(isTrueAdmin || hasRole(teamRoles, 'REPORTING')) && (
-                  <SidebarLink icon={Layers3} label="Reporting" href="/departments/reporting" sub />
+                  <SidebarLink icon={Layers3} label="Red Flag Reports" href="/departments/reporting" sub />
                 )}
 
                 {(isTrueAdmin || hasRole(teamRoles, 'RAW_DATA')) && (
