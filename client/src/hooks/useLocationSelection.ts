@@ -1,5 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Location } from '@/components/LocationTable';
+
+// Stable empty array references to prevent unnecessary re-renders
+const EMPTY_STRING_ARRAY: string[] = [];
+const EMPTY_LOCATION_ARRAY: Location[] = [];
 
 interface UseLocationSelectionOptions {
   initialLocationIds?: string[];
@@ -27,7 +31,9 @@ interface UseLocationSelectionReturn {
 export function useLocationSelection(
   options: UseLocationSelectionOptions = {}
 ): UseLocationSelectionReturn {
-  const { initialLocationIds = [], allLocations = [] } = options;
+  // Use stable empty arrays as defaults to prevent reset function from being recreated
+  const initialLocationIds = options.initialLocationIds ?? EMPTY_STRING_ARRAY;
+  const allLocations = options.allLocations ?? EMPTY_LOCATION_ARRAY;
 
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>(initialLocationIds);
   const [previousLocationIds, setPreviousLocationIds] = useState<string[]>([]);
