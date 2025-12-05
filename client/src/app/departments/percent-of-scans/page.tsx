@@ -49,8 +49,8 @@ const LOYALTY_DATA_FOLDER = "loyalty-scan-pool/"; // Updated based on user input
 
 // Data file types for this page, allowing selection between detail, summary, and rolled up summary
 const DATA_TYPES = [
-  { value: 'loyalty_scan_detail', label: 'Loyalty Scan Detail' },
-  { value: 'loyalty_scan_summary', label: 'Loyalty Scan Summary' },
+  { value: 'loyalty_scan_detail', label: 'Scan Detail' },
+  { value: 'loyalty_scan_summary', label: 'Scan Summary' },
   { value: 'loyalty_scan_rolled_up', label: 'Rolled Up Summary' }
 ];
 
