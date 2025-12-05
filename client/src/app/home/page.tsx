@@ -172,7 +172,7 @@ const HomePage = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Loyalty Transactions", href: "/departments/data", icon: FileText },
+                  { label: "Rewards Transactions", href: "/departments/data", icon: FileText },
                   { label: "Price Portal", href: "/departments/price-portal", icon: TrendingUp },
                   { label: "Teams", href: "/teams", icon: Users },
                   { label: "Reports", href: "/departments/reporting", icon: Activity },

@@ -99,7 +99,7 @@ const Sidebar = () => {
             {showDepartments && (
               <div className="mt-2 space-y-1 animate-fade-in-down">
                 {(isTrueAdmin || hasRole(teamRoles, 'DATA')) && (
-                  <SidebarLink icon={Layers3} label="Loyalty Transactions" href="/departments/data" sub />
+                  <SidebarLink icon={Layers3} label="Rewards Transactions" href="/departments/data" sub />
                 )}
 
                 {(isTrueAdmin || hasRole(teamRoles, 'SCANS')) && (
