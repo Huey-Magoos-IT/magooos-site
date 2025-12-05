@@ -116,9 +116,9 @@ const RawLoyaltyPage = () => {
 
   return (
     <div className="m-5 p-4">
-      <Header name="Raw Loyalty Data" />
+      <Header name="Raw Rewards Data" />
       <div className="mt-4 p-4 bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)]">
-        <h2 className="text-xl font-bold mb-4 text-[var(--theme-text)] border-b pb-2 border-[var(--theme-border)]">Raw Loyalty Data Viewer</h2>
+        <h2 className="text-xl font-bold mb-4 text-[var(--theme-text)] border-b pb-2 border-[var(--theme-border)]">Raw Rewards Data Viewer</h2>
         <div className="bg-[var(--theme-success)]/10 p-4 rounded-md mb-4 border-l-4 border-[var(--theme-success)]">
           <h3 className="font-semibold mb-2 text-[var(--theme-success)]">RAW_LOYALTY_REPORTING Access Granted</h3>
           <p className="text-[var(--theme-text-secondary)]">Team: {userTeam.teamName}</p>
