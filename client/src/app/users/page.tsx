@@ -47,8 +47,10 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
-import { AlertCircle, Check, User as UserIcon, UserPlus, Edit, KeyRound } from "lucide-react"; // Alias the User icon
+import { AlertCircle, Check, User as UserIcon, UserPlus, Edit, KeyRound, Eye, EyeOff } from "lucide-react"; // Alias the User icon
 import ViewToggle, { ViewType } from "@/components/ViewToggle";
 import RoleBadge from "@/components/RoleBadge";
 import UserCard from "@/components/UserCard";
@@ -100,6 +102,7 @@ const Users = () => {
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   // The user object passed from UserCard will match its internal prop structure
   const [userToDelete, setUserToDelete] = useState<{
@@ -999,6 +1002,7 @@ const Users = () => {
       <Dialog open={isResetPasswordModalOpen} onClose={() => {
         setIsResetPasswordModalOpen(false);
         setPasswordError("");
+        setShowResetPassword(false);
       }}>
         <DialogTitle>Reset Password for {userToEdit?.username}</DialogTitle>
         <DialogContent>
@@ -1009,29 +1013,66 @@ const Users = () => {
             autoFocus
             margin="dense"
             label="New Password"
-            type="password"
+            type={showResetPassword ? "text" : "password"}
             fullWidth
             variant="outlined"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             error={!!passwordError}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    edge="end"
+                    size="small"
+                  >
+                    {showResetPassword ? (
+                      <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <TextField
             margin="dense"
             label="Confirm New Password"
-            type="password"
+            type={showResetPassword ? "text" : "password"}
             fullWidth
             variant="outlined"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             error={!!passwordError}
             helperText={passwordError}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    edge="end"
+                    size="small"
+                  >
+                    {showResetPassword ? (
+                      <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {
             setIsResetPasswordModalOpen(false);
             setPasswordError("");
+            setShowResetPassword(false);
           }}>Cancel</Button>
           <Button
             onClick={async () => {
