@@ -12,10 +12,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Chip
+  Chip,
+  InputAdornment,
+  IconButton
 } from "@mui/material";
 import { Grid } from "@mui/material";
-import { Undo2, Trash2, CheckCircle, X } from "lucide-react";
+import { Undo2, Trash2, CheckCircle, X, Eye, EyeOff } from "lucide-react";
 import { useAppSelector } from "@/app/redux";
 import { Team } from "@/state/api";
 import { useGetLocationsQuery } from "@/state/lambdaApi";
@@ -65,6 +67,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = (props) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<number | "">("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -263,7 +266,7 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = (props) => {
             fullWidth
             name="tempPassword"
             label="Temporary Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             id="tempPassword"
             autoComplete="new-password"
             value={tempPassword}
@@ -274,6 +277,22 @@ const ModalCreateUser: React.FC<ModalCreateUserProps> = (props) => {
             }}
             InputProps={{
               style: { color: 'var(--theme-text)' },
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    size="small"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
           />
 

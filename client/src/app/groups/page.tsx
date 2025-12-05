@@ -347,7 +347,9 @@ const GroupsPage = () => {
 
   // Get all teams from the API
   const { data: teamsData } = useGetTeamsQuery();
-  const allTeams = teamsData?.teams || []; // Ensure allTeams is always an array for the modal
+  // IMPORTANT: Memoize to prevent creating new array reference on each render
+  // This was causing ModalCreateUser's useEffect to reset form fields repeatedly
+  const allTeams = React.useMemo(() => teamsData?.teams || [], [teamsData?.teams]);
   
   // Find teams that have the LOCATION_ADMIN role
   const teamsWithLocationAdminRole = teamsData?.teams?.filter((team: Team) =>

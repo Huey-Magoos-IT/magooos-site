@@ -145,13 +145,16 @@ const LoginForm = () => {
             <Lock className="h-5 w-5 text-[var(--theme-text-muted)]" />
           </div>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)] placeholder-[var(--theme-text-muted)] transition-all duration-200"
+            className="w-full pl-12 pr-12 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)] placeholder-[var(--theme-text-muted)] transition-all duration-200"
             placeholder="Confirm your new password"
             required
           />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center">
+            {showPassword ? <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" /> : <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />}
+          </button>
         </div>
       </div>
       <button
@@ -225,13 +228,16 @@ const LoginForm = () => {
         </label>
         <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)]"
+            className="w-full pl-4 pr-12 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)]"
             placeholder="Enter new password"
             required
           />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center">
+            {showPassword ? <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" /> : <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />}
+          </button>
         </div>
       </div>
       <div className="space-y-2">
@@ -240,13 +246,16 @@ const LoginForm = () => {
         </label>
         <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full pl-4 pr-4 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)]"
+            className="w-full pl-4 pr-12 py-4 border border-[var(--theme-border)] rounded-xl focus:ring-2 focus:ring-[var(--theme-primary)] focus:border-transparent bg-[var(--theme-surface-hover)] text-[var(--theme-text)]"
             placeholder="Confirm new password"
             required
           />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center">
+            {showPassword ? <EyeOff className="h-5 w-5 text-[var(--theme-text-muted)]" /> : <Eye className="h-5 w-5 text-[var(--theme-text-muted)]" />}
+          </button>
         </div>
       </div>
       <button
