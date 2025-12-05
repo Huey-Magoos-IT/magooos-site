@@ -48,7 +48,7 @@ const LOYALTY_DATA_FOLDER = process.env.NEXT_PUBLIC_LOYALTY_DATA_FOLDER || "loya
 
 // Data file types based on the new loyalty_data_MM-DD-YYYY.csv format
 const DATA_TYPES = [
-  { value: 'loyalty_data', label: 'Loyalty Data' }
+  { value: 'loyalty_data', label: 'Data Type Check' }
 ];
 
 // NOTE: The current implementation handles filenames that follow the pattern: loyalty_data_MM-DD-YYYY.csv

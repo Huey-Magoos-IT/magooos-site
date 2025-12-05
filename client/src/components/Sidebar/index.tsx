@@ -89,7 +89,7 @@ const Sidebar = () => {
                        group"
             >
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Departments
+                Reports
               </span>
               <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${
                 showDepartments ? 'rotate-90' : ''
@@ -99,7 +99,7 @@ const Sidebar = () => {
             {showDepartments && (
               <div className="mt-2 space-y-1 animate-fade-in-down">
                 {(isTrueAdmin || hasRole(teamRoles, 'DATA')) && (
-                  <SidebarLink icon={Layers3} label="Data" href="/departments/data" sub />
+                  <SidebarLink icon={Layers3} label="Loyalty Transactions" href="/departments/data" sub />
                 )}
 
                 {(isTrueAdmin || hasRole(teamRoles, 'SCANS')) && (
