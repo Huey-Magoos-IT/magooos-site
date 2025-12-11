@@ -3,23 +3,24 @@
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { setIsSidebarCollapsed } from "@/state";
 import { useGetAuthUserQuery } from "@/state/api";
-import { hasRole, hasAnyRole } from "@/lib/accessControl";
 import { signOut } from "aws-amplify/auth";
 import {
-  Home,
-  Users,
-  FolderKanban,
-  User,
-  Layers3,
   LucideIcon,
   ChevronRight,
   LogOut,
+  User,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { S3_IMAGE_BUCKET_URL } from "@/lib/constants";
+import {
+  getMainNavItems,
+  getAdminNavItems,
+  getReportNavItems,
+  AccessContext,
+} from "@/lib/navigation";
 
 const Sidebar = () => {
   const [showDepartments, setShowDepartments] = useState(true);
@@ -30,7 +31,18 @@ const Sidebar = () => {
   const currentUserGroupId = userDetails?.groupId;
 
   const isTrueAdmin = userTeam?.isAdmin || teamRoles.some(tr => tr.role.name === 'ADMIN');
-  const isLocationAdminRolePresent = teamRoles.some(tr => tr.role.name === 'LOCATION_ADMIN');
+
+  // Build access context for navigation filtering
+  const accessContext: AccessContext = useMemo(() => ({
+    isTrueAdmin,
+    teamRoles,
+    groupId: currentUserGroupId,
+  }), [isTrueAdmin, teamRoles, currentUserGroupId]);
+
+  // Get filtered navigation items from centralized config
+  const mainNavItems = useMemo(() => getMainNavItems(accessContext), [accessContext]);
+  const adminNavItems = useMemo(() => getAdminNavItems(accessContext), [accessContext]);
+  const reportNavItems = useMemo(() => getReportNavItems(accessContext), [accessContext]);
 
   const dispatch = useAppDispatch();
   const isSidebarCollapsed = useAppSelector(
@@ -61,65 +73,61 @@ const Sidebar = () => {
       <div className="flex h-full w-full flex-col">
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-2">
-          <SidebarLink icon={Home} label="Home" href="/home" />
+          {/* Main Navigation Items (Home, Teams, Groups) */}
+          {mainNavItems.map((item) => (
+            <SidebarLink
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+            />
+          ))}
 
-          {isTrueAdmin && (
-            <SidebarLink icon={User} label="Users" href="/users" />
+          {/* Admin Navigation Items (Users, Price Users) */}
+          {adminNavItems.map((item) => (
+            <SidebarLink
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              href={item.href}
+            />
+          ))}
+
+          {/* Reports/Departments Section */}
+          {reportNavItems.length > 0 && (
+            <div className="pt-4">
+              <button
+                onClick={() => setShowDepartments(!showDepartments)}
+                className="w-full flex items-center justify-between px-4 py-2.5
+                         text-[var(--theme-text-secondary)]
+                         hover:text-[var(--theme-primary)]
+                         rounded-xl transition-all duration-200
+                         hover:bg-[var(--theme-surface-hover)]
+                         group"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  Reports
+                </span>
+                <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${
+                  showDepartments ? 'rotate-90' : ''
+                }`} />
+              </button>
+
+              {showDepartments && (
+                <div className="mt-2 space-y-1 animate-fade-in-down">
+                  {reportNavItems.map((item) => (
+                    <SidebarLink
+                      key={item.id}
+                      icon={item.icon}
+                      label={item.label}
+                      href={item.href}
+                      sub={item.isSubItem}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-
-          <SidebarLink icon={Users} label="Teams" href="/teams" />
-
-          {(isTrueAdmin || (isLocationAdminRolePresent && !!currentUserGroupId)) && (
-            <SidebarLink icon={FolderKanban} label="Groups" href="/groups" />
-          )}
-
-          {hasRole(teamRoles, 'PRICE_ADMIN') && (
-            <SidebarLink icon={User} label="Price Users" href="/price-users" />
-          )}
-
-          {/* Departments Section */}
-          <div className="pt-4">
-            <button
-              onClick={() => setShowDepartments(!showDepartments)}
-              className="w-full flex items-center justify-between px-4 py-2.5
-                       text-[var(--theme-text-secondary)]
-                       hover:text-[var(--theme-primary)]
-                       rounded-xl transition-all duration-200
-                       hover:bg-[var(--theme-surface-hover)]
-                       group"
-            >
-              <span className="text-xs font-semibold uppercase tracking-wider">
-                Reports
-              </span>
-              <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${
-                showDepartments ? 'rotate-90' : ''
-              }`} />
-            </button>
-
-            {showDepartments && (
-              <div className="mt-2 space-y-1 animate-fade-in-down">
-                {(isTrueAdmin || hasRole(teamRoles, 'DATA')) && (
-                  <SidebarLink icon={Layers3} label="Rewards Transactions" href="/departments/data" sub />
-                )}
-
-                {(isTrueAdmin || hasRole(teamRoles, 'SCANS')) && (
-                  <SidebarLink icon={Layers3} label="% of Scans" href="/departments/percent-of-scans" sub />
-                )}
-
-                {(isTrueAdmin || hasRole(teamRoles, 'REPORTING')) && (
-                  <SidebarLink icon={Layers3} label="Red Flag Reports" href="/departments/reporting" sub />
-                )}
-
-                {(isTrueAdmin || hasRole(teamRoles, 'RAW_DATA')) && (
-                  <SidebarLink icon={Layers3} label="Raw Data" href="/departments/raw-data" sub />
-                )}
-
-                {hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']) && (
-                  <SidebarLink icon={Layers3} label="Price Portal" href="/departments/price-portal" sub />
-                )}
-              </div>
-            )}
-          </div>
         </nav>
 
         {/* User Section */}
