@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useGetAuthUserQuery } from '@/state/api';
 import {
   TrendingUp,
@@ -14,12 +14,33 @@ import {
   Flame
 } from 'lucide-react';
 import Link from 'next/link';
+import { getHomeQuickActions, AccessContext } from '@/lib/navigation';
 
 const HomePage = () => {
-  const { data: currentUser } = useGetAuthUserQuery({});
-  const userName = currentUser?.userDetails?.username || 'Friend';
+  const { data: currentUser, isLoading } = useGetAuthUserQuery({});
+  const userDetails = currentUser?.userDetails;
+  const userName = userDetails?.username || 'Friend';
+  const userTeam = userDetails?.team;
+  const teamRoles = userTeam?.teamRoles || [];
+  const userGroupId = userDetails?.groupId;
+
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState('');
+
+  // Build access context for navigation filtering
+  const isTrueAdmin = userTeam?.isAdmin || teamRoles.some(tr => tr.role.name === 'ADMIN');
+
+  const accessContext: AccessContext = useMemo(() => ({
+    isTrueAdmin,
+    teamRoles,
+    groupId: userGroupId,
+  }), [isTrueAdmin, teamRoles, userGroupId]);
+
+  // Get dynamic quick actions based on user's permissions
+  const quickActions = useMemo(() =>
+    getHomeQuickActions(accessContext, 4),
+    [accessContext]
+  );
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -170,16 +191,14 @@ const HomePage = () => {
                 Jump right into your most important tasks.
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Rewards Transactions", href: "/departments/data", icon: FileText },
-                  { label: "Price Portal", href: "/departments/price-portal", icon: TrendingUp },
-                  { label: "Teams", href: "/teams", icon: Users },
-                  { label: "Reports", href: "/departments/reporting", icon: Activity },
-                ].map((action, i) => {
+              <div className={`grid gap-4 ${
+                quickActions.length <= 2 ? 'grid-cols-2' :
+                quickActions.length === 3 ? 'grid-cols-3' : 'grid-cols-2'
+              }`}>
+                {quickActions.map((action) => {
                   const ActionIcon = action.icon;
                   return (
-                    <Link key={i} href={action.href}>
+                    <Link key={action.id} href={action.href}>
                       <div className="bg-white/10 backdrop-blur hover:bg-white/20
                                     rounded-xl p-4 border border-white/20
                                     transition-all duration-300 hover:scale-105
