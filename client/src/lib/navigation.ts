@@ -14,14 +14,73 @@ import { TeamRole } from "@/state/api";
 import { hasRole, hasAnyRole } from "./accessControl";
 
 /**
- * Navigation Configuration
+ * Navigation Configuration - Single Source of Truth
  *
- * Single source of truth for all navigation items.
- * Used by both Sidebar and Home page to ensure consistency.
+ * This file controls what appears in BOTH the Sidebar and Home page Quick Actions.
+ * When you add/modify entries here, both components automatically update.
  *
- * When adding a new page:
- * 1. Add entry here with appropriate canAccess function
- * 2. Both Sidebar and Home page will automatically reflect the change
+ * ============================================================================
+ * HOW TO ADD A NEW PAGE
+ * ============================================================================
+ *
+ * 1. Import the icon at the top of this file (from lucide-react)
+ * 2. Add a new entry to the NAV_ITEMS array with the following properties:
+ *
+ * EXAMPLE - Adding a new report that requires the "INVENTORY" role:
+ *
+ *   {
+ *     id: "inventory-report",           // Unique identifier (kebab-case)
+ *     label: "Inventory Report",        // Display name in UI
+ *     href: "/departments/inventory",   // Route path
+ *     icon: Package,                    // Lucide icon component
+ *     canAccess: ({ isTrueAdmin, teamRoles }) =>
+ *       isTrueAdmin || hasRole(teamRoles, "INVENTORY"),
+ *     showOnHome: true,                 // Show in Home page Quick Actions?
+ *     homePriority: 3,                  // Lower = higher priority (1-10)
+ *     category: "reports",              // "main" | "reports" | "admin"
+ *     isSubItem: true,                  // Indent in sidebar (for reports)
+ *   },
+ *
+ * ============================================================================
+ * PROPERTY REFERENCE
+ * ============================================================================
+ *
+ * id           - Unique string identifier for the nav item
+ * label        - Text displayed in sidebar and home page
+ * href         - The route/URL path
+ * icon         - Lucide React icon component
+ * canAccess    - Function that returns true if user can see this item
+ *                Receives: { isTrueAdmin, teamRoles, groupId }
+ * showOnHome   - Whether to display in Home page Quick Actions
+ * homePriority - Order in Quick Actions (1 = first, higher = later)
+ * category     - Determines where it appears in sidebar:
+ *                - "main": Top section (Home, Teams, Groups)
+ *                - "admin": Admin section (Users, Price Users)
+ *                - "reports": Collapsible Reports section
+ * isSubItem    - If true, indented in sidebar (use for reports)
+ *
+ * ============================================================================
+ * ACCESS CONTROL PATTERNS
+ * ============================================================================
+ *
+ * Everyone can access:
+ *   canAccess: () => true
+ *
+ * Admin only:
+ *   canAccess: ({ isTrueAdmin }) => isTrueAdmin
+ *
+ * Specific role (admins always have access via hasRole):
+ *   canAccess: ({ isTrueAdmin, teamRoles }) =>
+ *     isTrueAdmin || hasRole(teamRoles, "ROLE_NAME")
+ *
+ * Multiple roles (any of):
+ *   canAccess: ({ teamRoles }) =>
+ *     hasAnyRole(teamRoles, ["ROLE_A", "ROLE_B", "ADMIN"])
+ *
+ * Role + condition (e.g., Location Admin with assigned group):
+ *   canAccess: ({ isTrueAdmin, teamRoles, groupId }) =>
+ *     isTrueAdmin || (hasRole(teamRoles, "LOCATION_ADMIN") && !!groupId)
+ *
  */
 
 export interface AccessContext {
