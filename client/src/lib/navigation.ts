@@ -219,7 +219,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/departments/price-portal",
     icon: TrendingUp,
     canAccess: ({ teamRoles }) =>
-      hasAnyRole(teamRoles, ["LOCATION_ADMIN", "ADMIN", "PRICE_ADMIN"]),
+      hasAnyRole(teamRoles, ["PRICE_USER", "PRICE_ADMIN", "ADMIN"]),
     showOnHome: true,
     homePriority: 2,
     category: "reports",
