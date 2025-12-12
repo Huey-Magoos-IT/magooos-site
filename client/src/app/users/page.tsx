@@ -185,13 +185,14 @@ const Users = () => {
 
   // Function for handling user creation submission using Amplify signUp
   // NOTE: This requires the user to verify their email before the DB record is created by the Lambda.
+  // Returns userId if available (for group assignment), but Cognito flow creates user asynchronously.
   const handleCreateUserSubmit = useCallback(async (formData: {
     username: string;
     email: string;
     tempPassword: string;
     teamId: number;
     locationIds: string[];
-  }) => {
+  }): Promise<{ userId: number } | void> => {
     try {
       console.log("Creating user via Amplify signUp:", formData.username, formData.email);
 
@@ -205,6 +206,8 @@ const Users = () => {
       console.log("Email is available, proceeding with user creation");
 
       // Step 2: Create the user in Cognito using signUp
+      // Note: groupId is not passed as a custom attribute since the Lambda handles user creation
+      // The locations are already included (auto-filled from group if selected)
       const { isSignUpComplete, userId, nextStep } = await signUp({
         username: formData.username,
         password: formData.tempPassword,
@@ -221,6 +224,12 @@ const Users = () => {
       // Step 3: Show success message and close modal
       toast.success(`User ${formData.username} created. They must verify their email (${formData.email}) via the link sent. Once verified and logged in, their database record will be created with the assigned team and locations, and they will appear in the list.`);
       setIsModalOpen(false);
+
+      // Note: We return void here because Cognito creates users asynchronously.
+      // The actual DB userId is only available after email verification.
+      // If a group was selected, the locations are already set - group assignment
+      // can be done after the user appears in the system.
+      return;
 
     } catch (error: any) {
       console.error("Error creating user via Amplify signUp:", error);
