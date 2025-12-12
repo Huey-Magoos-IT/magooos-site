@@ -28,7 +28,7 @@ const LocationSelectionPage = () => {
     );
   }, [user?.locationIds, locationsData?.locations]);
 
-  const hasAccess = hasAnyRole(teamRoles, ['LOCATION_ADMIN', 'ADMIN', 'PRICE_ADMIN']);
+  const hasAccess = hasAnyRole(teamRoles, ['PRICE_USER', 'PRICE_ADMIN', 'ADMIN']);
 
   // Initialize with previously selected locations from sessionStorage
   useEffect(() => {
@@ -113,7 +113,7 @@ const LocationSelectionPage = () => {
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-xl font-semibold text-[var(--theme-error)]">Access Denied</div>
         <div className="text-[var(--theme-text-secondary)]">
-          You need LOCATION_ADMIN, ADMIN, or PRICE_ADMIN role access to view this content.
+          You need PRICE_USER, PRICE_ADMIN, or ADMIN role access to view this content.
         </div>
       </div>
     );
