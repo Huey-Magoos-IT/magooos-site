@@ -1,309 +1,402 @@
-# FBC Beta Testing Guide
+# IT Functionality Testing Guide: FBC User Perspective
 
-This guide is for FBC (Franchise Business Consultant) users to test the Huey Magoo's Portal before full rollout.
+This guide is for IT team members to test portal functionality **as an FBC user would experience it**.
 
----
-
-## **Part 1: Getting Started**
-
-### Understanding Your Account
-
-As an FBC, you have been set up with:
-- **Team:** FBC
-- **Roles:** REPORTING, SCANS, LOCATION_ADMIN
-- **Group:** A group containing all YOUR franchise locations
-
-Your roles give you access to:
-| Role | What It Unlocks |
-|------|-----------------|
-| REPORTING | Red Flag Reports page |
-| SCANS | % of Scans page |
-| LOCATION_ADMIN | Groups page + ability to create Location Users |
-
-### Account Activation Process
-
-**Step 1: Verify Your Email**
-1. Check your inbox for an email with subject "Huey Magoos Portal Account - Email Verification Required"
-2. Click the "Verify Email" link
-3. A confirmation page will appear - you can close it
-
-**Step 2: Set Your Password**
-1. Go to the login page
-2. Click "Reset Password"
-3. Enter your username (provided by IT)
-4. Check your email for a confirmation code
-5. Enter the code and create your new password
-6. You can now log in
+**Goal:** Verify everything works correctly and identify UI/UX issues from the FBC perspective.
 
 ---
 
-### ✅ Test: Authentication
+## **Setup: Create a Test FBC Account**
 
-| Test | Try This | What Should Happen | ✓/✗ |
-|------|----------|-------------------|-----|
-| Login | Enter username + password | Redirects to Teams page | |
-| Password toggle | Click eye icon on password field | Shows/hides password | |
-| Wrong password | Enter incorrect password | Shows error, stays on login | |
+Before testing, create a dummy FBC user:
 
----
+1. **Create a Test Group:**
+   - Go to Groups page (as Admin)
+   - Create a group named "IT Test Group"
+   - Add 3-5 test locations
 
-## **Part 2: Navigation**
+2. **Create a Test FBC User:**
+   - Go to Users page
+   - Create user with:
+     - Username: `testfbc`
+     - Email: Your email (so you receive verification)
+     - Team: FBC (must have REPORTING, SCANS, LOCATION_ADMIN roles)
+   - Verify the email
+   - Set password
 
-After logging in, you'll see the **sidebar** on the left with:
+3. **Assign User to Group:**
+   - Go to Groups page
+   - Assign `testfbc` to "IT Test Group"
 
-```
-Home
-Teams
-Groups
-▼ Reports
-   • % of Scans
-   • Red Flag Reports
-   • Price Portal
-```
-
-**Home Page:** Your dashboard with Quick Actions - shortcuts to pages you can access.
-
-**Teams Page:** Shows your team (FBC) and your roles. Just informational.
-
-**Groups Page:** Where you manage Location Users (covered in Part 5).
+4. **Log out and log in as `testfbc`**
 
 ---
 
-### ✅ Test: Navigation
+## **Section 1: Authentication Flow**
 
-| Test | Try This | What Should Happen | ✓/✗ |
-|------|----------|-------------------|-----|
-| Sidebar visible | Look at left side | All menu items listed above are visible | |
-| Home page | Click "Home" | Dashboard loads with Quick Actions | |
-| Quick Actions | View Quick Actions section | Shows only pages you have access to | |
+### 1.1 Login Page
 
----
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does the login page load correctly? | | |
+| Is the layout clear and professional? | | |
+| Are the username/password fields obvious? | | |
+| Does the password eye icon work? | | |
+| Is the "Reset Password" link visible and clear? | | |
+| Are error messages helpful when login fails? | | |
 
-## **Part 3: % of Scans**
+**UI/Layout Notes:**
+-
+-
 
-### What This Page Does
+### 1.2 Password Reset Flow
 
-This page shows your **Scan Rate** - the percentage of transactions where a rewards card was scanned. Use this to:
-- Monitor store performance
-- Identify employees who need coaching
-- Track improvements over time
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Is the reset password flow intuitive? | | |
+| Does the confirmation code email arrive? | | |
+| Are instructions clear at each step? | | |
+| Any confusing wording or unclear buttons? | | |
 
-### Report Types
-
-| Report | What It Shows |
-|--------|--------------|
-| **Scan Summary** | Scan Rate per LOCATION - compare stores |
-| **Scan Detail** | Scan Rate per EMPLOYEE - see individual performance |
-| **Rolled Up Summary** | Average performance across your date range |
-
-### How to Generate a Report
-
-1. **Select Report Type:** Click the dropdown under "File Content Type"
-2. **Select Dates:** Use a preset (Last 7 Days) OR pick custom dates
-3. **Select Locations:** Click locations in the table on the right. They appear as chips.
-   - **Add All:** Adds all your locations
-   - **Clear All:** Removes all selections
-   - **Undo:** Reverts your last action
-4. **Click "Process Data":** Wait for the report to generate
-5. **View Results:** Data appears in the table below
-6. **Export:** Click the export button to download as CSV
+**UI/Layout Notes:**
+-
+-
 
 ---
 
-### ✅ Test: % of Scans
+## **Section 2: Home Page (FBC View)**
 
-| Test | Try This | What Should Happen | ✓/✗ |
-|------|----------|-------------------|-----|
-| Page loads | Click "% of Scans" in sidebar | Page loads, shows green "SCANS Access Successful" | |
-| Report types | Click dropdown | Shows: Scan Detail, Scan Summary, Rolled Up Summary | |
-| Date preset | Select "Last 7 Days" | Start and End dates auto-fill | |
-| Add location | Click a location in the table | Appears as a chip in "Selected Locations" | |
-| Add All | Click "Add All" button | All your locations added | |
-| Clear All | Click "Clear All" | All locations removed | |
-| Undo | Make a change, click "Undo" | Previous state restored | |
-| Generate report | Select type, dates, 3+ locations, click "Process Data" | Loading shows, then data table appears | |
-| Scan Summary | Generate with "Scan Summary" | Shows Location, Total Checks, Scans, Scan Rate | |
-| Scan Detail | Generate with "Scan Detail" | Shows Employee breakdown | |
-| Export | Click export button | CSV file downloads | |
-| No locations | Try to process with no locations | Error message or prompt | |
-| No data | Select dates with no data | "No data found" message | |
+Log in as the test FBC user and examine the home page.
 
----
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does the page load without errors? | | |
+| Does the greeting show the correct username? | | |
+| Does the time widget update? | | |
+| Are Quick Actions visible? | | |
+| Do Quick Actions only show permitted pages? | | |
+| Is the layout balanced and professional? | | |
 
-## **Part 4: Red Flag Reports**
+**UI/Layout Observations:**
 
-### What This Page Does
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Hero section gradient/colors | | |
+| Stats cards (Active Users, Reports, etc.) | | |
+| Quick Actions grid | | |
+| Recent Activity section | | |
+| Overall spacing and alignment | | |
 
-This page helps you identify **potential theft or misuse** by finding:
-1. Rewards accounts used suspiciously often
-2. Discounts given without a rewards card
-
-### Report Types
-
-| Report | What It Finds |
-|--------|--------------|
-| **Red Flag Transactions** | Rewards IDs used multiple times per day (suspicious) |
-| **Discount without Rewards ID** | Discounts applied with no rewards card (shouldn't happen) |
-
-### How to Use Red Flag Transactions
-
-1. Select "Red Flag Transactions" as report type
-2. Set **"Min Daily Usage Count"** - e.g., `3` means "show me rewards IDs used 3+ times in one day"
-3. Select dates and locations
-4. Click "Process Data"
-5. Review results - these are transactions worth investigating
-
-### How to Use Discount without Rewards ID
-
-1. Select "Discount without Rewards ID"
-2. Select dates and locations
-3. Click "Process Data"
-4. Review results - every row is a discount given without a rewards card attached
+**Notes:**
+-
+-
 
 ---
 
-### ✅ Test: Red Flag Reports
+## **Section 3: Sidebar Navigation (FBC View)**
 
-| Test | Try This | What Should Happen | ✓/✗ |
-|------|----------|-------------------|-----|
-| Page loads | Click "Red Flag Reports" in sidebar | Page loads, shows "REPORTING Access Granted" | |
-| Report types | Click dropdown | Shows: Red Flag Transactions, Discount without Rewards ID | |
-| Usage count field | Select "Red Flag Transactions" | "Min Daily Usage Count" field appears | |
-| Set count | Enter "3" in usage count | Value accepted | |
-| Generate Red Flag | Fill form, click "Process Data" | Shows transactions with IDs used 3+ times/day | |
-| Generate Discount | Select Discount report, fill form, process | Shows discounts without rewards ID | |
-| Employee names | Check Employee column | Names populated where available | |
-| Export | Click export button | CSV downloads | |
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does sidebar show correct items for FBC? | | |
+| Should see: Home, Teams, Groups, Reports section | | |
+| Should NOT see: Users, Price Users | | |
+| Does collapse/expand work? | | |
+| Does "Reports" section expand/collapse? | | |
+| Is the active page highlighted? | | |
+| Are icons clear and appropriate? | | |
 
----
+**UI/Layout Observations:**
 
-## **Part 5: Groups - Creating Location Users**
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Sidebar width | | |
+| Menu item spacing | | |
+| Icon choices | | |
+| Active state styling | | |
+| "Reports" section header | | |
 
-### What This Page Does
-
-The **Groups** page lets you create **Location Users** - people who work at your franchise locations and need access to run reports for specific stores.
-
-### Understanding the Hierarchy
-
-```
-YOU (FBC / Location Admin)
-  └── Your Group (contains your locations)
-        └── Location Users YOU create
-              └── Can only see locations YOU assign them
-```
-
-### What You Can Do
-
-- ✅ View your assigned group
-- ✅ See which locations are in your group
-- ✅ Create Location Users under your group
-- ✅ Assign specific locations to those users
-- ✅ Resend verification emails to users you created
-- ✅ Delete unconfirmed users you created
-
-### What You CANNOT Do
-
-- ❌ Create or edit groups (Admin only)
-- ❌ See other groups
-- ❌ Assign locations outside your group
-
-### How to Create a Location User
-
-1. Go to **Groups** page
-2. Find your group card
-3. Click **"Create Location User"** button
-4. Fill out the form:
-   - **Username:** Their login name
-   - **Email:** Their email address
-   - **Temp Password:** Initial password (they'll change it later)
-   - **Locations:** Select which of YOUR locations they can access
-5. Click **Create/Submit**
-
-### What Happens Next
-
-1. User appears in "Unconfirmed Users" section on your group card
-2. They receive a verification email
-3. They verify their email and set their password
-4. They can now log in and see ONLY the locations you assigned
-
-### Managing Unconfirmed Users
-
-| Action | What It Does |
-|--------|-------------|
-| **Resend Verification** | Sends another verification email |
-| **Delete** | Removes the user (if they haven't verified yet) |
+**Notes:**
+-
+-
 
 ---
 
-### ✅ Test: Groups
+## **Section 4: Teams Page**
 
-| Test | Try This | What Should Happen | ✓/✗ |
-|------|----------|-------------------|-----|
-| Page loads | Click "Groups" in sidebar | Page loads, shows YOUR group only | |
-| Group info | Look at your group card | Shows group name and your locations | |
-| Create User button | Look for "Create Location User" | Button is visible on your group | |
-| Open modal | Click "Create Location User" | Modal/form opens | |
-| Team pre-selected | Check Team field | Should say "Location User" automatically | |
-| Enter username | Type a username | Field accepts input (can you type?) | |
-| Enter email | Type an email | Field accepts input | |
-| Enter password | Type a temp password | Field accepts input | |
-| Password toggle | Click eye icon | Password shows/hides | |
-| Location picker | View available locations | Only YOUR group's locations shown | |
-| Select locations | Click to select 1-2 locations | Locations selected | |
-| Create user | Fill everything, click Create | Success message, modal closes | |
-| User appears | Check group card | New user in "Unconfirmed Users" section | |
-| Resend email | Click "Resend Verification" | Confirmation that email sent | |
-| Delete user | Click "Delete" on unconfirmed user | User removed from list | |
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does the page load? | | |
+| Does it show the user's team (FBC)? | | |
+| Are roles displayed correctly? | | |
+| Is the page purpose clear? | | |
 
----
+**UI/Layout Observations:**
 
-## **Part 6: Usability Feedback**
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Page header | | |
+| Team card design | | |
+| Role badges | | |
+| Overall page feels bare/empty? | | |
+| Is there enough information displayed? | | |
 
-### Performance - Is it fast enough?
-
-| Question | Response |
-|----------|----------|
-| Do pages load in under 3 seconds? | |
-| Do reports process in under 30 seconds? | |
-| Is navigation between pages smooth? | |
-
-### Usability - Is it easy to use?
-
-| Question | Response |
-|----------|----------|
-| Was the signup process clear? | |
-| Could you find the reports you needed? | |
-| Were the report filters intuitive? | |
-| Is the data presented in a useful way? | |
-
-### Value - Is it useful for your job?
-
-| Question | Response |
-|----------|----------|
-| Is the Scan Rate data useful for monitoring stores? | |
-| Is the Red Flag report useful for identifying theft? | |
-| Would you use this regularly? Why or why not? | |
-| What would make this more valuable for you? | |
+**Notes:**
+-
+-
 
 ---
 
-## **Feedback Summary**
+## **Section 5: Groups Page (FBC View)**
 
-**Tester Name:** _______________________
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does page load? | | |
+| Does user see ONLY their assigned group? | | |
+| Is "Create Group" button hidden (FBC can't create)? | | |
+| Is "Edit" button hidden on group card? | | |
+| Is group name and locations displayed? | | |
+| Is "Create Location User" button visible? | | |
 
-**Date Tested:** _______________________
+**UI/Layout Observations:**
 
-**Overall Rating:** ☐ Works Great  ☐ Mostly Works  ☐ Needs Work  ☐ Broken
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Group card design | | |
+| Location list display | | |
+| Button placements | | |
+| "Unconfirmed Users" section | | |
 
-**Top 3 Issues Found:**
+**Notes:**
+-
+-
+
+---
+
+## **Section 6: Create Location User Modal**
+
+Click "Create Location User" on the group card.
+
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does modal open? | | |
+| Can you TYPE in the Username field? | | |
+| Can you TYPE in the Email field? | | |
+| Can you TYPE in the Password field? | | |
+| Does password eye icon work? | | |
+| Is Team pre-selected to "Location User"? | | |
+| Does location picker show only group locations? | | |
+| Can you select/deselect locations? | | |
+| Does form submit successfully? | | |
+| Does modal close after success? | | |
+| Does new user appear in "Unconfirmed Users"? | | |
+
+**UI/Layout Observations:**
+
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Modal size and positioning | | |
+| Form field labels | | |
+| Field spacing | | |
+| Location picker design | | |
+| Submit button placement | | |
+| Error message display | | |
+
+**Notes:**
+-
+-
+
+---
+
+## **Section 7: % of Scans Page**
+
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does page load? | | |
+| Is access granted message shown? | | |
+| Does report type dropdown work? | | |
+| Shows: Scan Detail, Scan Summary, Rolled Up Summary? | | |
+| Does date preset dropdown work? | | |
+| Does manual date selection work? | | |
+| Can future dates be blocked? | | |
+| Does location table show only permitted locations? | | |
+| Does clicking a location add it as a chip? | | |
+| Does "Add All" work? | | |
+| Does "Clear All" work? | | |
+| Does "Undo" work? | | |
+| Does "Process Data" show loading state? | | |
+| Does data table appear after processing? | | |
+| Does export/download work? | | |
+
+**UI/Layout Observations:**
+
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Page header | | |
+| Form layout (left column) | | |
+| Location table (right column) | | |
+| Selected locations chip display | | |
+| Date pickers | | |
+| "Process Data" button | | |
+| Loading indicator | | |
+| Data table design | | |
+| Export button | | |
+
+**Notes:**
+-
+-
+
+---
+
+## **Section 8: Red Flag Reports Page**
+
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does page load? | | |
+| Is access granted message shown? | | |
+| Does report type dropdown work? | | |
+| Shows: Red Flag Transactions, Discount without Rewards ID? | | |
+| Does "Min Daily Usage Count" appear for Red Flag type? | | |
+| Does it hide for Discount type? | | |
+| Do date and location selectors work? | | |
+| Does processing work for both report types? | | |
+| Does data display correctly? | | |
+| Does export work? | | |
+
+**UI/Layout Observations:**
+
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Report type selector placement | | |
+| "Min Daily Usage Count" field placement | | |
+| Form arrangement | | |
+| Data table columns | | |
+| Should any elements be rearranged? | | |
+
+**Notes:**
+-
+-
+
+---
+
+## **Section 9: Price Portal (FBC View)**
+
+> Note: Price Portal is unfinished. Document what works and what doesn't.
+
+| Check | Observation | Issues Found |
+|-------|-------------|--------------|
+| Does location selection page load? | | |
+| Can locations be selected? | | |
+| Does "Continue" work? | | |
+| Does price table load? | | |
+| Does category filter work? | | |
+| Can prices be edited? | | |
+| Does submit work? | | |
+
+**UI/Layout Observations:**
+
+| Element | Looks Good? | Suggested Changes |
+|---------|-------------|-------------------|
+| Location selection page | | |
+| Price table layout | | |
+| Category filter | | |
+| Input fields for new prices | | |
+
+**Known Issues / Broken Features:**
+-
+-
+
+---
+
+## **Section 10: General UI/UX Observations**
+
+### Color Palette
+
+| Element | Current | Issue/Suggestion |
+|---------|---------|------------------|
+| Primary color | | |
+| Backgrounds | | |
+| Text colors | | |
+| Success/Error states | | |
+| Buttons | | |
+
+### Typography
+
+| Element | Current | Issue/Suggestion |
+|---------|---------|------------------|
+| Headers | | |
+| Body text | | |
+| Labels | | |
+| Readability | | |
+
+### Consistency
+
+| Check | Observation |
+|-------|-------------|
+| Are buttons styled consistently across pages? | |
+| Are form layouts consistent? | |
+| Are success/error messages consistent? | |
+| Are loading states consistent? | |
+
+### Responsiveness
+
+| Screen Size | Issues Found |
+|-------------|--------------|
+| Desktop (1920px) | |
+| Laptop (1366px) | |
+| Tablet (768px) | |
+| Mobile (375px) | |
+
+---
+
+## **Section 11: Performance**
+
+| Metric | Target | Actual | Pass? |
+|--------|--------|--------|-------|
+| Login page load | < 2 sec | | |
+| Home page load | < 3 sec | | |
+| Report page load | < 3 sec | | |
+| Report processing (small) | < 10 sec | | |
+| Report processing (large) | < 30 sec | | |
+| Page navigation | < 1 sec | | |
+| Modal open | Instant | | |
+
+---
+
+## **Testing Summary**
+
+**Tester:** _______________________
+
+**Date:** _______________________
+
+**Pages Tested:**
+- [ ] Login / Auth
+- [ ] Home Page
+- [ ] Sidebar
+- [ ] Teams Page
+- [ ] Groups Page
+- [ ] Create Location User
+- [ ] % of Scans
+- [ ] Red Flag Reports
+- [ ] Price Portal
+
+### Critical Bugs (Blocking)
 1.
 2.
 3.
 
-**Feature Requests / Suggestions:**
+### High Priority Issues (Should Fix)
+1.
+2.
+3.
 
+### UI/UX Improvements (Nice to Have)
+1.
+2.
+3.
 
-**Would this be useful for your franchisees?** ☐ Yes  ☐ No  ☐ Maybe
+### Overall Assessment
 
-**Additional Comments:**
+☐ Ready for FBC release
+☐ Needs fixes before release
+☐ Major issues - not ready
 
