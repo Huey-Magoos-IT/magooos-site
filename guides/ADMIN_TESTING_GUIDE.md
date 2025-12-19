@@ -1,434 +1,463 @@
-# Administrator Functionality Testing Guide
+# Administrator Testing & Training Guide
 
-This guide is for IT administrators to comprehensively test all portal functionality before rollout.
-
----
-
-## **Test Accounts Required**
-
-| Account Type | Team/Roles | Purpose |
-|--------------|------------|---------|
-| Admin | Admin team (full access) | Test all admin features |
-| FBC User | FBC team (REPORTING, SCANS, LOCATION_ADMIN) | Test FBC experience |
-| Location User | Location User team | Test restricted access |
-| Price Admin | PRICE_ADMIN role | Test price features |
+This guide is for IT administrators to understand, test, and manage the Huey Magoo's Portal.
 
 ---
 
-## **Bug Reporting Template**
+## **Part 1: System Architecture Overview**
+
+### How the Portal Works
+
+The portal is a **role-based access control (RBAC)** system. What users can see and do depends on their **Team**, **Roles**, and **Group** assignment.
+
+### The Hierarchy
 
 ```
-**Bug Title:** [Brief description]
-**Severity:** Critical / High / Medium / Low
-**Page:** [Where it occurred]
-**Steps to Reproduce:**
-1.
-2.
-3.
-**Expected:** [What should happen]
-**Actual:** [What happened]
-**Browser:** [Chrome/Firefox/Safari/Edge + version]
-**Screenshots:** [Attach if applicable]
+TEAMS (define what roles a user has)
+  └── ROLES (define what pages/features a user can access)
+        └── GROUPS (define which locations a user can see data for)
+              └── USERS (individual people)
 ```
 
-**Severity Guide:**
-- **Critical:** Can't use app, data loss, security issue
-- **High:** Major feature broken
-- **Medium:** Feature works but has problems
-- **Low:** Minor visual/cosmetic issues
+### Key Concepts
+
+| Concept | What It Is | Example |
+|---------|-----------|---------|
+| **Team** | A collection of roles assigned to users | "FBC Team" has REPORTING, SCANS, LOCATION_ADMIN |
+| **Role** | A permission that unlocks specific features | SCANS unlocks the % of Scans page |
+| **Group** | A collection of locations | "Brian's Group" contains 19 franchise locations |
+| **User** | An individual person with a login | bsolomonic@hueymagoos.com |
+
+### Available Roles
+
+| Role | What It Unlocks |
+|------|-----------------|
+| ADMIN | Everything - full system access |
+| DATA | Rewards Transactions page |
+| REPORTING | Red Flag Reports page |
+| SCANS | % of Scans page |
+| RAW_DATA | Raw Data page |
+| RAW_LOYALTY_REPORTING | Raw Rewards Data page |
+| LOCATION_ADMIN | Groups page + create Location Users |
+| PRICE_ADMIN | Price Portal + Price Users management |
 
 ---
 
-## **Section 1: Authentication**
+## **Part 2: Setting Up an FBC (End-to-End)**
 
-### 1.1 Login Flow
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Valid login | Enter correct credentials, click Login | Redirects to Teams page | | |
-| Invalid password | Enter wrong password | Error message, stays on login | | |
-| Invalid username | Enter nonexistent username | Error message | | |
-| Empty fields | Click Login with empty fields | Validation error | | |
-| Password visibility | Click eye icon | Password shows/hides | | |
+This is the complete process to onboard a new FBC like Brian Solomonic.
 
-### 1.2 Password Reset
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Request reset | Click Reset Password, enter username | Code email sent | | |
-| Valid code | Enter correct code + new password | Password updated | | |
-| Invalid code | Enter wrong code | Error message | | |
-| Password requirements | Try weak password | Validation error | | |
+### Step 1: Ensure FBC Team Exists
 
-### 1.3 New User Verification
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Verification email | Create new user | Email received | | |
-| Click verify link | Click link in email | Email verified | | |
-| Resend verification | Click resend button | New email sent | | |
+The FBC team should already exist with these roles:
+- REPORTING
+- SCANS
+- LOCATION_ADMIN
 
----
+**To verify:**
+1. Go to **Teams** page
+2. Look for "FBC" team
+3. Confirm it has the three roles above
 
-## **Section 2: Navigation & Layout**
+### Step 2: Create a Group for the FBC
 
-### 2.1 Sidebar (Admin View)
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| All links visible | Login as Admin | Home, Users, Teams, Groups, Price Users, all Reports | | |
-| Collapse/expand | Click collapse button | Sidebar toggles smoothly | | |
-| Reports section | Click chevron | Expands/collapses sub-items | | |
-| Active state | Click link | Current page highlighted | | |
+**Why:** Groups bundle locations together. Each FBC manages different franchise locations.
 
-### 2.2 Sidebar (FBC View)
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Limited links | Login as FBC | NO Users, NO Price Users visible | | |
-| Groups visible | Check sidebar | Groups link shows | | |
-| Reports visible | Check Reports section | % of Scans, Red Flag Reports, Price Portal | | |
+**How:**
+1. Go to **Groups** page
+2. Click **"Create Group"**
+3. Enter:
+   - **Name:** "Brian Solomonic" (or descriptive name)
+   - **Description:** Optional notes
+   - **Locations:** Select ALL locations this FBC manages
+4. Click **Save**
 
-### 2.3 Home Page
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Click Home | Dashboard displays | | |
-| Greeting | Check greeting | Time-appropriate (Morning/Afternoon/Evening) | | |
-| Username | Check greeting | Shows logged-in user's name | | |
-| Quick Actions | View Quick Actions | Only accessible pages shown | | |
-| Clock | Check time widget | Shows current time, updates | | |
+### Step 3: Create the FBC User Account
 
-### 2.4 Responsive Design
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Desktop (1920px) | View on desktop | Layout correct | | |
-| Tablet (768px) | Resize to tablet | Layout adjusts | | |
-| Mobile (375px) | Resize to mobile | Sidebar collapsible, content readable | | |
+**How:**
+1. Go to **Users** page
+2. Click **"Create User"**
+3. Enter:
+   - **Username:** `bsolomonic`
+   - **Email:** `bsolomonic@hueymagoos.com`
+   - **Temp Password:** Generate one (e.g., `S56(SYhag*%4AHHi`)
+   - **Team:** Select "FBC"
+   - **Locations:** Select all locations (will be overridden by group anyway)
+4. Click **Create**
 
----
+**What happens:**
+- User is created in AWS Cognito
+- Verification email is sent to the user
+- User appears in Users list
 
-## **Section 3: Users Page (Admin Only)**
+### Step 4: Assign the User to Their Group
 
-### 3.1 User List
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Users | All users displayed | | |
-| User info | Check user cards | Shows username, email, team, status | | |
-| Search/filter | Use search (if available) | Filters user list | | |
+⚠️ **IMPORTANT:** The user MUST be in a team with LOCATION_ADMIN role BEFORE you can assign them to a group.
 
-### 3.2 Create User
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Open modal | Click Create User | Modal opens | | |
-| Enter username | Type username | Field accepts input | | |
-| Enter email | Type email | Field accepts input | | |
-| Enter password | Type temp password | Field accepts input | | |
-| Password visibility | Click eye icon | Password shows/hides | | |
-| Select team | Choose team from dropdown | Team selected | | |
-| Select locations | Add locations | Locations appear as chips | | |
-| Submit valid form | Fill all fields, submit | User created, appears in list | | |
-| Submit empty form | Submit without data | Validation errors shown | | |
+**How:**
+1. Go to **Groups** page
+2. Find the group you created (e.g., "Brian Solomonic")
+3. Click to expand the group OR click **"Assign User"**
+4. Select the user from the dropdown
+5. Click **Assign**
 
-### 3.3 Edit User
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Open edit | Click Edit on user | Edit form opens | | |
-| Modify fields | Change user details | Fields editable | | |
-| Save changes | Click Save | Changes saved | | |
+**What happens:**
+- User's `groupId` is set to this group
+- User's `locationIds` are automatically updated to include ALL locations in the group
+- User can now see their group on the Groups page
+- User can create Location Users for their franchise locations
 
-### 3.4 Delete User
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Delete user | Click Delete, confirm | User removed from list | | |
-| Cancel delete | Click Delete, cancel | User NOT removed | | |
+### Step 5: Send Login Credentials
 
-### 3.5 Reset Password
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Reset password | Click reset for user | Password reset initiated | | |
-| Password visibility | Click eye icon in reset dialog | Password shows/hides | | |
+Send the FBC:
+- Their username
+- Their temporary password
+- Link to the portal
+- Instructions to verify email and reset password (see FBC_ONBOARDING_GUIDE.md)
 
 ---
 
-## **Section 4: Teams Page**
+## **Part 3: Understanding Groups in Detail**
 
-### 4.1 View Teams
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Teams | Teams list displays | | |
-| Team info | Check team cards | Shows team name, roles | | |
-| Role badges | View role badges | Roles displayed correctly | | |
+### What Groups Control
 
----
+| Feature | How Groups Affect It |
+|---------|---------------------|
+| **Report Data** | Users only see data for locations in their group |
+| **Location Selection** | Location pickers only show group locations |
+| **Create Users** | Location Admins can only create users within their group |
 
-## **Section 5: Groups Page**
+### Admin vs. Location Admin View
 
-### 5.1 Admin View
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| All groups visible | Login as Admin | All groups shown | | |
-| Create group | Click Create Group | Modal opens | | |
-| Enter name | Type group name | Field accepts input | | |
-| Enter description | Type description | Field accepts input | | |
-| Select locations | Add locations to group | Locations added | | |
-| Save group | Click Save | Group created, appears in list | | |
-| Edit group | Click Edit | Can modify group details | | |
-| Delete group | Click Delete, confirm | Group removed | | |
-| Assign user | Assign LocationAdmin to group | User appears under group | | |
-| Remove user | Remove user from group | User removed, access cleared | | |
+| Action | Admin | Location Admin |
+|--------|-------|----------------|
+| See all groups | ✅ | ❌ (only their group) |
+| Create groups | ✅ | ❌ |
+| Edit groups | ✅ | ❌ |
+| Delete groups | ✅ | ❌ |
+| Assign users to groups | ✅ | ❌ |
+| Create Location Users | ✅ | ✅ (only in their group) |
 
-### 5.2 Location Admin View
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Single group | Login as LocationAdmin | Only their group visible | | |
-| No create button | Check page | Cannot create new groups | | |
-| No edit button | Check group card | Cannot edit group | | |
-| Create Location User | Click Create Location User | Modal opens | | |
-| Team pre-selected | Check Team field | "Location User" auto-selected | | |
-| Locations restricted | Check location picker | Only group's locations available | | |
-| Create user | Fill form, submit | User created successfully | | |
-| Type in fields | Click into username, email, password | Can type in all fields | | |
-| Unconfirmed users | Create user | Appears in unconfirmed section | | |
-| Resend verification | Click Resend | Email sent | | |
-| Delete unconfirmed | Click Delete | User removed | | |
+### When a Group is Updated
 
-### 5.3 No Group Assigned
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Access without group | Login as LocationAdmin without group | "Group Access Pending" message | | |
+If you **add or remove locations** from a group:
+- All Location Admins assigned to that group automatically have their locations updated
+- Location Users keep their individual location assignments (subset of group)
+
+### When a User is Removed from a Group
+
+- Their `groupId` is cleared
+- Their `locationIds` are cleared
+- They lose access to group features
+- They see "Group Access Pending" message
 
 ---
 
-## **Section 6: % of Scans Report**
+## **Part 4: User Management**
 
-### 6.1 Page Access
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to % of Scans | Page displays without error | | |
-| Access check | View access banner | "SCANS Access Successful" shown | | |
-| Denied (no role) | Login without SCANS role | Access denied message | | |
+### Users Page Overview
 
-### 6.2 Report Type
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Dropdown works | Click File Content Type | Shows 3 options | | |
-| Scan Detail | Select Scan Detail | Option selected | | |
-| Scan Summary | Select Scan Summary | Option selected | | |
-| Rolled Up Summary | Select Rolled Up Summary | Option selected | | |
+The **Users** page shows all users in the system with:
+- Username
+- Email
+- Team
+- Status (Active/Disabled)
 
-### 6.3 Date Selection
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Preset dropdown | Click Date Range Preset | Shows preset options | | |
-| Select preset | Choose "Last 7 Days" | Dates auto-populate | | |
-| Manual start date | Pick start date | Date updates, preset clears | | |
-| Manual end date | Pick end date | Date updates | | |
-| Future date blocked | Try to select tomorrow | Not selectable | | |
-| Start after end | Try invalid range | Validation or auto-correct | | |
+### Creating a User
 
-### 6.4 Location Selection
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Location table | View table | Shows locations user can access | | |
-| Add location | Click location row | Added to Selected Locations | | |
-| Remove location | Click X on chip | Location removed | | |
-| Add All | Click Add All | All locations added | | |
-| Clear All | Click Clear All | All locations removed | | |
-| Undo | Click Undo after action | Previous state restored | | |
+1. Click **"Create User"**
+2. Fill in:
+   - **Username:** Login name (e.g., `jsmith`)
+   - **Email:** Must be valid (receives verification)
+   - **Temp Password:** Initial password
+   - **Team:** Determines their roles/permissions
+   - **Locations:** Which locations they can access
+3. Click **Create**
 
-### 6.5 Process Reports
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Scan Summary | Select type, dates, locations | Report generates, shows table | | |
-| Scan Detail | Select type, dates, locations | Report generates with employee data | | |
-| Rolled Up Summary | Select type, dates, locations | Aggregated data shows | | |
-| Loading state | Click Process | Loading indicator visible | | |
-| Empty results | Select dates with no data | "No data" message | | |
-| Export CSV | Click export button | CSV downloads correctly | | |
+### Password Field
 
-### 6.6 Performance
-| Test | Metric | Target | Actual | ✓/✗ |
-|------|--------|--------|--------|-----|
-| 7 days, 5 locations | Load time | < 10 sec | | |
-| 30 days, 20 locations | Load time | < 30 sec | | |
+- Click the **eye icon** to show/hide the password
+- This works on create and reset password dialogs
+
+### Editing a User
+
+- Click **Edit** on a user row
+- Modify fields as needed
+- Click **Save**
+
+### Deleting a User
+
+- Click **Delete** on a user row
+- Confirm the deletion
+- User is removed from Cognito and database
+
+### Resetting a Password
+
+- Click **Reset Password** on a user row
+- Enter new temporary password
+- User will need to log in with new password
 
 ---
 
-## **Section 7: Red Flag Reports**
+## **Part 5: How Authentication Works**
 
-### 7.1 Page Access
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Red Flag Reports | Page displays | | |
-| Access check | View access banner | "REPORTING Access Granted" | | |
+### Backend: AWS Cognito
 
-### 7.2 Red Flag Transactions
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Select report type | Choose Red Flag Transactions | Selected | | |
-| Usage count field | Check form | "Min Daily Usage Count" appears | | |
-| Set count to 3 | Enter 3 | Value accepted | | |
-| Process report | Select dates, locations, process | Data displays | | |
-| Verify filtering | Check results | Only IDs used 3+ times/day | | |
+All authentication is handled by **AWS Cognito**:
+- User accounts are stored in Cognito User Pool
+- Passwords are managed by Cognito
+- Email verification is handled by Cognito
+- Password reset emails come from Cognito
 
-### 7.3 Discount without Rewards ID
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Select report type | Choose Discount without Rewards ID | Selected | | |
-| Process report | Select dates, locations, process | Data displays | | |
-| Verify data | Check results | Shows discounts without rewards ID | | |
+### User Creation Flow
 
-### 7.4 Data Quality
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Employee names | Check Employee column | Names populated | | |
-| Location filter | Check data | Matches selected locations | | |
-| Date filter | Check dates | Within selected range | | |
-| Export CSV | Click export | Downloads correctly | | |
+```
+1. Admin creates user in portal
+   ↓
+2. Portal calls Cognito signUp() API
+   ↓
+3. Cognito creates user account
+   ↓
+4. Cognito sends verification email
+   ↓
+5. User clicks verification link
+   ↓
+6. User sets password via Reset Password flow
+   ↓
+7. User can now log in
+   ↓
+8. On first login, database record is created/updated
+```
 
----
+### Unconfirmed Users
 
-## **Section 8: Rewards Transactions (Data Page)**
+Users who haven't verified their email appear as "Unconfirmed" in:
+- The Users page (for admins)
+- The Groups page (for Location Admins viewing their group)
 
-### 8.1 Page Access
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Rewards Transactions | Page displays | | |
-| Access check | View access banner | "DATA Access" shown | | |
-
-### 8.2 Data Type Check Report
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Report type | Check dropdown | "Data Type Check" available | | |
-| Select dates | Choose date range | Dates selected | | |
-| Select locations | Add locations | Locations added | | |
-| Process | Click Process Data | Report generates | | |
-| Export | Export to CSV | Downloads correctly | | |
+Options for unconfirmed users:
+- **Resend Verification:** Sends another verification email
+- **Delete:** Removes the unverified account
 
 ---
 
-## **Section 9: Raw Data Pages**
+## **Part 6: Report Pages**
 
-### 9.1 Raw Data Page
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Raw Data | Page displays | | |
-| File list | View available files | JSON files listed | | |
-| Download file | Select file, download | JSON file downloads | | |
+### % of Scans
 
-### 9.2 Raw Rewards Data Page
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Raw Rewards Data | Page displays | | |
-| File selection | Select a file | File selected | | |
-| View JSON | Load file | JSON displays in viewer | | |
+**Purpose:** Track rewards card scan rates by location and employee
 
----
+**Requires:** SCANS role
 
-## **Section 10: Price Portal**
+**Report Types:**
+- **Scan Summary:** Scan rate per location
+- **Scan Detail:** Scan rate per employee
+- **Rolled Up Summary:** Averaged across date range
 
-> ⚠️ **NOTE:** Price Portal is currently unfinished. Test available functionality and document what's working vs. broken.
+### Red Flag Reports
 
-### 10.1 Location Selection
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Price Portal | Location selection page displays | | |
-| Select locations | Click locations | Locations selected | | |
-| Continue | Click Continue | Proceeds to price table | | |
+**Purpose:** Identify potential theft/fraud
 
-### 10.2 Price Table
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Table loads | After location selection | Price table displays | | |
-| Category filter | Select category | Table filters | | |
-| View prices | Check columns | Current prices shown | | |
-| Edit price | Enter new price in 'New' column | Value accepted | | |
-| Invalid price | Enter letters | Validation error | | |
+**Requires:** REPORTING role
 
-### 10.3 Submit Changes
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Submit | Click Submit Price Changes | Submission processes | | |
-| Account lock | After submit | Portal shows "In Progress" | | |
-| Unlock | Admin unlocks | Access restored | | |
+**Report Types:**
+- **Red Flag Transactions:** Rewards IDs used multiple times per day
+- **Discount without Rewards ID:** Discounts given without a rewards card
 
-### 10.4 Known Issues / Unfinished Areas
-| Area | Status | Notes |
-|------|--------|-------|
-| | | |
-| | | |
-| | | |
+### Rewards Transactions
+
+**Purpose:** Data validation and transaction review
+
+**Requires:** DATA role
+
+**Report Types:**
+- **Data Type Check:** Validates transaction data types
+
+### Raw Data / Raw Rewards Data
+
+**Purpose:** Access raw JSON data files from S3
+
+**Requires:** RAW_DATA or RAW_LOYALTY_REPORTING role
 
 ---
 
-## **Section 11: Price Users (Admin)**
+## **Part 7: Price Portal**
 
-### 11.1 User Management
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Price Users | User list displays | | |
-| View users | Check list | Shows price users with status | | |
-| Lock user | Click Lock | User locked from Price Portal | | |
-| Unlock user | Click Unlock | User unlocked | | |
+> ⚠️ **NOTE:** Price Portal is currently unfinished. Document what works and what doesn't.
 
-### 11.2 Reports
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| View pending reports | Check reports section | Pending price changes shown | | |
-| Send report | Click Send | Report sent | | |
+### How Price Portal Works
 
-### 11.3 Item Mappings
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Navigate | Go to Item Mappings | Page loads | | |
-| View mappings | Check table | Item mappings displayed | | |
+1. User selects locations
+2. User views/edits prices in a table
+3. User submits price changes
+4. User's portal access is **locked** while changes are processed
+5. Admin reviews and approves changes
+6. Admin unlocks the user
 
----
+### Price Users Page (Admin)
 
-## **Section 12: Settings Page**
+**Purpose:** Manage price portal users
 
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Page loads | Navigate to Settings | Page displays | | |
-| User info | Check displayed info | Username, Team, Email shown | | |
-| Info accuracy | Verify data | Matches logged-in user | | |
+**Features:**
+- View all users with price portal access
+- Lock/unlock users
+- View pending price change reports
+- Send reports for processing
+
+### Item Mappings Page
+
+**Purpose:** Map menu items to system IDs
+
+Located at: Price Users → Item Mappings
 
 ---
 
-## **Section 13: Browser Compatibility**
+## **Part 8: Testing Checklist**
 
-| Browser | Version | Works? | Issues |
-|---------|---------|--------|--------|
-| Chrome | Latest | | |
-| Firefox | Latest | | |
-| Safari | Latest | | |
-| Edge | Latest | | |
-| Mobile Chrome | Latest | | |
-| Mobile Safari | Latest | | |
+### Test Accounts Needed
+
+| Account | Team | Roles | Group |
+|---------|------|-------|-------|
+| Admin Test | Admin | (all) | None needed |
+| FBC Test | FBC | REPORTING, SCANS, LOCATION_ADMIN | Assign to test group |
+| Location User Test | Location User | (basic) | Same group as FBC |
 
 ---
 
-## **Section 14: Performance Benchmarks**
+### 8.1 Authentication Tests
 
-| Metric | Target | Actual | Pass? |
-|--------|--------|--------|-------|
-| Initial page load | < 3 sec | | |
-| Navigation between pages | < 1 sec | | |
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| Valid login | Correct credentials | Redirects to Teams | |
+| Invalid login | Wrong password | Error message | |
+| Password visibility | Click eye icon | Password shows/hides | |
+| Password reset | Request reset, enter code | Password updated | |
+| Email verification | Create user, check email | Verification email received | |
+
+### 8.2 User Management Tests (Admin)
+
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| View users | Go to Users page | All users listed | |
+| Create user | Fill form, submit | User created, email sent | |
+| Edit user | Modify and save | Changes saved | |
+| Delete user | Delete and confirm | User removed | |
+| Reset password | Reset for existing user | New password works | |
+
+### 8.3 Groups Tests (Admin)
+
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| View all groups | Go to Groups page | All groups visible | |
+| Create group | Fill form with locations | Group created | |
+| Edit group | Modify name/locations | Changes saved | |
+| Delete group | Delete and confirm | Group removed | |
+| Assign user | Assign Location Admin to group | User appears under group | |
+| Remove user | Remove from group | User's group access cleared | |
+
+### 8.4 Groups Tests (Location Admin)
+
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| View only own group | Login as Location Admin | Only their group visible | |
+| Cannot create group | Check for Create button | Button not present | |
+| Cannot edit group | Check for Edit button | Button not present | |
+| Create Location User | Fill form, submit | User created | |
+| Location restriction | Check location picker | Only group locations available | |
+| Type in fields | Click and type in username/email/password | Can type in all fields | |
+| Manage unconfirmed | Resend/delete options | Both work | |
+
+### 8.5 Report Tests
+
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| % of Scans loads | Navigate to page | Page loads, access granted | |
+| Generate Scan Summary | Fill form, process | Data table appears | |
+| Generate Scan Detail | Fill form, process | Employee data appears | |
+| Red Flag Reports loads | Navigate to page | Page loads, access granted | |
+| Generate Red Flag | Set count=3, process | Filtered results | |
+| Generate Discount report | Select type, process | Results appear | |
+| Export CSV | Click export | File downloads | |
+
+### 8.6 Price Portal Tests
+
+| Test | Steps | Expected | Status/Notes |
+|------|-------|----------|--------------|
+| Location selection | Select locations, continue | Price table loads | |
+| View prices | Check price table | Current prices shown | |
+| Edit price | Enter new price | Value accepted | |
+| Submit changes | Click Submit | Submission processes | |
+| Account lock | After submit | Portal shows locked | |
+| Unlock user (Admin) | Unlock from Price Users | Access restored | |
+
+### 8.7 Navigation & Layout
+
+| Test | Steps | Expected | ✓/✗ |
+|------|-------|----------|-----|
+| Sidebar (Admin) | Login as Admin | All links visible | |
+| Sidebar (FBC) | Login as FBC | Limited links (no Users, no Price Users) | |
+| Home page | Click Home | Dashboard with Quick Actions | |
+| Quick Actions | Check actions shown | Match user's permissions | |
+| Mobile responsive | Resize to mobile | Layout adjusts | |
+
+### 8.8 Performance
+
+| Metric | Target | Actual | ✓/✗ |
+|--------|--------|--------|-----|
+| Page load | < 3 sec | | |
 | Report (7 days, 5 locations) | < 10 sec | | |
 | Report (30 days, 20 locations) | < 30 sec | | |
-| CSV export | < 5 sec | | |
-| Modal open/close | Instant | | |
-| Form submissions | < 3 sec | | |
+| Navigation | < 1 sec | | |
+
+### 8.9 Browser Compatibility
+
+| Browser | Works? | Issues |
+|---------|--------|--------|
+| Chrome | | |
+| Firefox | | |
+| Safari | | |
+| Edge | | |
+| Mobile Chrome | | |
+| Mobile Safari | | |
 
 ---
 
-## **Section 15: Error Handling**
+## **Part 9: Common Issues & Troubleshooting**
 
-| Test | Steps | Expected | ✓/✗ | Notes |
-|------|-------|----------|-----|-------|
-| Network disconnect | Disable network, try action | Error message, no crash | | |
-| Session expired | Let session expire, try action | Redirects to login | | |
-| API error | (If testable) | Graceful error message | | |
-| Invalid form data | Submit bad data | Validation errors shown | | |
+### User Can't Log In
+
+1. Check if email is verified (Users page shows status)
+2. Try resending verification email
+3. Try resetting password
+
+### Location Admin Can't See Groups Page
+
+1. Verify they're in a team with LOCATION_ADMIN role
+2. Verify they've been assigned to a group
+
+### Location Admin Can't Type in Create User Modal
+
+This was a known bug that has been fixed. If it recurs:
+1. Check browser console for errors
+2. Try refreshing the page
+3. Try a different browser
+
+### Report Shows No Data
+
+1. Verify date range has data (try a known date)
+2. Verify locations are selected
+3. Check if S3 bucket has files for that date range
+
+### User Not Receiving Emails
+
+1. Check spam/junk folder
+2. Verify email address is correct
+3. Try resending verification
+4. Check AWS Cognito logs if persistent
 
 ---
 
-## **Testing Sign-Off**
+## **Part 10: Sign-Off**
 
 | Tester | Date | Sections Tested | Critical Bugs | Approved? |
 |--------|------|-----------------|---------------|-----------|
@@ -443,5 +472,4 @@ This guide is for IT administrators to comprehensively test all portal functiona
 3.
 
 **Notes:**
-
 

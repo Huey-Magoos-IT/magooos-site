@@ -2,217 +2,288 @@
 
 This guide is for FBC (Franchise Business Consultant) users to test the Huey Magoo's Portal before full rollout.
 
-**Testing Focus:** Authentication, % of Scans, Red Flag Reports, Groups
+---
+
+## **Part 1: Getting Started**
+
+### Understanding Your Account
+
+As an FBC, you have been set up with:
+- **Team:** FBC
+- **Roles:** REPORTING, SCANS, LOCATION_ADMIN
+- **Group:** A group containing all YOUR franchise locations
+
+Your roles give you access to:
+| Role | What It Unlocks |
+|------|-----------------|
+| REPORTING | Red Flag Reports page |
+| SCANS | % of Scans page |
+| LOCATION_ADMIN | Groups page + ability to create Location Users |
+
+### Account Activation Process
+
+**Step 1: Verify Your Email**
+1. Check your inbox for an email with subject "Huey Magoos Portal Account - Email Verification Required"
+2. Click the "Verify Email" link
+3. A confirmation page will appear - you can close it
+
+**Step 2: Set Your Password**
+1. Go to the login page
+2. Click "Reset Password"
+3. Enter your username (provided by IT)
+4. Check your email for a confirmation code
+5. Enter the code and create your new password
+6. You can now log in
 
 ---
 
-## **How to Report Issues**
+### ✅ Test: Authentication
 
-When you find something wrong or confusing, note:
-1. **What page** you were on
-2. **What you were trying to do**
-3. **What happened** (or didn't happen)
-4. **Screenshots** if possible
-
----
-
-## **Test 1: Authentication & Account Setup**
-
-### 1.1 Email Verification
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Check email for verification link | Email received with "Verify Email" link | | |
-| 2 | Click verification link | Browser opens, shows confirmation | | |
-
-### 1.2 Password Setup
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Go to login page | Login form displays | | |
-| 2 | Click "Reset Password" | Reset password form appears | | |
-| 3 | Enter your username | Form accepts username | | |
-| 4 | Click "Send Password Reset Code" | Confirmation code email received | | |
-| 5 | Enter code and new password | Password reset successful | | |
-
-### 1.3 Login
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Enter username and password | Fields accept input | | |
-| 2 | Click eye icon on password field | Password visibility toggles | | |
-| 3 | Click Login | Redirects to Teams page | | |
-| 4 | Try wrong password | Error message shown, stays on login | | |
-
-### 1.4 Navigation
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | View sidebar | Shows: Home, Teams, Groups, Reports section | | |
-| 2 | Check Reports section | Shows: % of Scans, Red Flag Reports, Price Portal | | |
-| 3 | Click Home | Home page loads with Quick Actions | | |
-| 4 | Verify Quick Actions | Only shows pages you have access to | | |
+| Test | Try This | What Should Happen | ✓/✗ |
+|------|----------|-------------------|-----|
+| Login | Enter username + password | Redirects to Teams page | |
+| Password toggle | Click eye icon on password field | Shows/hides password | |
+| Wrong password | Enter incorrect password | Shows error, stays on login | |
 
 ---
 
-## **Test 2: % of Scans**
+## **Part 2: Navigation**
 
-### 2.1 Page Load
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click "% of Scans" in sidebar | Page loads without errors | | |
-| 2 | Check page header | Shows "% of Scans Department" | | |
-| 3 | Check access message | Shows green "SCANS Access Successful" | | |
+After logging in, you'll see the **sidebar** on the left with:
 
-### 2.2 Report Type Selection
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click File Content Type dropdown | Shows 3 options | | |
-| 2 | Verify options | "Scan Detail", "Scan Summary", "Rolled Up Summary" | | |
-| 3 | Select each option | Selection updates without error | | |
+```
+Home
+Teams
+Groups
+▼ Reports
+   • % of Scans
+   • Red Flag Reports
+   • Price Portal
+```
 
-### 2.3 Date Selection
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click Date Range Preset dropdown | Shows preset options (Last 7 Days, etc.) | | |
-| 2 | Select "Last 7 Days" | Start and End dates auto-populate | | |
-| 3 | Manually change Start Date | Date picker works, preset clears | | |
-| 4 | Manually change End Date | Date picker works | | |
-| 5 | Try to select future date | Should be blocked (max is yesterday) | | |
+**Home Page:** Your dashboard with Quick Actions - shortcuts to pages you can access.
 
-### 2.4 Location Selection
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | View Location Table on right | Shows only YOUR assigned locations | | |
-| 2 | Click a location | Location appears as chip in Selected Locations | | |
-| 3 | Click "Add All" button | All your locations added | | |
-| 4 | Click X on a location chip | Location removed | | |
-| 5 | Click "Clear All" | All locations removed | | |
-| 6 | Click "Undo" after an action | Previous state restored | | |
+**Teams Page:** Shows your team (FBC) and your roles. Just informational.
 
-### 2.5 Generate Reports
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Select: Scan Summary, Last 7 Days, 3+ locations | Form filled out | | |
-| 2 | Click "Process Data" | Loading indicator appears | | |
-| 3 | Wait for processing | Data table appears below | | |
-| 4 | Check data table | Shows Location, Total Checks, Scans, Scan Rate | | |
-| 5 | Try "Scan Detail" report | Shows employee-level breakdown | | |
-| 6 | Try "Rolled Up Summary" | Shows averaged data across date range | | |
-
-### 2.6 Data Export
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Generate a report with data | Data displays in table | | |
-| 2 | Click export/download button | CSV file downloads | | |
-| 3 | Open CSV file | Data matches what was displayed | | |
-
-### 2.7 Edge Cases
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Process with no locations selected | Error message or prompt | | |
-| 2 | Process with no dates selected | Error message or prompt | | |
-| 3 | Select date range with no data | "No data found" message | | |
+**Groups Page:** Where you manage Location Users (covered in Part 5).
 
 ---
 
-## **Test 3: Red Flag Reports**
+### ✅ Test: Navigation
 
-### 3.1 Page Load
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click "Red Flag Reports" in sidebar | Page loads without errors | | |
-| 2 | Check page header | Shows "Reporting Department" | | |
-| 3 | Check access message | Shows green "REPORTING Access Granted" | | |
-
-### 3.2 Report Type Selection
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click Report Type dropdown | Shows 2 options | | |
-| 2 | Verify options | "Red Flag Transactions", "Discount without Rewards ID" | | |
-
-### 3.3 Red Flag Transactions Report
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Select "Red Flag Transactions" | Report type selected | | |
-| 2 | Check for "Min Daily Usage Count" field | Field appears | | |
-| 3 | Enter "3" in Min Daily Usage Count | Value accepted | | |
-| 4 | Select date range and locations | Form filled | | |
-| 5 | Click "Process Data" | Report generates | | |
-| 6 | Verify results | Shows rewards IDs used 3+ times per day | | |
-
-### 3.4 Discount without Rewards ID Report
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Select "Discount without Rewards ID" | Report type selected | | |
-| 2 | Select date range and locations | Form filled | | |
-| 3 | Click "Process Data" | Report generates | | |
-| 4 | Verify results | Shows discounts given without rewards ID | | |
-
-### 3.5 Data Quality
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Check Employee Name column | Names populated where available | | |
-| 2 | Check Location column | Matches selected locations | | |
-| 3 | Check Date column | Within selected date range | | |
+| Test | Try This | What Should Happen | ✓/✗ |
+|------|----------|-------------------|-----|
+| Sidebar visible | Look at left side | All menu items listed above are visible | |
+| Home page | Click "Home" | Dashboard loads with Quick Actions | |
+| Quick Actions | View Quick Actions section | Shows only pages you have access to | |
 
 ---
 
-## **Test 4: Groups (Location Admin)**
+## **Part 3: % of Scans**
 
-### 4.1 Page Access
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click "Groups" in sidebar | Page loads | | |
-| 2 | View your group | Only YOUR assigned group is visible | | |
-| 3 | Check group card | Shows group name and locations | | |
+### What This Page Does
 
-### 4.2 Create Location User
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | Click "Create Location User" on group card | Modal opens | | |
-| 2 | Check Team field | Pre-selected to "Location User" | | |
-| 3 | Enter Username | Field accepts input | | |
-| 4 | Enter Email | Field accepts input | | |
-| 5 | Enter Temp Password | Field accepts input | | |
-| 6 | Click eye icon on password | Password visibility toggles | | |
-| 7 | View Location picker | Only YOUR group's locations shown | | |
-| 8 | Select 1-2 locations | Locations added to form | | |
-| 9 | Click Create/Submit | User created successfully | | |
+This page shows your **Scan Rate** - the percentage of transactions where a rewards card was scanned. Use this to:
+- Monitor store performance
+- Identify employees who need coaching
+- Track improvements over time
 
-### 4.3 Manage Unconfirmed Users
-| Step | Action | Expected Result | ✓/✗ | Notes |
-|------|--------|-----------------|-----|-------|
-| 1 | After creating user, check group card | User appears in "Unconfirmed Users" section | | |
-| 2 | Click "Resend Verification" | Confirmation that email was resent | | |
-| 3 | Click "Delete" on unconfirmed user | User removed from list | | |
+### Report Types
+
+| Report | What It Shows |
+|--------|--------------|
+| **Scan Summary** | Scan Rate per LOCATION - compare stores |
+| **Scan Detail** | Scan Rate per EMPLOYEE - see individual performance |
+| **Rolled Up Summary** | Average performance across your date range |
+
+### How to Generate a Report
+
+1. **Select Report Type:** Click the dropdown under "File Content Type"
+2. **Select Dates:** Use a preset (Last 7 Days) OR pick custom dates
+3. **Select Locations:** Click locations in the table on the right. They appear as chips.
+   - **Add All:** Adds all your locations
+   - **Clear All:** Removes all selections
+   - **Undo:** Reverts your last action
+4. **Click "Process Data":** Wait for the report to generate
+5. **View Results:** Data appears in the table below
+6. **Export:** Click the export button to download as CSV
 
 ---
 
-## **Test 5: General Usability**
+### ✅ Test: % of Scans
 
-### 5.1 Performance
-| Item | Acceptable? | Notes |
-|------|-------------|-------|
-| Page load time (< 3 seconds) | | |
-| Report processing time (< 30 seconds) | | |
-| Smooth navigation between pages | | |
-| No freezing or unresponsive UI | | |
+| Test | Try This | What Should Happen | ✓/✗ |
+|------|----------|-------------------|-----|
+| Page loads | Click "% of Scans" in sidebar | Page loads, shows green "SCANS Access Successful" | |
+| Report types | Click dropdown | Shows: Scan Detail, Scan Summary, Rolled Up Summary | |
+| Date preset | Select "Last 7 Days" | Start and End dates auto-fill | |
+| Add location | Click a location in the table | Appears as a chip in "Selected Locations" | |
+| Add All | Click "Add All" button | All your locations added | |
+| Clear All | Click "Clear All" | All locations removed | |
+| Undo | Make a change, click "Undo" | Previous state restored | |
+| Generate report | Select type, dates, 3+ locations, click "Process Data" | Loading shows, then data table appears | |
+| Scan Summary | Generate with "Scan Summary" | Shows Location, Total Checks, Scans, Scan Rate | |
+| Scan Detail | Generate with "Scan Detail" | Shows Employee breakdown | |
+| Export | Click export button | CSV file downloads | |
+| No locations | Try to process with no locations | Error message or prompt | |
+| No data | Select dates with no data | "No data found" message | |
 
-### 5.2 Visual/UI
-| Item | Acceptable? | Notes |
-|------|-------------|-------|
-| Text is readable | | |
-| Buttons are clearly labeled | | |
-| Error messages are clear | | |
-| Layout makes sense | | |
-| Colors/contrast are good | | |
+---
 
-### 5.3 Overall Experience
+## **Part 4: Red Flag Reports**
+
+### What This Page Does
+
+This page helps you identify **potential theft or misuse** by finding:
+1. Rewards accounts used suspiciously often
+2. Discounts given without a rewards card
+
+### Report Types
+
+| Report | What It Finds |
+|--------|--------------|
+| **Red Flag Transactions** | Rewards IDs used multiple times per day (suspicious) |
+| **Discount without Rewards ID** | Discounts applied with no rewards card (shouldn't happen) |
+
+### How to Use Red Flag Transactions
+
+1. Select "Red Flag Transactions" as report type
+2. Set **"Min Daily Usage Count"** - e.g., `3` means "show me rewards IDs used 3+ times in one day"
+3. Select dates and locations
+4. Click "Process Data"
+5. Review results - these are transactions worth investigating
+
+### How to Use Discount without Rewards ID
+
+1. Select "Discount without Rewards ID"
+2. Select dates and locations
+3. Click "Process Data"
+4. Review results - every row is a discount given without a rewards card attached
+
+---
+
+### ✅ Test: Red Flag Reports
+
+| Test | Try This | What Should Happen | ✓/✗ |
+|------|----------|-------------------|-----|
+| Page loads | Click "Red Flag Reports" in sidebar | Page loads, shows "REPORTING Access Granted" | |
+| Report types | Click dropdown | Shows: Red Flag Transactions, Discount without Rewards ID | |
+| Usage count field | Select "Red Flag Transactions" | "Min Daily Usage Count" field appears | |
+| Set count | Enter "3" in usage count | Value accepted | |
+| Generate Red Flag | Fill form, click "Process Data" | Shows transactions with IDs used 3+ times/day | |
+| Generate Discount | Select Discount report, fill form, process | Shows discounts without rewards ID | |
+| Employee names | Check Employee column | Names populated where available | |
+| Export | Click export button | CSV downloads | |
+
+---
+
+## **Part 5: Groups - Creating Location Users**
+
+### What This Page Does
+
+The **Groups** page lets you create **Location Users** - people who work at your franchise locations and need access to run reports for specific stores.
+
+### Understanding the Hierarchy
+
+```
+YOU (FBC / Location Admin)
+  └── Your Group (contains your locations)
+        └── Location Users YOU create
+              └── Can only see locations YOU assign them
+```
+
+### What You Can Do
+
+- ✅ View your assigned group
+- ✅ See which locations are in your group
+- ✅ Create Location Users under your group
+- ✅ Assign specific locations to those users
+- ✅ Resend verification emails to users you created
+- ✅ Delete unconfirmed users you created
+
+### What You CANNOT Do
+
+- ❌ Create or edit groups (Admin only)
+- ❌ See other groups
+- ❌ Assign locations outside your group
+
+### How to Create a Location User
+
+1. Go to **Groups** page
+2. Find your group card
+3. Click **"Create Location User"** button
+4. Fill out the form:
+   - **Username:** Their login name
+   - **Email:** Their email address
+   - **Temp Password:** Initial password (they'll change it later)
+   - **Locations:** Select which of YOUR locations they can access
+5. Click **Create/Submit**
+
+### What Happens Next
+
+1. User appears in "Unconfirmed Users" section on your group card
+2. They receive a verification email
+3. They verify their email and set their password
+4. They can now log in and see ONLY the locations you assigned
+
+### Managing Unconfirmed Users
+
+| Action | What It Does |
+|--------|-------------|
+| **Resend Verification** | Sends another verification email |
+| **Delete** | Removes the user (if they haven't verified yet) |
+
+---
+
+### ✅ Test: Groups
+
+| Test | Try This | What Should Happen | ✓/✗ |
+|------|----------|-------------------|-----|
+| Page loads | Click "Groups" in sidebar | Page loads, shows YOUR group only | |
+| Group info | Look at your group card | Shows group name and your locations | |
+| Create User button | Look for "Create Location User" | Button is visible on your group | |
+| Open modal | Click "Create Location User" | Modal/form opens | |
+| Team pre-selected | Check Team field | Should say "Location User" automatically | |
+| Enter username | Type a username | Field accepts input (can you type?) | |
+| Enter email | Type an email | Field accepts input | |
+| Enter password | Type a temp password | Field accepts input | |
+| Password toggle | Click eye icon | Password shows/hides | |
+| Location picker | View available locations | Only YOUR group's locations shown | |
+| Select locations | Click to select 1-2 locations | Locations selected | |
+| Create user | Fill everything, click Create | Success message, modal closes | |
+| User appears | Check group card | New user in "Unconfirmed Users" section | |
+| Resend email | Click "Resend Verification" | Confirmation that email sent | |
+| Delete user | Click "Delete" on unconfirmed user | User removed from list | |
+
+---
+
+## **Part 6: Usability Feedback**
+
+### Performance - Is it fast enough?
+
+| Question | Response |
+|----------|----------|
+| Do pages load in under 3 seconds? | |
+| Do reports process in under 30 seconds? | |
+| Is navigation between pages smooth? | |
+
+### Usability - Is it easy to use?
+
 | Question | Response |
 |----------|----------|
 | Was the signup process clear? | |
 | Could you find the reports you needed? | |
 | Were the report filters intuitive? | |
 | Is the data presented in a useful way? | |
+
+### Value - Is it useful for your job?
+
+| Question | Response |
+|----------|----------|
+| Is the Scan Rate data useful for monitoring stores? | |
+| Is the Red Flag report useful for identifying theft? | |
+| Would you use this regularly? Why or why not? | |
 | What would make this more valuable for you? | |
-| Any features you wish existed? | |
 
 ---
 
@@ -229,6 +300,10 @@ When you find something wrong or confusing, note:
 2.
 3.
 
-**Suggestions for Improvement:**
+**Feature Requests / Suggestions:**
 
+
+**Would this be useful for your franchisees?** ☐ Yes  ☐ No  ☐ Maybe
+
+**Additional Comments:**
 
