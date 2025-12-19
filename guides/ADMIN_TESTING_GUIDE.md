@@ -1,607 +1,344 @@
-# IT Functionality Testing Guide: Administrator Perspective
+# Administrator Testing & Training Guide
 
-This guide is for IT team members to test portal functionality **as an Administrator**.
-
-**Goal:** Verify all admin features work correctly and identify UI/UX issues across the entire platform.
+This guide is for IT to understand and test the Huey Magoo's Portal from an Admin perspective. This guide is completed FIRST, then continue with the FBC Testing Guide.
 
 ---
 
-## **Prerequisites**
+## **Part 1: System Architecture Overview**
 
-- Admin account credentials
-- Access to the portal
-- Time to test all sections thoroughly
+### How the Portal Works
 
----
+The portal is a **role-based access control (RBAC)** system. What users can see and do depends on their **Team**, **Roles**, and **Group** assignment.
 
-## **Section 1: Authentication (Admin)**
+### The Hierarchy
 
-### 1.1 Login Page
+```
+TEAMS (define what roles a user has)
+  └── ROLES (define what pages/features a user can access)
+        └── GROUPS (define which locations a user can see data for)
+              └── USERS (individual people)
+```
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does login page load? | | |
-| Is layout professional? | | |
-| Does password eye icon work? | | |
-| Does login redirect to correct page? | | |
-| Are error messages clear? | | |
+### Key Concepts
 
-**UI/Layout Notes:**
--
--
+| Concept | What It Is | Example |
+|---------|-----------|---------|
+| **Team** | A collection of roles assigned to users | "FBC Team" has REPORTING, SCANS, LOCATION_ADMIN |
+| **Role** | A permission that unlocks specific features | SCANS unlocks the % of Scans page |
+| **Group** | A collection of locations | "IT Test Group" contains selected franchise locations |
+| **User** | An individual person with a login | testfbc@hueymagoos.com |
 
-### 1.2 Password Reset (Test with a test account)
+### Available Roles
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does reset flow work? | | |
-| Is the flow intuitive? | | |
-| Do emails arrive? | | |
-
----
-
-## **Section 2: Home Page (Admin View)**
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Is greeting correct (time + username)? | | |
-| Does clock widget work? | | |
-| Are Quick Actions visible? | | |
-| Do Quick Actions show all admin options? | | |
-
-**UI/Layout Observations:**
-
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Hero section | | |
-| Stats cards | | |
-| Quick Actions grid | | |
-| Recent Activity | | |
-| Weekly stats | | |
-| Overall balance/spacing | | |
-
-**Notes:**
--
--
+| Role | What It Unlocks |
+|------|-----------------|
+| ADMIN | Everything - full system access |
+| DATA | Rewards Transactions page |
+| REPORTING | Red Flag Reports page |
+| SCANS | % of Scans page |
+| RAW_DATA | Raw Data page |
+| RAW_LOYALTY_REPORTING | Raw Rewards Data page |
+| LOCATION_ADMIN | Groups page + create Location Users |
+| PRICE_ADMIN | Price Portal + Price Users management |
 
 ---
 
-## **Section 3: Sidebar (Admin View)**
+## **Part 2: Setting Up a Test FBC Account (End-to-End)**
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Shows: Home, Users, Teams, Groups, Price Users? | | |
-| Shows all Reports items? | | |
-| Does collapse/expand work? | | |
-| Is active page highlighted? | | |
+This walks through the complete process to onboard an FBC. You will create a test FBC account that will be used in the FBC Testing Guide.
 
-**UI/Layout Observations:**
+### Step 1: Ensure FBC Team Exists
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Overall sidebar design | | |
-| Menu item styling | | |
-| Icons | | |
-| Section headers | | |
+The FBC team should already exist with these roles:
+- REPORTING
+- SCANS
+- LOCATION_ADMIN
 
-**Notes:**
--
--
+**To verify:**
+1. Go to **Teams** page
+2. Look for "FBC" team
+3. Confirm it has the three roles above
 
----
+If it doesn't exist, create it with those roles.
 
-## **Section 4: Users Page**
+### Step 2: Create a Group for the Test FBC
 
-### 4.1 User List
+**Why:** Groups bundle locations together. Each FBC manages different franchise locations.
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are all users listed? | | |
-| Is user info displayed (username, email, team)? | | |
-| Is the list searchable/filterable? | | |
+**How:**
+1. Go to **Groups** page
+2. Click **"Create Group"**
+3. Enter:
+   - **Name:** "IT Test Group"
+   - **Description:** "Test group for IT functionality testing"
+   - **Locations:** Select 5-10 locations for testing
+4. Click **Save**
 
-**UI/Layout Observations:**
+### Step 3: Create the Test FBC User Account
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Page header | | |
-| User cards/rows | | |
-| Information density | | |
-| Action buttons placement | | |
+**How:**
+1. Go to **Users** page
+2. Click **"Create User"**
+3. Enter:
+   - **Username:** `testfbc`
+   - **Email:** Use a real email you can access for testing
+   - **Temp Password:** Generate one (e.g., `TestPass123!`)
+   - **Team:** Select "FBC"
+   - **Locations:** Select the same locations as the group
+4. Click **Create**
 
-### 4.2 Create User Modal
+**What happens:**
+- User is created in AWS Cognito
+- Verification email is sent to the email address
+- User appears in Users list
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does modal open? | | |
-| Can you type in all fields? | | |
-| Does password eye icon work? | | |
-| Does team dropdown work? | | |
-| Does location selection work? | | |
-| Does form validate required fields? | | |
-| Does submit create user? | | |
-| Is verification email sent? | | |
+### Step 4: Assign the User to Their Group
 
-**UI/Layout Observations:**
+⚠️ **IMPORTANT:** The user MUST be in a team with LOCATION_ADMIN role BEFORE you can assign them to a group.
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Modal design | | |
-| Form layout | | |
-| Field labels | | |
-| Error messages | | |
+**How:**
+1. Go to **Groups** page
+2. Find the group you created ("IT Test Group")
+3. Click to expand the group OR click **"Assign User"**
+4. Select `testfbc` from the dropdown
+5. Click **Assign**
 
-### 4.3 Edit User
+**What happens:**
+- User's `groupId` is set to this group
+- User's `locationIds` are automatically updated to include ALL locations in the group
+- User can now see their group on the Groups page
+- User can create Location Users for locations in their group
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Can you edit user details? | | |
-| Do changes save? | | |
+### Step 5: Continue to FBC Testing Guide
 
-### 4.4 Delete User
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does delete prompt for confirmation? | | |
-| Does delete actually remove user? | | |
-
-### 4.5 Reset Password
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does reset password dialog open? | | |
-| Does password eye icon work? | | |
-| Does reset work? | | |
-
-**Notes:**
--
--
+The test FBC account is now created. Continue with **FBC_TESTING_GUIDE.md** to:
+- Verify the email was received
+- Complete the login flow
+- Test % of Scans reports
+- Test Red Flag Reports
+- Test creating Location Users from the FBC perspective
 
 ---
 
-## **Section 5: Teams Page**
+## **Part 3: Understanding Groups in Detail**
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are teams displayed? | | |
-| Are roles shown for each team? | | |
-| Is the page informative enough? | | |
+### What Groups Control
 
-**UI/Layout Observations:**
+| Feature | How Groups Affect It |
+|---------|---------------------|
+| **Report Data** | Users only see data for locations in their group |
+| **Location Selection** | Location pickers only show group locations |
+| **Create Users** | Location Admins can only create users within their group |
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Page feels bare/empty? | | |
-| Team card design | | |
-| Role badges | | |
-| Should there be more functionality here? | | |
+### Admin vs. Location Admin View
 
-**Notes:**
--
--
+| Action | Admin | Location Admin |
+|--------|-------|----------------|
+| See all groups | ✅ | ❌ (only their group) |
+| Create groups | ✅ | ❌ |
+| Edit groups | ✅ | ❌ |
+| Delete groups | ✅ | ❌ |
+| Assign users to groups | ✅ | ❌ |
+| Create Location Users | ✅ | ✅ (only in their group) |
 
----
+### When a Group is Updated
 
-## **Section 6: Groups Page (Admin View)**
+If you **add or remove locations** from a group:
+- All Location Admins assigned to that group automatically have their locations updated
+- Location Users keep their individual location assignments (subset of group)
 
-### 6.1 Groups List
+### When a User is Removed from a Group
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are ALL groups visible? | | |
-| Is each group's info displayed? | | |
-| Can groups be expanded to see details? | | |
-
-### 6.2 Create Group
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Is "Create Group" button visible? | | |
-| Does modal/form open? | | |
-| Can you enter name and description? | | |
-| Does location picker work? | | |
-| Does form submit create group? | | |
-
-### 6.3 Edit Group
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Can you edit group name? | | |
-| Can you edit description? | | |
-| Can you add/remove locations? | | |
-| Do changes save? | | |
-
-### 6.4 Delete Group
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does delete prompt confirmation? | | |
-| Does delete remove group? | | |
-| What happens to assigned users? | | |
-
-### 6.5 Assign User to Group
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Is "Assign User" option visible? | | |
-| Does user dropdown show only eligible users? | | |
-| (Users must have LOCATION_ADMIN role) | | |
-| Does assignment work? | | |
-| Does user appear under group after? | | |
-
-### 6.6 Remove User from Group
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Can you remove a user from group? | | |
-| Is their group access cleared? | | |
-
-**UI/Layout Observations:**
-
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Group card design | | |
-| Assigned users display | | |
-| Location list display | | |
-| Action buttons | | |
-| Create/Edit forms | | |
-
-**Notes:**
--
--
+- Their `groupId` is cleared
+- Their `locationIds` are cleared
+- They lose access to group features
+- They see "Group Access Pending" message
 
 ---
 
-## **Section 7: % of Scans Page**
+## **Part 4: User Management**
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Access granted for admin? | | |
-| All report types available? | | |
-| Date selection works? | | |
-| Location selection works? | | |
-| Processing works? | | |
-| Export works? | | |
+### Users Page Overview
 
-**UI/Layout Observations:**
+The **Users** page shows all users in the system with:
+- Username
+- Email
+- Team
+- Status (Active/Disabled)
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Form layout | | |
-| Data table | | |
-| Controls arrangement | | |
+### Creating a User
 
-**Notes:**
--
--
+1. Click **"Create User"**
+2. Fill in:
+   - **Username:** Login name (e.g., `jsmith`)
+   - **Email:** Must be valid (receives verification)
+   - **Temp Password:** Initial password
+   - **Team:** Determines their roles/permissions
+   - **Locations:** Which locations they can access
+3. Click **Create**
 
----
+### Password Field
 
-## **Section 8: Red Flag Reports Page**
+- Click the **eye icon** to show/hide the password
+- This works on create and reset password dialogs
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Both report types work? | | |
-| Min Daily Usage Count filter works? | | |
-| Processing and export work? | | |
+### Editing a User
 
-**UI/Layout Observations:**
+- Click **Edit** on a user row
+- Modify fields as needed
+- Click **Save**
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Form arrangement | | |
-| Should elements be rearranged? | | |
-| Data table layout | | |
+### Deleting a User
 
-**Notes:**
--
--
+- Click **Delete** on a user row
+- Confirm the deletion
+- User is removed from Cognito and database
+
+### Resetting a Password
+
+- Click **Reset Password** on a user row
+- Enter new temporary password
+- User will need to log in with new password
 
 ---
 
-## **Section 9: Rewards Transactions (Data Page)**
+## **Part 5: How Authentication Works**
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Is "Data Type Check" report available? | | |
-| Does processing work? | | |
-| Does export work? | | |
+### Backend: AWS Cognito
 
-**UI/Layout Observations:**
+All authentication is handled by **AWS Cognito**:
+- User accounts are stored in Cognito User Pool
+- Passwords are managed by Cognito
+- Email verification is handled by Cognito
+- Password reset emails come from Cognito
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Page design | | |
-| Form layout | | |
+### User Creation Flow
 
-**Notes:**
--
--
+```
+1. Admin creates user in portal
+   ↓
+2. Portal calls Cognito signUp() API
+   ↓
+3. Cognito creates user account
+   ↓
+4. Cognito sends verification email
+   ↓
+5. User clicks verification link
+   ↓
+6. User sets password via Reset Password flow
+   ↓
+7. User can now log in
+   ↓
+8. On first login, database record is created/updated
+```
 
----
+### Unconfirmed Users
 
-## **Section 10: Raw Data Page**
+Users who haven't verified their email appear as "Unconfirmed" in:
+- The Users page (for admins)
+- The Groups page (for Location Admins viewing their group)
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are files listed? | | |
-| Can files be downloaded? | | |
-
-**UI/Layout Observations:**
-
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| File list design | | |
-| Download functionality | | |
-
-**Notes:**
--
--
-
----
-
-## **Section 11: Raw Rewards Data Page**
-
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Can files be selected? | | |
-| Does JSON viewer work? | | |
-
-**UI/Layout Observations:**
-
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| File selector | | |
-| JSON viewer | | |
-
-**Notes:**
--
--
+Options for unconfirmed users:
+- **Resend Verification:** Sends another verification email
+- **Delete:** Removes the unverified account
 
 ---
 
-## **Section 12: Price Portal**
+## **Part 6: Report Pages Overview**
 
-> ⚠️ **Note:** Price Portal is unfinished. Document what works and what's broken.
+> **NOTE:** The actual report testing happens in the FBC Testing Guide using the test FBC account. This section is just an overview.
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Location selection works? | | |
-| Price table loads? | | |
-| Category filter works? | | |
-| Price editing works? | | |
-| Submit works? | | |
-| Account lock works? | | |
+### % of Scans
 
-**UI/Layout Observations:**
+**Purpose:** Track rewards card scan rates by location and employee
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Location selection | | |
-| Price table | | |
-| Submit flow | | |
+**Requires:** SCANS role
 
-**Known Issues / Broken Features:**
--
--
+**Report Types:**
+- **Scan Summary:** Scan rate per location
+- **Scan Detail:** Scan rate per employee
+- **Rolled Up Summary:** Averaged across date range
 
----
+### Red Flag Reports
 
-## **Section 13: Price Users Page**
+**Purpose:** Identify potential theft/fraud
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are price users listed? | | |
-| Does lock/unlock work? | | |
-| Are pending reports shown? | | |
-| Does send report work? | | |
+**Requires:** REPORTING role
 
-**UI/Layout Observations:**
+**Report Types:**
+- **Red Flag Transactions:** Rewards IDs used multiple times per day
+- **Discount without Rewards ID:** Discounts given without a rewards card
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| User list | | |
-| Lock/unlock controls | | |
-| Reports section | | |
+### Rewards Transactions
 
-**Notes:**
--
--
+**Purpose:** Data validation and transaction review
+
+**Requires:** DATA role
+
+**Report Types:**
+- **Data Type Check:** Validates transaction data types
+
+### Raw Data / Raw Rewards Data
+
+**Purpose:** Access raw JSON data files from S3
+
+**Requires:** RAW_DATA or RAW_LOYALTY_REPORTING role
 
 ---
 
-## **Section 14: Item Mappings Page**
+## **Part 7: Price Portal**
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Are mappings displayed? | | |
-| Can mappings be edited? | | |
+> ⚠️ **NOTE:** Price Portal is currently unfinished.
 
-**UI/Layout Observations:**
+### How Price Portal Works
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Table design | | |
-| Edit functionality | | |
+1. User selects locations
+2. User views/edits prices in a table
+3. User submits price changes
+4. User's portal access is **locked** while changes are processed
+5. Admin reviews and approves changes
+6. Admin unlocks the user
 
-**Notes:**
--
--
+### Price Users Page (Admin)
 
----
+**Purpose:** Manage price portal users
 
-## **Section 15: Settings Page**
+**Features:**
+- View all users with price portal access
+- Lock/unlock users
+- View pending price change reports
+- Send reports for processing
 
-| Check | Observation | Issues Found |
-|-------|-------------|--------------|
-| Does page load? | | |
-| Is user info displayed? | | |
-| Is info accurate? | | |
+### Item Mappings Page
 
-**UI/Layout Observations:**
+**Purpose:** Map menu items to system IDs
 
-| Element | Looks Good? | Suggested Changes |
-|---------|-------------|-------------------|
-| Page layout | | |
-| Information display | | |
-| Should there be more settings? | | |
-
-**Notes:**
--
--
+Located at: Price Users → Item Mappings
 
 ---
 
-## **Section 16: General UI/UX Review**
+## **Part 8: Common Issues & Troubleshooting**
 
-### Color Palette
+### User Can't Log In
 
-| Element | Current | Issue/Suggestion |
-|---------|---------|------------------|
-| Primary brand color | | |
-| Secondary colors | | |
-| Background colors | | |
-| Text colors | | |
-| Success/warning/error states | | |
-| Button colors | | |
+1. Check if email is verified (Users page shows status)
+2. Try resending verification email
+3. Try resetting password
 
-### Typography
+### Location Admin Can't See Groups Page
 
-| Element | Observation | Issue/Suggestion |
-|---------|-------------|------------------|
-| Page headers | | |
-| Section headers | | |
-| Body text | | |
-| Labels | | |
-| Button text | | |
-| Overall readability | | |
+1. Verify they're in a team with LOCATION_ADMIN role
+2. Verify they've been assigned to a group
 
-### Consistency Across Pages
+### Report Shows No Data
 
-| Check | Consistent? | Notes |
-|-------|-------------|-------|
-| Button styles | | |
-| Form layouts | | |
-| Card designs | | |
-| Table styles | | |
-| Modal designs | | |
-| Loading indicators | | |
-| Error messages | | |
-| Success messages | | |
+1. Verify date range has data (try a known date)
+2. Verify locations are selected
+3. Check if S3 bucket has files for that date range
 
-### Page-by-Page Balance
+### User Not Receiving Emails
 
-| Page | Layout Balanced? | Feels Empty? | Too Cluttered? | Notes |
-|------|------------------|--------------|----------------|-------|
-| Home | | | | |
-| Users | | | | |
-| Teams | | | | |
-| Groups | | | | |
-| % of Scans | | | | |
-| Red Flag Reports | | | | |
-| Price Portal | | | | |
-| Settings | | | | |
-
----
-
-## **Section 17: Responsiveness**
-
-| Screen Size | Issues Found |
-|-------------|--------------|
-| Desktop (1920px) | |
-| Desktop (1440px) | |
-| Laptop (1366px) | |
-| Tablet (768px) | |
-| Mobile (375px) | |
-
----
-
-## **Section 18: Browser Compatibility**
-
-| Browser | Version | Works? | Issues |
-|---------|---------|--------|--------|
-| Chrome | Latest | | |
-| Firefox | Latest | | |
-| Safari | Latest | | |
-| Edge | Latest | | |
-
----
-
-## **Section 19: Performance**
-
-| Metric | Target | Actual | Pass? |
-|--------|--------|--------|-------|
-| Login | < 2 sec | | |
-| Page loads | < 3 sec | | |
-| Report processing (small) | < 10 sec | | |
-| Report processing (large) | < 30 sec | | |
-| Navigation | < 1 sec | | |
-| Modal open | Instant | | |
-| User creation | < 3 sec | | |
-| Group creation | < 2 sec | | |
-
----
-
-## **Testing Summary**
-
-**Tester:** _______________________
-
-**Date:** _______________________
-
-**Pages Tested:**
-- [ ] Login / Auth
-- [ ] Home Page
-- [ ] Sidebar
-- [ ] Users Page (all CRUD)
-- [ ] Teams Page
-- [ ] Groups Page (all CRUD + assignments)
-- [ ] % of Scans
-- [ ] Red Flag Reports
-- [ ] Rewards Transactions
-- [ ] Raw Data
-- [ ] Raw Rewards Data
-- [ ] Price Portal
-- [ ] Price Users
-- [ ] Item Mappings
-- [ ] Settings
-
-### Critical Bugs (Blocking Release)
-1.
-2.
-3.
-
-### High Priority Issues (Should Fix)
-1.
-2.
-3.
-
-### UI/UX Improvements (Recommended)
-1.
-2.
-3.
-
-### Low Priority / Nice to Have
-1.
-2.
-3.
-
-### Overall Assessment
-
-☐ Ready for release
-☐ Needs fixes before release
-☐ Major issues - not ready
-
-**Additional Notes:**
-
-
+1. Check spam/junk folder
+2. Verify email address is correct
+3. Try resending verification
+4. Check AWS Cognito logs if persistent
