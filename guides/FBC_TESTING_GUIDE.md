@@ -4,6 +4,20 @@ This guide is for IT to test the portal from an FBC's perspective. Complete the 
 
 ---
 
+## **What You're Testing For**
+
+Now you're looking at the portal through an FBC's eyes. As you go through each page:
+
+- **Does it make sense?** Would an FBC understand what they're looking at without training?
+- **Is the layout appropriate?** Does the Groups page look right for someone managing their locations?
+- **Is anything confusing?** Are buttons labeled clearly? Is navigation intuitive?
+- **Does the data presentation work?** Are the reports easy to read and useful?
+- **How does it feel?** Professional? Clunky? Clean? Overwhelming?
+
+Remember: FBCs won't have Admin access. They see a limited view. Does that limited view feel complete, or does it feel like something's missing?
+
+---
+
 ## **Part 1: Account Activation**
 
 After creating the test FBC account in the Admin guide, switch to testing as that user.
@@ -36,16 +50,15 @@ As an FBC, the sidebar shows:
 Home
 Teams
 Groups
+Settings
 ▼ Reports
    • % of Scans
    • Red Flag Reports
-   • Price Portal
 ```
 
 **What they DON'T see:**
 - Users page (Admin only)
 - Price Users (Admin only)
-- Settings (Admin only)
 - Rewards Transactions, Raw Data, Raw Rewards Data (different roles)
 
 ### Home Page
@@ -54,7 +67,6 @@ The Home page shows Quick Actions - shortcuts to pages the user has access to. A
 - % of Scans
 - Red Flag Reports
 - Groups
-- Price Portal
 
 ### Teams Page
 
@@ -177,20 +189,3 @@ FBCs only see THEIR group - not all groups in the system. The group card shows:
 
 - **Resend Verification:** Sends another email
 - **Delete:** Removes the unverified user
-
----
-
-## **Part 6: Price Portal**
-
-> ⚠️ **NOTE:** Price Portal is currently unfinished.
-
-FBCs can access the Price Portal to view and submit price changes for their locations.
-
-### Basic Flow
-
-1. Select locations from the picker
-2. View current prices in the table
-3. Edit prices as needed
-4. Submit changes
-5. Account gets locked while changes are processed
-6. Admin reviews and unlocks

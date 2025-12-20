@@ -4,6 +4,20 @@ This guide is for IT to understand and test the Huey Magoo's Portal from an Admi
 
 ---
 
+## **What You're Testing For**
+
+As you go through each page and feature, pay attention to:
+
+- **Functionality:** Does it work? Do buttons do what they should? Do forms submit correctly?
+- **UI/Layout:** Does the page look right? Is anything misaligned, cluttered, or too empty?
+- **Clarity:** Is it obvious what things do? Are labels and buttons clear?
+- **Aesthetics:** Do colors, fonts, and spacing look professional? Anything feel off?
+- **Consistency:** Do similar elements look and behave the same across pages?
+
+Document anything that stands out - bugs, confusing elements, ugly layouts, unclear buttons, etc.
+
+---
+
 ## **Part 1: System Architecture Overview**
 
 ### How the Portal Works
@@ -94,7 +108,9 @@ If it doesn't exist, create it with those roles.
 
 ### Step 4: Assign the User to Their Group
 
-⚠️ **IMPORTANT:** The user MUST be in a team with LOCATION_ADMIN role BEFORE you can assign them to a group.
+⚠️ **IMPORTANT:**
+- The user MUST be in a team with LOCATION_ADMIN role BEFORE you can assign them to a group.
+- The user MUST verify their email BEFORE you can assign them to a group.
 
 **How:**
 1. Go to **Groups** page
@@ -176,11 +192,6 @@ The **Users** page shows all users in the system with:
    - **Team:** Determines their roles/permissions
    - **Locations:** Which locations they can access
 3. Click **Create**
-
-### Password Field
-
-- Click the **eye icon** to show/hide the password
-- This works on create and reset password dialogs
 
 ### Editing a User
 
