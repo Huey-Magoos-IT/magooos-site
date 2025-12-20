@@ -35,29 +35,29 @@ Once you log in, you will see your main dashboard. Here is an overview of each s
 ### **Teams**
 This is the first page you will see after logging in. It's a simple page that shows you which team you belong to ("FBC") and a list of the permissions your role has, such as `REPORTING`, `SCANS`, and `LOCATION_ADMIN`. You do not need to take any action on this page.
 
-### **Department: % of Scans**
-**Purpose:** This page calculates the percentage of total transactions that included a loyalty card scan, referred to as the **'Scan Rate'**. This metric is used to track how consistently loyalty accounts are being scanned at checkout.
+### **% of Scans**
+**Purpose:** This page calculates the percentage of total transactions that included a rewards card scan, referred to as the **'Scan Rate'**. This metric is used to track how consistently rewards accounts are being scanned at checkout.
 
 **How to Use This Page:**
 1.  **Choose Your Report Type:**
-    *   **`Loyalty Scan Summary`**: Shows the overall Scan Rate for each **location**, allowing for comparison across stores.
-    *   **`Loyalty Scan Detail`**: Breaks down the Scan Rate by individual **employee** to show their specific performance (Total Checks vs. Loyalty Scans).
+    *   **`Scan Summary`**: Shows the overall Scan Rate for each **location**, allowing for comparison across stores.
+    *   **`Scan Detail`**: Breaks down the Scan Rate by individual **employee** to show their specific performance (Total Checks vs. Rewards Scans).
     *   **`Rolled Up Summary`**: Provides a long-term average performance for locations over your selected date range, smoothing out daily fluctuations.
 2.  **Select Date Range:** Choose from a preset (like "Last 30 Days") or a custom date range.
 3.  **Select Locations:** Use the location table on the right to choose the stores for your report. You can use the "Add All" button to include all of your assigned locations.
 4.  **Process Data:** Click the **"Process Data"** button to generate your report in the table below.
 
-### **Department: Reporting**
+### **Red Flag Reports**
 **Purpose:** This page is a security and operations tool designed to help you pinpoint two specific types of transaction anomalies that could indicate employee theft or operational errors.
 
 **How to Use This Page:**
 1.  **Choose Your Report Type:**
-    *   **`Rewards Red Flag Transactions`**: This report helps find "power users" of loyalty accounts, which can be a sign of misuse. The system counts how many times each loyalty ID is used per day. This report will show you every transaction associated with loyalty IDs that exceed a **"Min Daily Usage Count"** that you can set. For example, setting the count to `3` will find all loyalty accounts used three or more times in one day, which is highly unusual for a regular customer.
-    *   **`Rewards Discount without Rewards ID`**: This report is very direct. It searches for every transaction where a loyalty discount was applied, but **no loyalty ID** was attached to the check. This helps you quickly identify discounts that may have been given out improperly, as a loyalty discount should always be tied to a verified loyalty account.
+    *   **`Red Flag Transactions`**: This report helps find "power users" of rewards accounts, which can be a sign of misuse. The system counts how many times each rewards ID is used per day. This report will show you every transaction associated with rewards IDs that exceed a **"Min Daily Usage Count"** that you can set. For example, setting the count to `3` will find all rewards accounts used three or more times in one day, which is highly unusual for a regular customer.
+    *   **`Discount without Rewards ID`**: This report is very direct. It searches for every transaction where a rewards discount was applied, but **no rewards ID** was attached to the check. This helps you quickly identify discounts that may have been given out improperly, as a rewards discount should always be tied to a verified rewards account.
 2.  **Select Date Range & Locations** to narrow your investigation.
 3.  **Process Data** to run the report and view the results in the table at the bottom of the page.
 
-### **Department: Price Portal**
+### **Price Portal**
 The Price Portal is where you can view current menu prices for your locations and submit requests for price changes. This is a multi-step process.
 
 **Step 1: Select Your Locations**
