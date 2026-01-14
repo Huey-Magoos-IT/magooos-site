@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Activity,
   Database,
+  DollarSign,
   LucideIcon,
 } from "lucide-react";
 import { TeamRole } from "@/state/api";
@@ -199,6 +200,18 @@ export const NAV_ITEMS: NavItem[] = [
       isTrueAdmin || hasRole(teamRoles, "REPORTING"),
     showOnHome: true,
     homePriority: 3,
+    category: "reports",
+    isSubItem: true,
+  },
+  {
+    id: "net-sales-report",
+    label: "Net Sales Report",
+    href: "/reports/net-sales-report",
+    icon: DollarSign,
+    canAccess: ({ isTrueAdmin, teamRoles }) =>
+      isTrueAdmin || hasRole(teamRoles, "REPORTING"),
+    showOnHome: true,
+    homePriority: 4,
     category: "reports",
     isSubItem: true,
   },
