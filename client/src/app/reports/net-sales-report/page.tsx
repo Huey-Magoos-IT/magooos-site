@@ -179,10 +179,6 @@ const NetSalesReportPage = () => {
       return;
     }
 
-    if (selectedLocations.length === 0) {
-      toast.error("Please select at least one location");
-      return;
-    }
 
     setCSVLoading(true);
     setCSVError(null);
@@ -212,10 +208,7 @@ const NetSalesReportPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
 
-      setProcessingProgress('Filtering data by location and selected filters...');
-
-      // Get selected location names for filtering
-      const selectedLocationNames = selectedLocations.map(loc => loc.name);
+      setProcessingProgress('Applying filters...');
 
       // Get selected channel names for filtering
       const selectedChannelNames = selectedChannels.length > 0
@@ -228,28 +221,12 @@ const NetSalesReportPage = () => {
         : []; // Empty means all types
 
       console.log("NET SALES PAGE - Filter mode:", filterMode);
-      console.log("NET SALES PAGE - Selected locations:", selectedLocationNames);
       console.log("NET SALES PAGE - Selected channels:", selectedChannelNames);
       console.log("NET SALES PAGE - Selected types:", selectedTypeNames);
-      console.log("NET SALES PAGE - Sample data:", combinedData.slice(0, 3));
+      console.log("NET SALES PAGE - Total rows from CSV:", combinedData.length);
 
-      // Filter data by location and optionally by order channel/type
+      // Filter data by channel/type only (location filtering removed to preserve all data)
       let filteredData = combinedData.filter(row => {
-        // Filter by Restaurant Name
-        const restaurantName = row['Restaurant Name'] || '';
-        const locationMatches = selectedLocationNames.some(locName => {
-          const locLower = locName.toLowerCase().trim();
-          const rowLower = restaurantName.toLowerCase().trim();
-          // Exact match or partial match
-          return rowLower === locLower ||
-                 rowLower.includes(locLower) ||
-                 locLower.includes(rowLower);
-        });
-
-        if (!locationMatches) {
-          return false;
-        }
-
         // Filter by Order Channel (if channels are selected and mode includes channel)
         if ((filterMode === 'channel' || filterMode === 'both') && selectedChannelNames.length > 0) {
           const orderChannel = row['Order Channel'] || '';
@@ -275,7 +252,7 @@ const NetSalesReportPage = () => {
         return true;
       });
 
-      console.log(`NET SALES PAGE - Filtered from ${combinedData.length} to ${filteredData.length} rows`);
+      console.log(`NET SALES PAGE - Filtered to ${filteredData.length} rows`);
 
       // Remove the unwanted column based on filter mode (for display and download)
       if (filterMode === 'channel') {
@@ -685,7 +662,7 @@ const NetSalesReportPage = () => {
                   <Button
                     variant="contained"
                     onClick={processCSVData}
-                    disabled={csvLoading || !startDate || !endDate || selectedLocations.length === 0}
+                    disabled={csvLoading || !startDate || !endDate}
                     fullWidth
                     sx={{
                       background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
