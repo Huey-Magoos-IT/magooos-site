@@ -28,6 +28,7 @@ import {
   fetchFiles as fetchS3Files,
   filterFilesByDateAndType,
   processMultipleCSVs,
+  filterData,
   CSVProcessingConfig
 } from "@/lib/csvProcessing";
 import { DatePreset, datePresets, getDateRangeForPreset } from "@/lib/utils";
@@ -179,6 +180,10 @@ const NetSalesReportPage = () => {
       return;
     }
 
+    if (selectedLocations.length === 0) {
+      toast.error("Please select at least one location");
+      return;
+    }
 
     setCSVLoading(true);
     setCSVError(null);
@@ -208,7 +213,26 @@ const NetSalesReportPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
 
-      setProcessingProgress('Applying filters...');
+      setProcessingProgress('Applying location filter...');
+
+      // Define config for Net Sales CSV processing - use Location ID column for filtering
+      const netSalesCsvConfig: CSVProcessingConfig = {
+        locationIdentifierField: {
+          sourceNames: ['Location ID', 'LocationID', 'Location_ID'] // Match the CSV column name
+        }
+      };
+
+      // Filter by location IDs using the same approach as other reports
+      let filteredData = filterData(
+        combinedData,
+        selectedLocationIds,  // Use location IDs (not names)
+        [],                   // No discount filtering for this report
+        selectedLocations,    // Pass locations for mapping
+        '',                   // No daily usage count filter
+        netSalesCsvConfig     // Config specifying Location ID column
+      );
+
+      console.log("NET SALES PAGE - After location filter:", filteredData.length, "rows");
 
       // Get selected channel names for filtering
       const selectedChannelNames = selectedChannels.length > 0
@@ -221,38 +245,30 @@ const NetSalesReportPage = () => {
         : []; // Empty means all types
 
       console.log("NET SALES PAGE - Filter mode:", filterMode);
+      console.log("NET SALES PAGE - Selected location IDs:", selectedLocationIds);
       console.log("NET SALES PAGE - Selected channels:", selectedChannelNames);
       console.log("NET SALES PAGE - Selected types:", selectedTypeNames);
-      console.log("NET SALES PAGE - Total rows from CSV:", combinedData.length);
 
-      // Filter data by channel/type only (location filtering removed to preserve all data)
-      let filteredData = combinedData.filter(row => {
-        // Filter by Order Channel (if channels are selected and mode includes channel)
-        if ((filterMode === 'channel' || filterMode === 'both') && selectedChannelNames.length > 0) {
+      // Apply channel/type filtering on top of location filtering
+      if ((filterMode === 'channel' || filterMode === 'both') && selectedChannelNames.length > 0) {
+        filteredData = filteredData.filter(row => {
           const orderChannel = row['Order Channel'] || '';
-          const channelMatches = selectedChannelNames.some(channelName =>
+          return selectedChannelNames.some(channelName =>
             orderChannel.toLowerCase().trim() === channelName.toLowerCase().trim()
           );
-          if (!channelMatches) {
-            return false;
-          }
-        }
+        });
+      }
 
-        // Filter by Order Type (if types are selected and mode includes type)
-        if ((filterMode === 'type' || filterMode === 'both') && selectedTypeNames.length > 0) {
+      if ((filterMode === 'type' || filterMode === 'both') && selectedTypeNames.length > 0) {
+        filteredData = filteredData.filter(row => {
           const orderType = row['Order Type'] || '';
-          const typeMatches = selectedTypeNames.some(typeName =>
+          return selectedTypeNames.some(typeName =>
             orderType.toLowerCase().trim() === typeName.toLowerCase().trim()
           );
-          if (!typeMatches) {
-            return false;
-          }
-        }
+        });
+      }
 
-        return true;
-      });
-
-      console.log(`NET SALES PAGE - Filtered to ${filteredData.length} rows`);
+      console.log(`NET SALES PAGE - Final filtered data: ${filteredData.length} rows`);
 
       // Remove the unwanted column based on filter mode (for display and download)
       if (filterMode === 'channel') {
@@ -662,7 +678,7 @@ const NetSalesReportPage = () => {
                   <Button
                     variant="contained"
                     onClick={processCSVData}
-                    disabled={csvLoading || !startDate || !endDate}
+                    disabled={csvLoading || !startDate || !endDate || selectedLocations.length === 0}
                     fullWidth
                     sx={{
                       background: 'linear-gradient(to right, var(--theme-primary), var(--theme-secondary))',
