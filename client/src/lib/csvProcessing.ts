@@ -273,7 +273,7 @@ export const parseCSV = <T = any>(csvText: string, hasHeader = true): Promise<Pa
   return new Promise((resolve, reject) => {
     Papa.parse<T>(csvText, { // Specify the type for Papa.parse
       header: hasHeader,
-      dynamicTyping: true, // Convert numerical values automatically
+      dynamicTyping: false, // Keep all values as strings to preserve original formatting
       skipEmptyLines: true,
       complete: (results: Papa.ParseResult<T>) => { // Use Papa.ParseResult<T>
         resolve({
