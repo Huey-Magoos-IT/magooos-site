@@ -340,7 +340,7 @@ const ReportingPage = () => {
 
   return (
     <div className="m-5 p-4">
-      <Header name="Reporting Department" />
+      <Header name="Red Flag Reports" />
       <div className="mt-4 p-4 bg-[var(--theme-surface)] rounded-lg shadow-md border border-[var(--theme-border)]">
         <div className="bg-[var(--theme-success)]/10 p-5 rounded-lg mb-6 border-l-4 border-[var(--theme-success)] shadow-sm">
           <h3 className="font-semibold mb-2 text-[var(--theme-success)]">REPORTING Access Granted</h3>
@@ -414,7 +414,7 @@ const ReportingPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
-                  minDate={new Date(2025, 0, 1, 12, 0, 0)} // Jan 1, 2025
+                  minDate={new Date(2025, 0, 13, 12, 0, 0)} // Jan 13, 2025
                   // Max date is either yesterday or the end date (if set), whichever is earlier
                   maxDate={(() => {
                     const yesterday = new Date();
@@ -445,9 +445,9 @@ const ReportingPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
-                  // Min date is either Jan 1, 2025 or the start date (if set), whichever is later
+                  // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
                   minDate={(() => {
-                    const minAllowedDate = new Date(2025, 0, 1, 12, 0, 0); // Jan 1, 2025
+                    const minAllowedDate = new Date(2025, 0, 13, 12, 0, 0); // Jan 13, 2025
 
                     // If start date is set, don't allow selecting an end date before it
                     if (startDate) {
