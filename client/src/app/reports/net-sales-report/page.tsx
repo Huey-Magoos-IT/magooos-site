@@ -36,8 +36,8 @@ import { toast } from "react-hot-toast";
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const NET_SALES_DATA_FOLDER = "net-sales-pool/";
 
-// Filter mode options
-type FilterMode = 'channel' | 'type';
+// Filter mode options - controls which column to show/filter by
+type FilterMode = 'channel' | 'type' | 'both';
 
 // Order Channel mapping from the specification
 const ORDER_CHANNELS = [
@@ -78,8 +78,8 @@ const NetSalesReportPage = () => {
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
 
-  // Filter mode state
-  const [filterMode, setFilterMode] = useState<FilterMode>('channel');
+  // Filter mode state - 'both' shows both columns, 'channel'/'type' shows only that column
+  const [filterMode, setFilterMode] = useState<FilterMode>('both');
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
 
@@ -93,9 +93,9 @@ const NetSalesReportPage = () => {
   // Derived state for just the location IDs
   const selectedLocationIds = selectedLocations.map(loc => loc.id);
 
-  // Get current filter options based on mode
-  const currentFilterOptions = filterMode === 'channel' ? ORDER_CHANNELS : ORDER_TYPES;
-  const currentSelected = filterMode === 'channel' ? selectedChannels : selectedTypes;
+  // Get current filter options based on mode (no filter chips shown for 'both' mode)
+  const currentFilterOptions = filterMode === 'channel' ? ORDER_CHANNELS : filterMode === 'type' ? ORDER_TYPES : [];
+  const currentSelected = filterMode === 'channel' ? selectedChannels : filterMode === 'type' ? selectedTypes : [];
   const setCurrentSelected = filterMode === 'channel' ? setSelectedChannels : setSelectedTypes;
 
   const handleAddLocation = (location: Location) => {
@@ -214,24 +214,26 @@ const NetSalesReportPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
 
-      setProcessingProgress(`Filtering data by location and ${filterMode === 'channel' ? 'channel' : 'type'}...`);
+      const filterModeLabel = filterMode === 'both' ? 'both columns' : filterMode === 'channel' ? 'channel' : 'type';
+      setProcessingProgress(`Filtering data by location${filterMode !== 'both' ? ` and ${filterModeLabel}` : ''}...`);
 
       // Get selected location names for filtering
       const selectedLocationNames = selectedLocations.map(loc => loc.name);
 
-      // Get selected filter names based on mode
-      const selectedFilterNames = currentSelected.length > 0
+      // Get selected filter names based on mode (only if not 'both')
+      const selectedFilterNames = filterMode !== 'both' && currentSelected.length > 0
         ? currentFilterOptions.filter(f => currentSelected.includes(f.id)).map(f => f.name)
         : []; // Empty means all
 
-      // Determine which column to filter on
+      // Determine which column to filter on (only relevant for channel/type modes)
       const filterColumn = filterMode === 'channel' ? 'Order Channel' : 'Order Type';
 
+      console.log("NET SALES PAGE - Filter mode:", filterMode);
       console.log("NET SALES PAGE - Selected locations:", selectedLocationNames);
-      console.log(`NET SALES PAGE - Selected ${filterMode}s:`, selectedFilterNames);
+      console.log(`NET SALES PAGE - Selected filters:`, selectedFilterNames);
       console.log("NET SALES PAGE - Sample data:", combinedData.slice(0, 3));
 
-      // Filter data by location and order channel/type
+      // Filter data by location and optionally by order channel/type
       let filteredData = combinedData.filter(row => {
         // Filter by Restaurant Name
         const restaurantName = row['Restaurant Name'] || '';
@@ -248,8 +250,8 @@ const NetSalesReportPage = () => {
           return false;
         }
 
-        // Filter by Order Channel or Order Type (if filters are selected)
-        if (selectedFilterNames.length > 0) {
+        // Filter by Order Channel or Order Type (only if filters are selected and not in 'both' mode)
+        if (filterMode !== 'both' && selectedFilterNames.length > 0) {
           const rowValue = row[filterColumn] || '';
           const filterMatches = selectedFilterNames.some(filterName =>
             rowValue.toLowerCase().trim() === filterName.toLowerCase().trim()
@@ -263,6 +265,22 @@ const NetSalesReportPage = () => {
       });
 
       console.log(`NET SALES PAGE - Filtered from ${combinedData.length} to ${filteredData.length} rows`);
+
+      // Remove the unwanted column based on filter mode (for display and download)
+      if (filterMode === 'channel') {
+        // Hide Order Type column
+        filteredData = filteredData.map(row => {
+          const { 'Order Type': _, ...rest } = row;
+          return rest;
+        });
+      } else if (filterMode === 'type') {
+        // Hide Order Channel column
+        filteredData = filteredData.map(row => {
+          const { 'Order Channel': _, ...rest } = row;
+          return rest;
+        });
+      }
+      // 'both' mode keeps all columns
 
       setCSVData(filteredData);
       setProcessingProgress("");
@@ -335,20 +353,23 @@ const NetSalesReportPage = () => {
               <div className="space-y-4 flex flex-col">
                 {/* Filter Mode Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
-                  <InputLabel className="text-[var(--theme-text-secondary)]">Filter By</InputLabel>
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Show Columns</InputLabel>
                   <Select
                     value={filterMode}
                     onChange={handleFilterModeChange}
-                    label="Filter By"
+                    label="Show Columns"
                     className="border-[var(--theme-border)] text-[var(--theme-text)]"
                   >
-                    <MenuItem value="channel">Order Channel</MenuItem>
-                    <MenuItem value="type">Order Type</MenuItem>
+                    <MenuItem value="both">Both (Channel & Type)</MenuItem>
+                    <MenuItem value="channel">Order Channel Only</MenuItem>
+                    <MenuItem value="type">Order Type Only</MenuItem>
                   </Select>
                   <FormHelperText className="text-[var(--theme-text-muted)]">
-                    {filterMode === 'channel'
-                      ? 'Filter by source (Doordash, UberEats, In Store, etc.)'
-                      : 'Filter by service type (Dine In, Drive-Thru, To-Go, etc.)'}
+                    {filterMode === 'both'
+                      ? 'Shows both Order Channel and Order Type columns'
+                      : filterMode === 'channel'
+                      ? 'Shows Order Channel column only (Doordash, UberEats, In Store, etc.)'
+                      : 'Shows Order Type column only (Dine In, Drive-Thru, To-Go, etc.)'}
                   </FormHelperText>
                 </FormControl>
 
@@ -512,69 +533,71 @@ const NetSalesReportPage = () => {
                   </Typography>
                 </div>
 
-                {/* Order Channel/Type Filter */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <Typography className="font-medium text-[var(--theme-text)]">
-                      {filterMode === 'channel' ? 'Order Channels' : 'Order Types'}
-                    </Typography>
-                    <div className="flex gap-2">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={handleClearFilters}
-                        disabled={currentSelected.length === 0}
-                        sx={{
-                          color: 'var(--theme-text-muted)',
-                          borderColor: 'var(--theme-border)',
-                          '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
-                        }}
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={handleSelectAllFilters}
-                        disabled={currentSelected.length === currentFilterOptions.length}
-                        color="success"
-                      >
-                        Select All
-                      </Button>
-                    </div>
-                  </div>
-                  <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md shadow-inner">
-                    <div className="flex flex-wrap gap-2">
-                      {currentFilterOptions.map((option) => (
-                        <Chip
-                          key={option.id}
-                          label={option.name}
-                          onClick={() => handleToggleFilter(option.id)}
+                {/* Order Channel/Type Filter - Only show when not in 'both' mode */}
+                {filterMode !== 'both' && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <Typography className="font-medium text-[var(--theme-text)]">
+                        {filterMode === 'channel' ? 'Order Channels' : 'Order Types'}
+                      </Typography>
+                      <div className="flex gap-2">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={handleClearFilters}
+                          disabled={currentSelected.length === 0}
                           sx={{
-                            backgroundColor: currentSelected.includes(option.id)
-                              ? 'var(--theme-primary)'
-                              : 'var(--theme-surface)',
-                            color: currentSelected.includes(option.id)
-                              ? 'var(--theme-text-on-primary)'
-                              : 'var(--theme-text)',
-                            border: '1px solid var(--theme-border)',
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: currentSelected.includes(option.id)
-                                ? 'var(--theme-primary-dark)'
-                                : 'var(--theme-surface-active)'
-                            }
+                            color: 'var(--theme-text-muted)',
+                            borderColor: 'var(--theme-border)',
+                            '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
                           }}
-                        />
-                      ))}
+                        >
+                          Clear
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={handleSelectAllFilters}
+                          disabled={currentSelected.length === currentFilterOptions.length}
+                          color="success"
+                        >
+                          Select All
+                        </Button>
+                      </div>
                     </div>
-                  </Box>
-                  <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
-                    {currentSelected.length > 0
-                      ? `${currentSelected.length} ${filterMode === 'channel' ? 'channel' : 'type'}${currentSelected.length !== 1 ? 's' : ''} selected`
-                      : `All ${filterMode === 'channel' ? 'channels' : 'types'} will be included`}
-                  </Typography>
-                </div>
+                    <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md shadow-inner">
+                      <div className="flex flex-wrap gap-2">
+                        {currentFilterOptions.map((option) => (
+                          <Chip
+                            key={option.id}
+                            label={option.name}
+                            onClick={() => handleToggleFilter(option.id)}
+                            sx={{
+                              backgroundColor: currentSelected.includes(option.id)
+                                ? 'var(--theme-primary)'
+                                : 'var(--theme-surface)',
+                              color: currentSelected.includes(option.id)
+                                ? 'var(--theme-text-on-primary)'
+                                : 'var(--theme-text)',
+                              border: '1px solid var(--theme-border)',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                backgroundColor: currentSelected.includes(option.id)
+                                  ? 'var(--theme-primary-dark)'
+                                  : 'var(--theme-surface-active)'
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </Box>
+                    <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
+                      {currentSelected.length > 0
+                        ? `${currentSelected.length} ${filterMode === 'channel' ? 'channel' : 'type'}${currentSelected.length !== 1 ? 's' : ''} selected`
+                        : `All ${filterMode === 'channel' ? 'channels' : 'types'} will be included`}
+                    </Typography>
+                  </div>
+                )}
 
                 {/* Process Data Button */}
                 <div className="mt-4">
