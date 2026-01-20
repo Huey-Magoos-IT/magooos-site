@@ -8,7 +8,7 @@ import AuthProvider, { useAuth } from "./authProvider";
 import LoginForm from "@/components/LoginForm";
 import StoreProvider, { useAppSelector } from "./redux";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV2";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isSidebarCollapsed = useAppSelector(
