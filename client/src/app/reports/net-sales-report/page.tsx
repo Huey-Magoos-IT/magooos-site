@@ -79,7 +79,7 @@ const NetSalesReportPage = () => {
   const [lastAction, setLastAction] = useState<string>("");
 
   // Filter mode state - 'both' shows both columns, 'channel'/'type' shows only that column
-  const [filterMode, setFilterMode] = useState<FilterMode>('both');
+  const [filterMode, setFilterMode] = useState<FilterMode>('channel');
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
 
@@ -156,9 +156,7 @@ const NetSalesReportPage = () => {
 
   const handleFilterModeChange = (event: SelectChangeEvent<FilterMode>) => {
     setFilterMode(event.target.value as FilterMode);
-    // Clear selections when switching modes
-    setSelectedChannels([]);
-    setSelectedTypes([]);
+    // Keep filter selections when switching modes - user may want to preserve their filters
   };
 
   // Fetch S3 files for client-side processing
@@ -214,23 +212,25 @@ const NetSalesReportPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
 
-      const filterModeLabel = filterMode === 'both' ? 'both columns' : filterMode === 'channel' ? 'channel' : 'type';
-      setProcessingProgress(`Filtering data by location${filterMode !== 'both' ? ` and ${filterModeLabel}` : ''}...`);
+      setProcessingProgress('Filtering data by location and selected filters...');
 
       // Get selected location names for filtering
       const selectedLocationNames = selectedLocations.map(loc => loc.name);
 
-      // Get selected filter names based on mode (only if not 'both')
-      const selectedFilterNames = filterMode !== 'both' && currentSelected.length > 0
-        ? currentFilterOptions.filter(f => currentSelected.includes(f.id)).map(f => f.name)
-        : []; // Empty means all
+      // Get selected channel names for filtering
+      const selectedChannelNames = selectedChannels.length > 0
+        ? ORDER_CHANNELS.filter(c => selectedChannels.includes(c.id)).map(c => c.name)
+        : []; // Empty means all channels
 
-      // Determine which column to filter on (only relevant for channel/type modes)
-      const filterColumn = filterMode === 'channel' ? 'Order Channel' : 'Order Type';
+      // Get selected type names for filtering
+      const selectedTypeNames = selectedTypes.length > 0
+        ? ORDER_TYPES.filter(t => selectedTypes.includes(t.id)).map(t => t.name)
+        : []; // Empty means all types
 
       console.log("NET SALES PAGE - Filter mode:", filterMode);
       console.log("NET SALES PAGE - Selected locations:", selectedLocationNames);
-      console.log(`NET SALES PAGE - Selected filters:`, selectedFilterNames);
+      console.log("NET SALES PAGE - Selected channels:", selectedChannelNames);
+      console.log("NET SALES PAGE - Selected types:", selectedTypeNames);
       console.log("NET SALES PAGE - Sample data:", combinedData.slice(0, 3));
 
       // Filter data by location and optionally by order channel/type
@@ -250,13 +250,24 @@ const NetSalesReportPage = () => {
           return false;
         }
 
-        // Filter by Order Channel or Order Type (only if filters are selected and not in 'both' mode)
-        if (filterMode !== 'both' && selectedFilterNames.length > 0) {
-          const rowValue = row[filterColumn] || '';
-          const filterMatches = selectedFilterNames.some(filterName =>
-            rowValue.toLowerCase().trim() === filterName.toLowerCase().trim()
+        // Filter by Order Channel (if channels are selected and mode includes channel)
+        if ((filterMode === 'channel' || filterMode === 'both') && selectedChannelNames.length > 0) {
+          const orderChannel = row['Order Channel'] || '';
+          const channelMatches = selectedChannelNames.some(channelName =>
+            orderChannel.toLowerCase().trim() === channelName.toLowerCase().trim()
           );
-          if (!filterMatches) {
+          if (!channelMatches) {
+            return false;
+          }
+        }
+
+        // Filter by Order Type (if types are selected and mode includes type)
+        if ((filterMode === 'type' || filterMode === 'both') && selectedTypeNames.length > 0) {
+          const orderType = row['Order Type'] || '';
+          const typeMatches = selectedTypeNames.some(typeName =>
+            orderType.toLowerCase().trim() === typeName.toLowerCase().trim()
+          );
+          if (!typeMatches) {
             return false;
           }
         }
@@ -353,23 +364,23 @@ const NetSalesReportPage = () => {
               <div className="space-y-4 flex flex-col">
                 {/* Filter Mode Selector */}
                 <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
-                  <InputLabel className="text-[var(--theme-text-secondary)]">Show Columns</InputLabel>
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Filter By</InputLabel>
                   <Select
                     value={filterMode}
                     onChange={handleFilterModeChange}
-                    label="Show Columns"
+                    label="Filter By"
                     className="border-[var(--theme-border)] text-[var(--theme-text)]"
                   >
-                    <MenuItem value="both">Both (Channel & Type)</MenuItem>
-                    <MenuItem value="channel">Order Channel Only</MenuItem>
-                    <MenuItem value="type">Order Type Only</MenuItem>
+                    <MenuItem value="channel">Order Channel</MenuItem>
+                    <MenuItem value="type">Order Type</MenuItem>
+                    <MenuItem value="both">Both</MenuItem>
                   </Select>
                   <FormHelperText className="text-[var(--theme-text-muted)]">
-                    {filterMode === 'both'
-                      ? 'Shows both Order Channel and Order Type columns'
-                      : filterMode === 'channel'
-                      ? 'Shows Order Channel column only (Doordash, UberEats, In Store, etc.)'
-                      : 'Shows Order Type column only (Dine In, Drive-Thru, To-Go, etc.)'}
+                    {filterMode === 'channel'
+                      ? 'Filter by source (Doordash, UberEats, In Store, etc.)'
+                      : filterMode === 'type'
+                      ? 'Filter by service type (Dine In, Drive-Thru, To-Go, etc.)'
+                      : 'Filter by both Order Channel and Order Type'}
                   </FormHelperText>
                 </FormControl>
 
@@ -533,19 +544,17 @@ const NetSalesReportPage = () => {
                   </Typography>
                 </div>
 
-                {/* Order Channel/Type Filter - Only show when not in 'both' mode */}
-                {filterMode !== 'both' && (
+                {/* Order Channel Filter - Show when mode is 'channel' or 'both' */}
+                {(filterMode === 'channel' || filterMode === 'both') && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <Typography className="font-medium text-[var(--theme-text)]">
-                        {filterMode === 'channel' ? 'Order Channels' : 'Order Types'}
-                      </Typography>
+                      <Typography className="font-medium text-[var(--theme-text)]">Order Channels</Typography>
                       <div className="flex gap-2">
                         <Button
                           size="small"
                           variant="outlined"
-                          onClick={handleClearFilters}
-                          disabled={currentSelected.length === 0}
+                          onClick={() => setSelectedChannels([])}
+                          disabled={selectedChannels.length === 0}
                           sx={{
                             color: 'var(--theme-text-muted)',
                             borderColor: 'var(--theme-border)',
@@ -557,8 +566,8 @@ const NetSalesReportPage = () => {
                         <Button
                           size="small"
                           variant="outlined"
-                          onClick={handleSelectAllFilters}
-                          disabled={currentSelected.length === currentFilterOptions.length}
+                          onClick={() => setSelectedChannels(ORDER_CHANNELS.map(c => c.id))}
+                          disabled={selectedChannels.length === ORDER_CHANNELS.length}
                           color="success"
                         >
                           Select All
@@ -567,22 +576,26 @@ const NetSalesReportPage = () => {
                     </div>
                     <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md shadow-inner">
                       <div className="flex flex-wrap gap-2">
-                        {currentFilterOptions.map((option) => (
+                        {ORDER_CHANNELS.map((channel) => (
                           <Chip
-                            key={option.id}
-                            label={option.name}
-                            onClick={() => handleToggleFilter(option.id)}
+                            key={channel.id}
+                            label={channel.name}
+                            onClick={() => setSelectedChannels(prev =>
+                              prev.includes(channel.id)
+                                ? prev.filter(id => id !== channel.id)
+                                : [...prev, channel.id]
+                            )}
                             sx={{
-                              backgroundColor: currentSelected.includes(option.id)
+                              backgroundColor: selectedChannels.includes(channel.id)
                                 ? 'var(--theme-primary)'
                                 : 'var(--theme-surface)',
-                              color: currentSelected.includes(option.id)
+                              color: selectedChannels.includes(channel.id)
                                 ? 'var(--theme-text-on-primary)'
                                 : 'var(--theme-text)',
                               border: '1px solid var(--theme-border)',
                               cursor: 'pointer',
                               '&:hover': {
-                                backgroundColor: currentSelected.includes(option.id)
+                                backgroundColor: selectedChannels.includes(channel.id)
                                   ? 'var(--theme-primary-dark)'
                                   : 'var(--theme-surface-active)'
                               }
@@ -592,9 +605,77 @@ const NetSalesReportPage = () => {
                       </div>
                     </Box>
                     <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
-                      {currentSelected.length > 0
-                        ? `${currentSelected.length} ${filterMode === 'channel' ? 'channel' : 'type'}${currentSelected.length !== 1 ? 's' : ''} selected`
-                        : `All ${filterMode === 'channel' ? 'channels' : 'types'} will be included`}
+                      {selectedChannels.length > 0
+                        ? `${selectedChannels.length} channel${selectedChannels.length !== 1 ? 's' : ''} selected`
+                        : 'All channels will be included'}
+                    </Typography>
+                  </div>
+                )}
+
+                {/* Order Type Filter - Show when mode is 'type' or 'both' */}
+                {(filterMode === 'type' || filterMode === 'both') && (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <Typography className="font-medium text-[var(--theme-text)]">Order Types</Typography>
+                      <div className="flex gap-2">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setSelectedTypes([])}
+                          disabled={selectedTypes.length === 0}
+                          sx={{
+                            color: 'var(--theme-text-muted)',
+                            borderColor: 'var(--theme-border)',
+                            '&:hover': { backgroundColor: 'var(--theme-surface-hover)' }
+                          }}
+                        >
+                          Clear
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setSelectedTypes(ORDER_TYPES.map(t => t.id))}
+                          disabled={selectedTypes.length === ORDER_TYPES.length}
+                          color="success"
+                        >
+                          Select All
+                        </Button>
+                      </div>
+                    </div>
+                    <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md shadow-inner">
+                      <div className="flex flex-wrap gap-2">
+                        {ORDER_TYPES.map((type) => (
+                          <Chip
+                            key={type.id}
+                            label={type.name}
+                            onClick={() => setSelectedTypes(prev =>
+                              prev.includes(type.id)
+                                ? prev.filter(id => id !== type.id)
+                                : [...prev, type.id]
+                            )}
+                            sx={{
+                              backgroundColor: selectedTypes.includes(type.id)
+                                ? 'var(--theme-primary)'
+                                : 'var(--theme-surface)',
+                              color: selectedTypes.includes(type.id)
+                                ? 'var(--theme-text-on-primary)'
+                                : 'var(--theme-text)',
+                              border: '1px solid var(--theme-border)',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                backgroundColor: selectedTypes.includes(type.id)
+                                  ? 'var(--theme-primary-dark)'
+                                  : 'var(--theme-surface-active)'
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </Box>
+                    <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
+                      {selectedTypes.length > 0
+                        ? `${selectedTypes.length} type${selectedTypes.length !== 1 ? 's' : ''} selected`
+                        : 'All types will be included'}
                     </Typography>
                   </div>
                 )}
