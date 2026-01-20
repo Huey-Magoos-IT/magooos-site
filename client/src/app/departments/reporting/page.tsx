@@ -414,7 +414,7 @@ const ReportingPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
-                  minDate={new Date(new Date().getFullYear(), 0, 13, 12, 0, 0)} // Jan 13 of current year at noon
+                  minDate={new Date(2025, 0, 1, 12, 0, 0)} // Jan 1, 2025
                   // Max date is either yesterday or the end date (if set), whichever is earlier
                   maxDate={(() => {
                     const yesterday = new Date();
@@ -445,15 +445,15 @@ const ReportingPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
-                  // Min date is either Jan 13, 2025 or the start date (if set), whichever is later
+                  // Min date is either Jan 1, 2025 or the start date (if set), whichever is later
                   minDate={(() => {
-                    const minAllowedDate = new Date(new Date().getFullYear(), 0, 13, 12, 0, 0); // Jan 13 of current year at noon
-                    
+                    const minAllowedDate = new Date(2025, 0, 1, 12, 0, 0); // Jan 1, 2025
+
                     // If start date is set, don't allow selecting an end date before it
                     if (startDate) {
                       return startDate > minAllowedDate ? startDate : minAllowedDate;
                     }
-                    
+
                     return minAllowedDate;
                   })()}
                   // Max date is yesterday
