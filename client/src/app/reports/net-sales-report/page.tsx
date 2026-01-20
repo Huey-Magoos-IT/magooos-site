@@ -36,17 +36,31 @@ import { toast } from "react-hot-toast";
 const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-lake-magooos-site.s3.us-east-2.amazonaws.com";
 const NET_SALES_DATA_FOLDER = "net-sales-pool/";
 
+// Filter mode options
+type FilterMode = 'channel' | 'type';
+
 // Order Channel mapping from the specification
 const ORDER_CHANNELS = [
-  { id: 1985, name: 'In Store' },
-  { id: 1986, name: 'Web' },
-  { id: 1987, name: 'UberEats' },
-  { id: 1988, name: 'Doordash' },
-  { id: 1989, name: 'Grubhub' },
-  { id: 2077, name: 'Catering' },
-  { id: 2288, name: 'Web Catering' },
-  { id: 3471, name: 'ezCater' },
-  { id: 5867, name: 'Off-Premise' },
+  { id: 1, name: 'In Store' },
+  { id: 2, name: 'Web' },
+  { id: 3, name: 'UberEats' },
+  { id: 4, name: 'Doordash' },
+  { id: 5, name: 'Grubhub' },
+  { id: 6, name: 'Catering' },
+  { id: 7, name: 'Web Catering' },
+  { id: 8, name: 'ezCater' },
+  { id: 9, name: 'Off-Premise' },
+];
+
+// Order Type mapping
+const ORDER_TYPES = [
+  { id: 1, name: 'Dine In' },
+  { id: 2, name: 'Drive-Thru' },
+  { id: 3, name: 'To-Go' },
+  { id: 4, name: 'Pickup' },
+  { id: 5, name: 'Third Party' },
+  { id: 6, name: 'Phone In' },
+  { id: 7, name: 'Web Order' },
 ];
 
 const NetSalesReportPage = () => {
@@ -63,7 +77,11 @@ const NetSalesReportPage = () => {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
+
+  // Filter mode state
+  const [filterMode, setFilterMode] = useState<FilterMode>('channel');
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
 
   // Client-side processing state
   const [allS3Files, setAllS3Files] = useState<string[]>([]);
@@ -74,6 +92,11 @@ const NetSalesReportPage = () => {
 
   // Derived state for just the location IDs
   const selectedLocationIds = selectedLocations.map(loc => loc.id);
+
+  // Get current filter options based on mode
+  const currentFilterOptions = filterMode === 'channel' ? ORDER_CHANNELS : ORDER_TYPES;
+  const currentSelected = filterMode === 'channel' ? selectedChannels : selectedTypes;
+  const setCurrentSelected = filterMode === 'channel' ? setSelectedChannels : setSelectedTypes;
 
   const handleAddLocation = (location: Location) => {
     setPreviousLocations([...selectedLocations]);
@@ -115,20 +138,27 @@ const NetSalesReportPage = () => {
     }
   };
 
-  const handleToggleChannel = (channelId: number) => {
-    setSelectedChannels(prev =>
-      prev.includes(channelId)
-        ? prev.filter(id => id !== channelId)
-        : [...prev, channelId]
+  const handleToggleFilter = (filterId: number) => {
+    setCurrentSelected(prev =>
+      prev.includes(filterId)
+        ? prev.filter(id => id !== filterId)
+        : [...prev, filterId]
     );
   };
 
-  const handleSelectAllChannels = () => {
-    setSelectedChannels(ORDER_CHANNELS.map(c => c.id));
+  const handleSelectAllFilters = () => {
+    setCurrentSelected(currentFilterOptions.map(f => f.id));
   };
 
-  const handleClearChannels = () => {
+  const handleClearFilters = () => {
+    setCurrentSelected([]);
+  };
+
+  const handleFilterModeChange = (event: SelectChangeEvent<FilterMode>) => {
+    setFilterMode(event.target.value as FilterMode);
+    // Clear selections when switching modes
     setSelectedChannels([]);
+    setSelectedTypes([]);
   };
 
   // Fetch S3 files for client-side processing
@@ -184,21 +214,24 @@ const NetSalesReportPage = () => {
       // Process all files (fetch and parse)
       const combinedData = await processMultipleCSVs(fileUrls);
 
-      setProcessingProgress("Filtering data by location and channel...");
+      setProcessingProgress(`Filtering data by location and ${filterMode === 'channel' ? 'channel' : 'type'}...`);
 
       // Get selected location names for filtering
       const selectedLocationNames = selectedLocations.map(loc => loc.name);
 
-      // Get selected channel names for filtering
-      const selectedChannelNames = selectedChannels.length > 0
-        ? ORDER_CHANNELS.filter(c => selectedChannels.includes(c.id)).map(c => c.name)
-        : []; // Empty means all channels
+      // Get selected filter names based on mode
+      const selectedFilterNames = currentSelected.length > 0
+        ? currentFilterOptions.filter(f => currentSelected.includes(f.id)).map(f => f.name)
+        : []; // Empty means all
+
+      // Determine which column to filter on
+      const filterColumn = filterMode === 'channel' ? 'Order Channel' : 'Order Type';
 
       console.log("NET SALES PAGE - Selected locations:", selectedLocationNames);
-      console.log("NET SALES PAGE - Selected channels:", selectedChannelNames);
+      console.log(`NET SALES PAGE - Selected ${filterMode}s:`, selectedFilterNames);
       console.log("NET SALES PAGE - Sample data:", combinedData.slice(0, 3));
 
-      // Filter data by location and order channel
+      // Filter data by location and order channel/type
       let filteredData = combinedData.filter(row => {
         // Filter by Restaurant Name
         const restaurantName = row['Restaurant Name'] || '';
@@ -215,13 +248,13 @@ const NetSalesReportPage = () => {
           return false;
         }
 
-        // Filter by Order Channel (if channels are selected)
-        if (selectedChannelNames.length > 0) {
-          const orderChannel = row['Order Channel'] || '';
-          const channelMatches = selectedChannelNames.some(channelName =>
-            orderChannel.toLowerCase().trim() === channelName.toLowerCase().trim()
+        // Filter by Order Channel or Order Type (if filters are selected)
+        if (selectedFilterNames.length > 0) {
+          const rowValue = row[filterColumn] || '';
+          const filterMatches = selectedFilterNames.some(filterName =>
+            rowValue.toLowerCase().trim() === filterName.toLowerCase().trim()
           );
-          if (!channelMatches) {
+          if (!filterMatches) {
             return false;
           }
         }
@@ -300,6 +333,25 @@ const NetSalesReportPage = () => {
             {/* Left column - Form inputs */}
             <Grid item xs={12} md={6}>
               <div className="space-y-4 flex flex-col">
+                {/* Filter Mode Selector */}
+                <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
+                  <InputLabel className="text-[var(--theme-text-secondary)]">Filter By</InputLabel>
+                  <Select
+                    value={filterMode}
+                    onChange={handleFilterModeChange}
+                    label="Filter By"
+                    className="border-[var(--theme-border)] text-[var(--theme-text)]"
+                  >
+                    <MenuItem value="channel">Order Channel</MenuItem>
+                    <MenuItem value="type">Order Type</MenuItem>
+                  </Select>
+                  <FormHelperText className="text-[var(--theme-text-muted)]">
+                    {filterMode === 'channel'
+                      ? 'Filter by source (Doordash, UberEats, In Store, etc.)'
+                      : 'Filter by service type (Dine In, Drive-Thru, To-Go, etc.)'}
+                  </FormHelperText>
+                </FormControl>
+
                 {/* Date Preset Dropdown */}
                 <FormControl fullWidth variant="outlined" className="bg-[var(--theme-surface-hover)] rounded-md shadow-sm border border-[var(--theme-border)]">
                   <InputLabel className="text-[var(--theme-text-secondary)]">Date Range Preset</InputLabel>
@@ -460,16 +512,18 @@ const NetSalesReportPage = () => {
                   </Typography>
                 </div>
 
-                {/* Order Channel Filter */}
+                {/* Order Channel/Type Filter */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Typography className="font-medium text-[var(--theme-text)]">Order Channels</Typography>
+                    <Typography className="font-medium text-[var(--theme-text)]">
+                      {filterMode === 'channel' ? 'Order Channels' : 'Order Types'}
+                    </Typography>
                     <div className="flex gap-2">
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={handleClearChannels}
-                        disabled={selectedChannels.length === 0}
+                        onClick={handleClearFilters}
+                        disabled={currentSelected.length === 0}
                         sx={{
                           color: 'var(--theme-text-muted)',
                           borderColor: 'var(--theme-border)',
@@ -481,8 +535,8 @@ const NetSalesReportPage = () => {
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={handleSelectAllChannels}
-                        disabled={selectedChannels.length === ORDER_CHANNELS.length}
+                        onClick={handleSelectAllFilters}
+                        disabled={currentSelected.length === currentFilterOptions.length}
                         color="success"
                       >
                         Select All
@@ -491,22 +545,22 @@ const NetSalesReportPage = () => {
                   </div>
                   <Box className="p-3 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-md shadow-inner">
                     <div className="flex flex-wrap gap-2">
-                      {ORDER_CHANNELS.map((channel) => (
+                      {currentFilterOptions.map((option) => (
                         <Chip
-                          key={channel.id}
-                          label={channel.name}
-                          onClick={() => handleToggleChannel(channel.id)}
+                          key={option.id}
+                          label={option.name}
+                          onClick={() => handleToggleFilter(option.id)}
                           sx={{
-                            backgroundColor: selectedChannels.includes(channel.id)
+                            backgroundColor: currentSelected.includes(option.id)
                               ? 'var(--theme-primary)'
                               : 'var(--theme-surface)',
-                            color: selectedChannels.includes(channel.id)
+                            color: currentSelected.includes(option.id)
                               ? 'var(--theme-text-on-primary)'
                               : 'var(--theme-text)',
                             border: '1px solid var(--theme-border)',
                             cursor: 'pointer',
                             '&:hover': {
-                              backgroundColor: selectedChannels.includes(channel.id)
+                              backgroundColor: currentSelected.includes(option.id)
                                 ? 'var(--theme-primary-dark)'
                                 : 'var(--theme-surface-active)'
                             }
@@ -516,9 +570,9 @@ const NetSalesReportPage = () => {
                     </div>
                   </Box>
                   <Typography className="text-xs text-[var(--theme-text-muted)] mt-1">
-                    {selectedChannels.length > 0
-                      ? `${selectedChannels.length} channel${selectedChannels.length !== 1 ? 's' : ''} selected`
-                      : "All channels will be included"}
+                    {currentSelected.length > 0
+                      ? `${currentSelected.length} ${filterMode === 'channel' ? 'channel' : 'type'}${currentSelected.length !== 1 ? 's' : ''} selected`
+                      : `All ${filterMode === 'channel' ? 'channels' : 'types'} will be included`}
                   </Typography>
                 </div>
 
