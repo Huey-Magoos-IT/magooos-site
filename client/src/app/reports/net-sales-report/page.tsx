@@ -405,7 +405,7 @@ const NetSalesReportPage = () => {
                   }}
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
-                  minDate={new Date(2025, 0, 1, 12, 0, 0)} // Jan 1, 2025
+                  minDate={new Date(2024, 11, 30, 12, 0, 0)} // Dec 30, 2024
                   maxDate={(() => {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -433,7 +433,7 @@ const NetSalesReportPage = () => {
                   format="MMddyyyy"
                   className="bg-[var(--theme-surface-hover)] w-full rounded-md shadow-sm border border-[var(--theme-border)]"
                   minDate={(() => {
-                    const minAllowedDate = new Date(2025, 0, 1, 12, 0, 0); // Jan 1, 2025
+                    const minAllowedDate = new Date(2024, 11, 30, 12, 0, 0); // Dec 30, 2024
                     if (startDate) {
                       return startDate > minAllowedDate ? startDate : minAllowedDate;
                     }
