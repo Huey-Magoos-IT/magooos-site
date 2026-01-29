@@ -39,6 +39,9 @@ client/
 │   │   │   │   └── page.tsx
 │   │   │   └── reporting/
 │   │   │       └── page.tsx
+│   │   ├── reports/
+│   │   │   └── net-sales-report/
+│   │   │       └── page.tsx
 │   │   ├── home/
 │   │   │   └── page.tsx
 │   │   ├── priority/
@@ -195,7 +198,7 @@ client/
 - `departments/price-portal/page.tsx`: Price management portal with location selection (`location-selection/page.tsx`), using `priceDataUtils.ts` and `priceChangeUtils.ts` (restricted to DATA or ADMIN).
 - `departments/raw-data/page.tsx`: Raw CSV data access and processing with `legacyLambdaProcessing.ts`.
 - `departments/raw-loyalty/page.tsx`: Raw loyalty data handling, integrated with loyalty lambdas.
-- `departments/reporting/page.tsx`: Reporting department page with enhanced capabilities:
+- `departments/reporting/page.tsx`: Red Flag Reports page with enhanced capabilities:
   * Dual processing approach:
     * Lambda-based processing for large datasets
     * Client-side processing for immediate results without API Gateway timeout limitations
@@ -208,6 +211,16 @@ client/
   * Export functionality for processed data
   * Direct S3 access for CSV processing in the browser
   * Enhanced with `reportUtils.ts` for advanced analytics
+- `reports/net-sales-report/page.tsx`: Net Sales Report page:
+  * Aggregated net sales by date, location, and order channel/type
+  * "Filter By" toggle with three modes: Order Channel, Order Type, or Both
+  * Order Channel filtering: In Store, Web, UberEats, Doordash, Grubhub, Catering, Web Catering, ezCater, Off-Premise
+  * Order Type filtering: Dine In, Drive-Thru, To-Go, Pickup, Third Party, Phone In, Web Orders, Unknown
+  * Location filtering using Location ID matching (same as other reports)
+  * Date range selection from Dec 30, 2024 with preset options
+  * CSV export functionality for filtered data
+  * S3 data source: `net-sales-pool/` folder in data-lake bucket
+  * Restricted to `REPORTING` role
 
 9. Additional Features:
 - `search/page.tsx`: Global search interface with filters and real-time results.

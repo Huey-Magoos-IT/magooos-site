@@ -63,6 +63,13 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Client-side CSV processing capabilities for immediate results
     - Direct browser access for S3 files without server-side processing
 
+3.  **Net Sales Data:**
+    - Folder: `net-sales-pool/` in `data-lake-magooos-site` bucket
+    - CSV files with net sales aggregated by date, location, and order channel/type
+    - File pattern: `net_sales_report_MM-DD-YYYY.csv`
+    - Restricted to `REPORTING` role
+    - Direct browser access for client-side processing
+
 # CRITICAL CODE PATTERNS
 
 1.  **Role-Based Access Control:**
@@ -131,7 +138,7 @@ EC2 (auto-scaled) ←→ RDS (VPC)
         - CSV data visualization using `CSVDataTable`
         - S3 integration for data storage
         - Restricted to `DATA` role
-    - **Reporting Department** (`app/departments/reporting/page.tsx`):
+    - **Red Flag Reports** (`app/departments/reporting/page.tsx`):
         - Comprehensive report generation with dual processing approach:
             - Lambda-based processing for large reports (handles datasets exceeding client capabilities)
             - Client-side processing for immediate results (bypasses API Gateway 29-second timeout)
@@ -155,6 +162,20 @@ EC2 (auto-scaled) ←→ RDS (VPC)
         - Access Control:
             - Restricted to `REPORTING` role
             - Comprehensive error handling for permission boundaries
+    - **Net Sales Report** (`app/reports/net-sales-report/page.tsx`):
+        - Aggregated net sales by date, location, and order channel/type
+        - S3 data source: `net-sales-pool/` folder in data-lake bucket
+        - Filter Modes:
+            - "Order Channel" - Shows channel column, hides Order Type
+            - "Order Type" - Shows type column, hides Order Channel
+            - "Both" - Shows both columns with dual filtering
+        - Order Channel options: In Store, Web, UberEats, Doordash, Grubhub, Catering, Web Catering, ezCater, Off-Premise
+        - Order Type options: Dine In, Drive-Thru, To-Go, Pickup, Third Party, Phone In, Web Orders, Unknown
+        - Location filtering using Location ID matching
+        - Date range selection from Dec 30, 2024 with preset options
+        - CSV export functionality
+        - Access Control:
+            - Restricted to `REPORTING` role
     - **Percent of Scans Department** (`app/departments/percent-of-scans/page.tsx`):
         - Analysis of scan percentages, restricted to `SCANS` or `REPORTING` roles
         - Integrated with loyalty and price data
