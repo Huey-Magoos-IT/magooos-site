@@ -19,7 +19,9 @@ import {
   FormControl,
   InputLabel,
   FormHelperText,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Checkbox,
+  FormControlLabel
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import LocationTable, { Location } from "@/components/LocationTable";
@@ -83,6 +85,7 @@ const NetSalesReportPage = () => {
   const [filterMode, setFilterMode] = useState<FilterMode>('channel');
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
+  const [showCashRounding, setShowCashRounding] = useState(false);
 
   // Client-side processing state
   const [allS3Files, setAllS3Files] = useState<string[]>([]);
@@ -279,6 +282,14 @@ const NetSalesReportPage = () => {
         // Hide Order Channel column
         filteredData = filteredData.map(row => {
           const { 'Order Channel': _, ...rest } = row;
+          return rest;
+        });
+      }
+
+      // Remove Cash Rounding column if checkbox is off
+      if (!showCashRounding) {
+        filteredData = filteredData.map(row => {
+          const { 'Cash Rounding': _, ...rest } = row;
           return rest;
         });
       }
@@ -666,6 +677,24 @@ const NetSalesReportPage = () => {
                     </Typography>
                   </div>
                 )}
+
+                {/* Cash Rounding Checkbox */}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={showCashRounding}
+                      onChange={(e) => setShowCashRounding(e.target.checked)}
+                      sx={{
+                        color: 'var(--theme-text-muted)',
+                        '&.Mui-checked': {
+                          color: 'var(--theme-primary)',
+                        },
+                      }}
+                    />
+                  }
+                  label="Show Cash Rounding column"
+                  className="text-[var(--theme-text)]"
+                />
 
                 {/* Process Data Button */}
                 <div className="mt-4">
