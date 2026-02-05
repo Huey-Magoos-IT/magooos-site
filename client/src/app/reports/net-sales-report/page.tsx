@@ -38,7 +38,7 @@ const S3_DATA_LAKE = process.env.NEXT_PUBLIC_DATA_LAKE_S3_URL || "https://data-l
 const NET_SALES_DATA_FOLDER = "net-sales-pool/";
 
 // Filter mode options - controls which column to show/filter by
-type FilterMode = 'channel' | 'type' | 'both';
+type FilterMode = 'channel' | 'type';
 
 // Order Channel mapping from the specification
 const ORDER_CHANNELS = [
@@ -79,7 +79,7 @@ const NetSalesReportPage = () => {
   const [previousLocations, setPreviousLocations] = useState<Location[]>([]);
   const [lastAction, setLastAction] = useState<string>("");
 
-  // Filter mode state - 'both' shows both columns, 'channel'/'type' shows only that column
+  // Filter mode state - 'channel' or 'type' controls which column to show/filter by
   const [filterMode, setFilterMode] = useState<FilterMode>('channel');
   const [selectedChannels, setSelectedChannels] = useState<number[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<number[]>([]);
@@ -94,9 +94,9 @@ const NetSalesReportPage = () => {
   // Derived state for just the location IDs
   const selectedLocationIds = selectedLocations.map(loc => loc.id);
 
-  // Get current filter options based on mode (no filter chips shown for 'both' mode)
-  const currentFilterOptions = filterMode === 'channel' ? ORDER_CHANNELS : filterMode === 'type' ? ORDER_TYPES : [];
-  const currentSelected = filterMode === 'channel' ? selectedChannels : filterMode === 'type' ? selectedTypes : [];
+  // Get current filter options based on mode
+  const currentFilterOptions = filterMode === 'channel' ? ORDER_CHANNELS : ORDER_TYPES;
+  const currentSelected = filterMode === 'channel' ? selectedChannels : selectedTypes;
   const setCurrentSelected = filterMode === 'channel' ? setSelectedChannels : setSelectedTypes;
 
   const handleAddLocation = (location: Location) => {
@@ -250,16 +250,14 @@ const NetSalesReportPage = () => {
       console.log("NET SALES PAGE - Selected types:", selectedTypeNames);
 
       // Apply channel/type filtering on top of location filtering
-      if ((filterMode === 'channel' || filterMode === 'both') && selectedChannelNames.length > 0) {
+      if (filterMode === 'channel' && selectedChannelNames.length > 0) {
         filteredData = filteredData.filter(row => {
           const orderChannel = row['Order Channel'] || '';
           return selectedChannelNames.some(channelName =>
             orderChannel.toLowerCase().trim() === channelName.toLowerCase().trim()
           );
         });
-      }
-
-      if ((filterMode === 'type' || filterMode === 'both') && selectedTypeNames.length > 0) {
+      } else if (filterMode === 'type' && selectedTypeNames.length > 0) {
         filteredData = filteredData.filter(row => {
           const orderType = row['Order Type'] || '';
           return selectedTypeNames.some(typeName =>
@@ -284,7 +282,6 @@ const NetSalesReportPage = () => {
           return rest;
         });
       }
-      // 'both' mode keeps all columns
 
       setCSVData(filteredData);
       setProcessingProgress("");
@@ -366,14 +363,11 @@ const NetSalesReportPage = () => {
                   >
                     <MenuItem value="channel">Order Channel</MenuItem>
                     <MenuItem value="type">Order Type</MenuItem>
-                    <MenuItem value="both">Both</MenuItem>
                   </Select>
                   <FormHelperText className="text-[var(--theme-text-muted)]">
                     {filterMode === 'channel'
                       ? 'Filter by source (Doordash, UberEats, In Store, etc.)'
-                      : filterMode === 'type'
-                      ? 'Filter by service type (Dine In, Drive-Thru, To-Go, etc.)'
-                      : 'Filter by both Order Channel and Order Type'}
+                      : 'Filter by service type (Dine In, Drive-Thru, To-Go, etc.)'}
                   </FormHelperText>
                 </FormControl>
 
@@ -537,8 +531,8 @@ const NetSalesReportPage = () => {
                   </Typography>
                 </div>
 
-                {/* Order Channel Filter - Show when mode is 'channel' or 'both' */}
-                {(filterMode === 'channel' || filterMode === 'both') && (
+                {/* Order Channel Filter - Show when mode is 'channel' */}
+                {filterMode === 'channel' && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <Typography className="font-medium text-[var(--theme-text)]">Order Channels</Typography>
@@ -605,8 +599,8 @@ const NetSalesReportPage = () => {
                   </div>
                 )}
 
-                {/* Order Type Filter - Show when mode is 'type' or 'both' */}
-                {(filterMode === 'type' || filterMode === 'both') && (
+                {/* Order Type Filter - Show when mode is 'type' */}
+                {filterMode === 'type' && (
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <Typography className="font-medium text-[var(--theme-text)]">Order Types</Typography>
