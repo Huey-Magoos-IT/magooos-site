@@ -1,0 +1,153 @@
+Card Name,List Name,Description,Labels,Due Date
+"Fix JWT Validation","Critical - Security","Currently any Bearer token is accepted. Implement proper JWT verification.
+
+Checklist:
+- Install jsonwebtoken
+- Create JWT verification middleware
+- Apply to all protected routes
+- Test with invalid tokens","Critical",
+"Remove Hardcoded Admin Fallback","Critical - Security","groupController.ts has dev fallback to 'admin' user in production code.
+
+Checklist:
+- Find all instances in codebase
+- Remove fallbacks
+- Test auth still works","Critical",
+"Add Rate Limiting","Critical - Security","API unprotected from abuse/DDoS.
+
+Checklist:
+- Install express-rate-limit
+- Configure limits (100 req/15min suggested)
+- Apply to all routes
+- Test rate limiting works","Critical",
+"Add Input Validation (Zod)","Critical - Security","No schema validation on any endpoint.
+
+Checklist:
+- Install Zod
+- Create schemas for user endpoints
+- Create schemas for team endpoints
+- Create schemas for group endpoints
+- Apply validation middleware","Critical",
+"Fix PrismaClient Singleton","Critical - Security","Each controller creates new PrismaClient instance - can exhaust connection pool.
+
+Checklist:
+- Create lib/prisma.ts singleton
+- Update all controller imports
+- Test database operations","Critical",
+"Add Health Check Endpoint","Critical - Security","Load balancers need /health endpoint.
+
+Checklist:
+- Add GET /health route
+- Return status + timestamp
+- Test endpoint","Critical",
+"Integrate Sentry","Critical - Monitoring","No error monitoring currently. Can't diagnose production issues.
+
+Checklist:
+- Create Sentry account/project
+- Install @sentry/node (server)
+- Install @sentry/nextjs (client)
+- Configure DSN
+- Test error reporting","Critical",
+"Add React Error Boundaries","Critical - Monitoring","App shows white screen on component crash.
+
+Checklist:
+- Create ErrorBoundary component
+- Wrap layout.tsx
+- Create fallback UI
+- Connect to Sentry","Critical",
+"Create GitHub Actions CI/CD","Critical - DevOps","No automated testing or deployment. Manual = human error.
+
+Checklist:
+- Create .github/workflows/ci.yml
+- Run lint on PR
+- Run tests on PR
+- Build check on PR
+- Auto-deploy on merge to main","Critical",
+"Replace console.logs with Winston","High Priority - Logging","309 console.log statements in backend. Need structured logging.
+
+Checklist:
+- Install Winston
+- Create logger configuration
+- Replace logs in controllers
+- Replace logs in routes","High Priority",
+"Add Graceful Shutdown Handlers","High Priority - Logging","No signal handlers - connections terminated abruptly on deploy.
+
+Checklist:
+- Add SIGTERM handler
+- Disconnect Prisma on shutdown
+- Close server gracefully","High Priority",
+"Write Backend Tests","High Priority - Testing","Zero server tests currently. Unknown bugs in production.
+
+Checklist:
+- Set up Jest for server
+- Auth endpoint tests (5+)
+- User endpoint tests (5+)
+- Team endpoint tests (5+)
+- Group endpoint tests (5+)","High Priority",
+"Create Deployment Runbook","High Priority - Documentation","No step-by-step production deployment guide.
+
+Checklist:
+- Document server setup steps
+- Document all environment variables
+- Document database migration process
+- Document rollback procedures
+- Document health check verification","High Priority",
+"Create API Documentation","High Priority - Documentation","No OpenAPI/Swagger spec.
+
+Checklist:
+- Document auth endpoints
+- Document user endpoints
+- Document team endpoints
+- Document group endpoints
+- Document report endpoints","High Priority",
+"Create User Guide","High Priority - Documentation","No end-user documentation for Ops/franchisees.
+
+Checklist:
+- Login and account setup
+- Navigation overview
+- Reports usage guide
+- Common tasks walkthrough","High Priority",
+"DoorDash: Tattle Setup","Tattle Integration","Grant Business Group Admin access to Tattle email.
+
+One-time setup, ~15 min","Tattle",
+"GrubHub: Tattle Setup","Tattle Integration","Create Admin user for Tattle.
+
+One-time setup, ~15 min","Tattle",
+"UberEats: Tattle Setup","Tattle Integration","Add Tattle user to all ~98 stores.
+
+Split across 2 emails:
+- hueymagoos@imagx.com (49 locations)
+- hueymagoos+one@imagx.com (remaining)
+
+First name must be: threepd
+Process: Add user > Select store > Apply > Repeat
+
+Est. 1-2 hours","Tattle",
+"Notify Brian Litke","Tattle Integration","Email brian.litke@gettattle.com when all access granted.
+
+Verify reviews are syncing into Tattle.","Tattle",
+"Alpha Testing - Operations","Testing Phase","Operations team alpha testing.
+
+Checklist:
+- Identify Ops testers
+- Create test accounts
+- Schedule testing window
+- Create feedback collection doc
+- Collect and triage feedback
+- Fix critical bugs found","Alpha/Beta",
+"Beta Testing - Franchisees","Testing Phase","Select franchisee beta testing.
+
+Checklist:
+- Identify beta franchisees
+- Create accounts
+- Schedule testing window
+- Collect feedback
+- Fix bugs found","Alpha/Beta",
+"Training Materials","Testing Phase","Create training materials for portal users.
+
+Checklist:
+- Decide format (docs/video/live)
+- Create materials
+- Schedule training sessions
+- Conduct training
+- Q&A and support","Alpha/Beta",
+"Net Sales Report","Done","COMPLETED - New report page at /reports/net-sales-report with location filtering, order channel/type filtering, date range selection, and CSV export.","Done",
