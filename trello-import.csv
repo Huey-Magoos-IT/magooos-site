@@ -1,0 +1,52 @@
+Card Name,List Name,Description,Labels
+"Build Auth Middleware + Remove Admin Fallbacks","To-Do","Replaces: 'Fix JWT Validation' and 'Remove Hardcoded Admin Fallback' cards (archive those)
+
+API Gateway already validates tokens. Server just needs to DECODE the JWT to know WHO the user is. Currently any authenticated user gets admin privileges on group operations.
+
+1. Create global middleware that:
+   - Decodes the already-validated JWT
+   - Extracts sub (cognitoId) from payload
+   - Looks up user via prisma singleton
+   - Attaches user to req.user
+
+2. Remove ALL per-controller auth spaghetti:
+   - Bearer token check (not verified, just accepted)
+   - x-user-cognito-id header check
+   - requestingUserId from body (spoofable)
+   - Admin fallback (// In a real implementation comment)
+
+Files affected:
+   - groupController.ts (7 instances of admin fallback)
+   - userController.ts (additional instances)
+
+3. Controllers just read req.user after middleware runs","Critical"
+"Configure Rate Limiting at API Gateway","To-Do","Replaces: 'Add Rate Limiting' card (archive that one)
+
+DO NOT add rate limiting at Express level. API Gateway proxies all requests from a single IP so express-rate-limit would throttle the entire app.
+
+Instead configure in AWS Console:
+1. Go to API Gateway console
+2. Select the API
+3. Create a Usage Plan with throttle settings
+4. Associate with API stage
+
+Takes ~5 min in the console.","Critical"
+"Fix PrismaClient Singleton (10 instances)","To-Do","Replaces: original 'Fix PrismaClient Singleton' card (archive that one) - updated with full scope
+
+TIER 1 PRIORITY - Will cause outages with hundreds of users.
+
+Each new PrismaClient() opens its own connection pool (default 5 connections). 10 instances = potentially 50 connections per server process. RDS typically allows ~100 connections. With PM2 and auto-scaling this WILL exhaust the database.
+
+10 files need updating:
+- server/src/controllers/groupController.ts
+- server/src/controllers/searchController.ts
+- server/src/controllers/projectController.ts
+- server/src/controllers/taskController.ts
+- server/src/controllers/teamController.ts
+- server/src/controllers/userController.ts
+- server/src/routes/groupRoutes.ts
+- server/src/routes/teamRoutes.ts
+- server/src/index.ts (/api-roles handler)
+- server/src/index.ts (/teams/roles handler)
+
+Fix: Create server/src/lib/prisma.ts singleton and update all imports","Critical"
