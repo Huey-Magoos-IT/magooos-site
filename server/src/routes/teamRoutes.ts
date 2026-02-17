@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 
 import {
   getTeams,
@@ -14,7 +14,6 @@ import {
 } from "../controllers/teamController";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Team routes
 router.get("/", getTeams);

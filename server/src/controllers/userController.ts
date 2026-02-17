@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 import {
   CognitoIdentityProviderClient,
   AdminDisableUserCommand,
@@ -19,14 +19,6 @@ const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.AW
 const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "us-east-2_5rTsYPjpA";
 const COGNITO_CLIENT_ID = process.env.COGNITO_CLIENT_ID || process.env.NEXT_PUBLIC_COGNITO_USER_POOL_CLIENT_ID || "11rv3fvrcmla2kgi5fs1ois71f";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  },
-  log: ['query', 'info', 'warn', 'error']
-});
 
 /**
  * Update user locations (admin or locationAdmin)
