@@ -170,7 +170,7 @@ EC2 (auto-scaled) ←→ RDS (VPC)
             - "Order Type" - Shows type column, hides Order Channel
             - "Both" - Shows both columns with dual filtering
         - Order Channel options: In Store, Web, UberEats, Doordash, Grubhub, Catering, Web Catering, ezCater, Off-Premise
-        - Order Type options: Dine In, Drive-Thru, To-Go, Pickup, Third Party, Phone In, Web Orders, Unknown
+        - Order Type options: Dine In, Drive-Thru, To-Go, Pickup, Third Party Delivery, Phone In, Web Orders, Unknown
         - Location filtering using Location ID matching
         - Date range selection from Dec 30, 2024 with preset options
         - CSV export functionality
