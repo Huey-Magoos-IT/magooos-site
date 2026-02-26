@@ -61,9 +61,9 @@ const ORDER_TYPES = [
   { id: 2, name: 'Drive-Thru' },
   { id: 3, name: 'To-Go' },
   { id: 4, name: 'Pickup' },
-  { id: 5, name: 'Third Party' },
+  { id: 5, name: 'Third Party Delivery' },
   { id: 6, name: 'Phone In' },
-  { id: 7, name: 'Web Order' },
+  { id: 7, name: 'Web Orders' },
 ];
 
 const NetSalesReportPage = () => {

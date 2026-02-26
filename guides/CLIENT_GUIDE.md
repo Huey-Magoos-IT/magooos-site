@@ -215,7 +215,7 @@ client/
   * Aggregated net sales by date, location, and order channel/type
   * "Filter By" toggle with three modes: Order Channel, Order Type, or Both
   * Order Channel filtering: In Store, Web, UberEats, Doordash, Grubhub, Catering, Web Catering, ezCater, Off-Premise
-  * Order Type filtering: Dine In, Drive-Thru, To-Go, Pickup, Third Party, Phone In, Web Orders, Unknown
+  * Order Type filtering: Dine In, Drive-Thru, To-Go, Pickup, Third Party Delivery, Phone In, Web Orders, Unknown
   * Location filtering using Location ID matching (same as other reports)
   * Date range selection from Dec 30, 2024 with preset options
   * CSV export functionality for filtered data
