@@ -85,8 +85,8 @@ export const getDateRangeForPreset = (
       endDate = startOfWeek(now) > yesterday ? startOfWeek(now) : yesterday;
       break;
     case "Last Week":
-      startDate = startOfWeek(subWeeks(now, 1));
-      endDate = endOfWeek(subWeeks(now, 1));
+      startDate = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      endDate = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
       // Ensure endDate is not after yesterday
       if (endDate > yesterday) {
         endDate = yesterday;
