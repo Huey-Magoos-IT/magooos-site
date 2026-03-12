@@ -5,6 +5,7 @@ declare global {
     interface Request {
       user?: {
         userId: number;
+        cognitoId: string;
         username: string;
       };
     }
