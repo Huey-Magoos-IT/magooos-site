@@ -14,7 +14,9 @@ All other AWS integrations should prefer direct HTTP/HTTPS requests or API Gatew
 
 ## Express API (`server/src/`)
 - Controllers: `taskController.ts` ↔ Prisma models
-- Routes: JWT validation → API Gateway
+- Routes: No server-side JWT validation currently — API Gateway passes requests through with Authorization: NONE
+- Auth pattern: Controllers use copy-pasted auth blocks that accept Bearer tokens but fall back to looking up 'admin' user instead of decoding JWT (see Auth Status section below)
+- PrismaClient: Singleton pattern via `server/src/lib/prisma.ts` — all controllers and routes import from here
 - Team management: `teamController.ts` with role-based permissions
 - Role management: `Role` and `TeamRole` models for granular access control
 - User lifecycle management: Includes enabling and disabling user accounts (soft delete) via API, synchronized with AWS Cognito. Includes email field in User model (added via migrations like 20250908233723_add_email_feature_finally).
@@ -196,23 +198,22 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Role-restricted to `DATA` or `ADMIN`
     - Supports price portal workflows
 
-## AWS Infrastructure:
-- EC2 auto-scaling groups for backend API (port 80)
-- RDS PostgreSQL with read replicas and daily backups
-- S3 buckets with versioning and access logging
-- Cognito user pools with custom attributes
-- API Gateway with rate limiting and updated CORS
-- Lambda functions for cron jobs and user management
-- DynamoDB for location data and reference tables
-- CloudWatch monitoring and alerting
+## AWS Infrastructure (Actual State):
+- EC2: Single `t2.micro` instance (`i-0ed2c164b6ca15f97`) in `huey_public-subnet-1`, NO auto-scaling
+- EC2 Public IP: `3.15.240.21` (auto-assigned, not Elastic IP)
+- RDS PostgreSQL in private subnets (accessible only from EC2 security group)
+- S3 buckets for profile images, CSV data, and net sales data
+- Cognito User Pool (`us-east-2_5rTsYPjpA`) with ~29 users
+- API Gateway (`puvzjk01yl`): REST API with `/{proxy+}` HTTP proxy to EC2 — **Authorization: NONE** (no Cognito authorizer)
+- Lambda API Gateway (`sutpql04fb`): Separate gateway for direct Lambda/DynamoDB integrations
+- Lambda functions for daily data processing (Step Functions, 2AM UTC)
+- DynamoDB for location data (`Location-u3tk7jwqujcqfedzbv7hksrt4a-NONE`)
 
 ## Development Ecosystem:
-- CI/CD pipelines with Amplify and GitHub Actions
-- Infrastructure-as-code (Terraform) for AWS resources
-- Local development environment with Docker
-- Automated testing with Jest and Cypress
-- Error tracking with Sentry integration
-- Documentation system with architecture diagrams
+- CI/CD: Amplify for frontend deployment
+- Testing: Jest with @testing-library/react (client-side only, ~15% coverage threshold)
+- Process management: PM2 on EC2
+- No Terraform, Docker, Cypress, Sentry, or GitHub Actions currently in use
 
 ## Extras Directory and Additional Tools:
 - `extras/` contains Lambda scripts and utilities:
@@ -230,21 +231,22 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 # AWS OPERATIONAL DETAILS
 
 ## Network Architecture:
-- Multi-AZ VPC with public/private subnets
-- NAT Gateway in public subnet for Lambda outbound traffic
-- Internet Gateway for public subnet access
-- Private subnets route through NAT Gateway (`0.0.0.0/0`)
-- Security groups with least-privilege access:
-    * EC2: Inbound from API Gateway
-    * RDS: Inbound from EC2 only
-    * Lambda: Outbound through NAT Gateway
-    * NAT Gateway: No inbound, all outbound
+- VPC: `huey_vpc` (`vpc-08bef18ff975172bc`), CIDR `10.0.0.0/16`
+- Subnets: 1 public (`huey_public-subnet-1` in us-east-2a), 2 private (`huey_private-subnet-1` in us-east-2a, `huey_private-subnet-2` in us-east-2b)
+- Internet Gateway: `huey_internet-gateway` for public subnet
+- NAT Gateway: `huey-nat-gateway` for private subnet outbound traffic
+- Security groups:
+    * EC2 (`huey_ec2-sg`): **Inbound ports 22, 80, 443 open to `0.0.0.0/0` (entire internet)** — NOT restricted to API Gateway
+    * RDS: Inbound port 5432 from EC2 security group only (outbound rule `sg-0a619d6def1602fa2`)
+- **KNOWN ISSUE**: EC2 is directly accessible on its public IP (`3.15.240.21:80`), bypassing API Gateway entirely. Any auth must be enforced at the Express level.
 
 ## EC2 Configuration:
-- Amazon Linux AMI with PM2 process management
-- Security hardening: SSH only via IAM keys, weekly AMI updates
-- Auto-scaling based on CPU/memory metrics
-- Port 80 exposed for API Gateway integration
+- Instance: `t2.micro` (`i-0ed2c164b6ca15f97`), Amazon Linux 2023
+- PM2 process management with `ecosystem.config.js`
+- IAM role: `EC2-Backend-CognitoDisableUser-Role`
+- NO auto-scaling configured — single instance
+- Port 80 exposed for HTTP traffic
+- Key pair: `standard-key`
 
 ## RDS Security:
 - Private subnet placement with encrypted storage
@@ -271,11 +273,21 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 - Read-only access through IAM role permissions
 
 ## Cognito Integration:
-- Frontend uses AWS Amplify UI components
-- API Gateway Cognito authorizers for all endpoints
-- JWT tokens required with 1-hour expiration
-- Post-confirmation Lambda syncs users to RDS
-- MFA enforcement for admin users
+- User Pool: `us-east-2_5rTsYPjpA` (User pool - jasw4-), Client ID: `11rv3fvrcmla2kgi5fs1ois71f`
+- Frontend uses AWS Amplify v6 (`fetchAuthSession`, `getCurrentUser`) for auth flow
+- Frontend sends `Authorization: Bearer <accessToken>` on all API requests via RTK Query `prepareHeaders`
+- **API Gateway has NO Cognito authorizer** — Authorization is set to NONE on `/{proxy+}`
+- **Server does NOT validate JWT tokens** — controllers accept Bearer tokens but fall back to looking up 'admin' user instead of decoding
+- Post-confirmation Lambda syncs new users to RDS (creates User record with cognitoId)
+- All users in PostgreSQL have `cognitoId` field populated, matching Cognito `sub` claim
+- JWKS URL: `https://cognito-idp.us-east-2.amazonaws.com/us-east-2_5rTsYPjpA/.well-known/jwks.json`
+
+## Auth Status (Current):
+- **What works**: Cognito handles login/signup correctly. Frontend gets valid JWTs. Tokens reach EC2.
+- **What's broken**: Server never decodes or verifies the JWT. Every Bearer token request resolves to the 'admin' user via `prisma.user.findFirst({ where: { username: 'admin' } })`. This means every authenticated user has admin privileges on group/user operations.
+- **Admin fallback locations**: 30 occurrences across `groupController.ts` (16) and `userController.ts` (14). Pattern: Bearer token → "In a real implementation, decode JWT" → look up admin user.
+- **Controllers with NO auth**: `projectController.ts`, `taskController.ts`, `searchController.ts` — completely open, no auth checks at all.
+- **Planned fix**: Phase A (add JWT decode middleware, log results, keep fallback) → Phase B (remove all 30 admin fallbacks, middleware becomes authoritative)
 
 ## S3 Configuration:
 1.  **Profile Pictures Bucket (`huey-site-images`):**
@@ -319,8 +331,9 @@ EC2 (auto-scaled) ←→ RDS (VPC)
 
 ## Backend:
 - Node.js/Express REST API
-- Prisma for database management
-- JWT authentication
+- Prisma ORM with singleton pattern (`server/src/lib/prisma.ts`)
+- Auth: Bearer tokens forwarded from frontend but NOT validated server-side (see Auth Status section)
+- Health check endpoint: `GET /health`
 - Direct AWS integration (AWS SDK used in backend for specific services like Cognito admin operations, otherwise SDK-less approaches preferred)
 
 ## DevOps:
@@ -370,10 +383,11 @@ EC2 (auto-scaled) ←→ RDS (VPC)
     - Security group allows inbound: 22 (SSH), 80 (HTTP), 443 (HTTPS)
 
 2.  **API Gateway Integration:**
-    - Proxy integration to EC2 public IP (`3.15.240.21`)
-    - `{proxy+}` resource forwards all paths
+    - Main gateway (`puvzjk01yl`): REST API, `/{proxy+}` HTTP proxy to EC2 public IP (`3.15.240.21`)
+    - Authorization: NONE — no Cognito authorizer on the gateway
     - HTTP integration type with proxy enabled
     - CORS configured for Amplify domain
+    - **Security note**: Since EC2 port 80 is open to `0.0.0.0/0`, all auth must be enforced at Express level
 
 ## Maintenance Procedures:
 1.  **Code Updates:**
