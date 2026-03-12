@@ -5,6 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import prisma from "./lib/prisma";
+import authMiddleware from "./middleware/auth";
 /* ROUTE IMPORTS */
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -40,6 +41,9 @@ app.use((err: any, req: Request, res: Response, next: any) => {
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
+
+/* AUTH MIDDLEWARE - Phase A: verifies JWT and attaches req.user, but does NOT block requests */
+app.use(authMiddleware);
 
 /* ROUTES */
 app.get("/", (req, res) => {
