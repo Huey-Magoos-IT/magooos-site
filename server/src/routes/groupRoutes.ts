@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 
 import {
   getGroups,
@@ -13,7 +13,6 @@ import {
 } from "../controllers/groupController";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Group management
 router.get("/", getGroups);

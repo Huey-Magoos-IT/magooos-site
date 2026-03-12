@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { PrismaClient } from "@prisma/client";
+import prisma from "./lib/prisma";
 /* ROUTE IMPORTS */
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -46,11 +46,15 @@ app.get("/", (req, res) => {
   res.send("This is home route");
 });
 
+/* HEALTH CHECK - Used by load balancers to verify service is running */
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
 /* DIRECT ENDPOINTS FOR ROLES - Must be BEFORE route registration */
 app.get("/api-roles", async (req, res) => {
   try {
     console.log("[GET /api-roles] Direct root roles endpoint called");
-    const prisma = new PrismaClient();
     const roles = await prisma.role.findMany();
     
     // Set explicit no-cache headers
@@ -73,7 +77,6 @@ app.get("/api-roles", async (req, res) => {
 app.get("/teams/roles", async (req, res) => {
   try {
     console.log("[GET /teams/roles] Direct root endpoint called");
-    const prisma = new PrismaClient();
     const roles = await prisma.role.findMany();
     
     // Set explicit no-cache headers
