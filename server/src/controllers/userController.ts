@@ -30,33 +30,12 @@ export const updateUserLocations = async (req: Request, res: Response): Promise<
     
     console.log(`[PATCH /users/${targetUserId}/locations] Updating user locations:`, { locationCount: locationIds?.length });
     
-    // --- Robust Authentication Check ---
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
-
-    if (requestingUserIdFromBody) {
-      console.log(`[PATCH /users/${targetUserId}/locations] Auth: Using requestingUserId from body:`, requestingUserIdFromBody);
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      console.log(`[PATCH /users/${targetUserId}/locations] Auth: Using Cognito ID from header:`, cognitoIdFromHeader);
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      // In a real app, decode JWT here. For now, assume admin if token exists.
-      console.log(`[PATCH /users/${targetUserId}/locations] Auth: Using Bearer token (assuming admin)`);
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } }); // Fallback/placeholder
-    } else if (process.env.NODE_ENV !== 'production') {
-       console.log(`[PATCH /users/${targetUserId}/locations] Auth: No user found, using admin fallback (dev)`);
-       requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
-
-    if (!requestingUser) {
-      console.error(`[PATCH /users/${targetUserId}/locations] Authentication failed - no valid requesting user found`);
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
-    console.log(`[PATCH /users/${targetUserId}/locations] Authenticated User: ${requestingUser.username} (ID: ${requestingUser.userId})`);
+    const requestingUser = req.user;
 
     // Fetch requesting user's roles
     const userWithRoles = await prisma.user.findUnique({
@@ -71,7 +50,6 @@ export const updateUserLocations = async (req: Request, res: Response): Promise<
         }
       }
     });
-    // --- End Robust Authentication Check ---
 
     // Determine roles based on the fetched userWithRoles
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
@@ -418,85 +396,31 @@ export const updateUserTeam = async (req: Request, res: Response): Promise<void>
   }
 
   try {
-    // Multiple authentication methods for flexibility with API Gateway
-    let requestingUser = null;
-    
-    // Method 1: Check for explicit requestingUserId in body
-    // This is helpful for API Gateway which might strip headers
-    if (requestingUserId) {
-      console.log("[UserTeam Update] Using requestingUserId from body:", requestingUserId);
-      requestingUser = await prisma.user.findUnique({
-        where: { userId: Number(requestingUserId) },
-        include: {
-          team: {
-            include: {
-              teamRoles: { include: { role: true } }
-            }
-          }
-        }
-      });
-      
-      if (requestingUser) {
-        console.log("[UserTeam Update] Found requesting user from body param:", requestingUser.username);
-      }
-    }
-    
-    // Method 2: Check for Cognito ID in headers (traditional auth)
-    if (!requestingUser) {
-      const requestingUserCognitoId = req.headers['x-user-cognito-id'] as string;
-      
-      if (requestingUserCognitoId) {
-        console.log("[UserTeam Update] Using Cognito ID from header:", requestingUserCognitoId);
-        requestingUser = await prisma.user.findUnique({
-          where: { cognitoId: requestingUserCognitoId },
-          include: {
-            team: {
-              include: {
-                teamRoles: { include: { role: true } }
-              }
-            }
-          }
-        });
-        
-        if (requestingUser) {
-          console.log("[UserTeam Update] Found requesting user from Cognito ID:", requestingUser.username);
-        }
-      }
-    }
-    
-    // Fallback for 'admin' user in development/testing
-    if (!requestingUser && process.env.NODE_ENV !== 'production') {
-      console.log("[UserTeam Update] No authenticated user found, looking for admin user");
-      // Find the admin user for testing purposes
-      requestingUser = await prisma.user.findFirst({
-        where: { username: 'admin' },
-        include: {
-          team: {
-            include: {
-              teamRoles: { include: { role: true } }
-            }
-          }
-        }
-      });
-      
-      if (requestingUser) {
-        console.log("[UserTeam Update] Using admin user as fallback in non-production mode");
-      }
-    }
-    
-    if (!requestingUser) {
-      console.error("[UserTeam Update] Authentication failed - no valid requesting user found");
-      res.status(401).json({
-        message: "Authentication required",
-        details: "Please provide authentication via header or requestingUserId parameter"
-      });
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
+      res.status(401).json({ message: "Authentication required" });
       return;
     }
-    
+
+    const requestingUser = await prisma.user.findUnique({
+      where: { userId: req.user.userId },
+      include: {
+        team: {
+          include: {
+            teamRoles: { include: { role: true } }
+          }
+        }
+      }
+    });
+
+    if (!requestingUser) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
     // Check if the requesting user is an admin or has admin role
     const isAdmin = requestingUser.team?.isAdmin ||
-                   requestingUser.team?.teamRoles?.some(tr => tr.role.name.toUpperCase() === 'ADMIN') ||
-                   requestingUser.username === 'admin';
+                   requestingUser.team?.teamRoles?.some(tr => tr.role.name.toUpperCase() === 'ADMIN');
     
     if (!isAdmin) {
       console.error("[PATCH /users/:userId/team] Access denied: User is not an admin");
@@ -988,29 +912,14 @@ export const listCognitoUsers = async (req: Request, res: Response): Promise<voi
     
     console.log(`[GET /users/cognito/list] Listing Cognito users with filter: ${filter}, groupId: ${groupId}`);
     
-    // Admin authorization check using existing pattern
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
-
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
-
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
 
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1024,7 +933,7 @@ export const listCognitoUsers = async (req: Request, res: Response): Promise<voi
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
     const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
+
     // Enhanced authorization: Allow location admins for their own group
     if (!isAdmin && !isLocationAdmin) {
       res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
@@ -1097,29 +1006,14 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
     
     console.log(`[POST /users/cognito/${username}/resend-verification] Resending verification link`);
     
-    // Admin authorization check using existing pattern
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
-
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
-
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
 
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1133,7 +1027,7 @@ export const resendVerificationLink = async (req: Request, res: Response): Promi
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
     const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
+
     if (!isAdmin && !isLocationAdmin) {
       res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
       return;
@@ -1269,30 +1163,15 @@ export const toggleUserStatus = async (req: Request, res: Response): Promise<voi
       return;
     }
     
-    // Authentication check using existing pattern
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
-
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
-
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
 
     // Check if requesting user has PRICE_ADMIN or ADMIN role
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1381,29 +1260,14 @@ export const updateUserEmail = async (req: Request, res: Response): Promise<void
   }
  
   try {
-    // --- Authorization Check ---
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
- 
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
- 
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
- 
+
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1414,14 +1278,13 @@ export const updateUserEmail = async (req: Request, res: Response): Promise<void
         }
       }
     });
- 
+
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
+
     if (!isAdmin) {
       res.status(403).json({ message: "Access denied: Admin role required to update user email" });
       return;
     }
-    // --- End Authorization Check ---
  
     const user = await prisma.user.findUnique({
       where: { userId: parseInt(userId) },
@@ -1466,29 +1329,14 @@ export const deleteCognitoUser = async (req: Request, res: Response): Promise<vo
     
     console.log(`[DELETE /users/cognito/${username}] Deleting unconfirmed Cognito user`);
     
-    // Admin authorization check using existing pattern
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
-
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
-
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
 
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1502,7 +1350,7 @@ export const deleteCognitoUser = async (req: Request, res: Response): Promise<vo
 
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
     const isLocationAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'LOCATION_ADMIN');
-    
+
     if (!isAdmin && !isLocationAdmin) {
       res.status(403).json({ message: "Access denied: Admin or Location Admin role required" });
       return;
@@ -1605,29 +1453,14 @@ export const adminResetUserPassword = async (req: Request, res: Response): Promi
   }
 
   try {
-    // --- Authorization Check (copied from updateUserEmail) ---
-    let requestingUser = null;
-    const requestingUserIdFromBody = req.body.requestingUserId;
-    const cognitoIdFromHeader = req.headers['x-user-cognito-id'] as string;
-    const authHeader = req.headers['authorization'] as string;
- 
-    if (requestingUserIdFromBody) {
-      requestingUser = await prisma.user.findUnique({ where: { userId: Number(requestingUserIdFromBody) } });
-    } else if (cognitoIdFromHeader) {
-      requestingUser = await prisma.user.findUnique({ where: { cognitoId: cognitoIdFromHeader } });
-    } else if (authHeader && authHeader.startsWith('Bearer ')) {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    } else if (process.env.NODE_ENV !== 'production') {
-      requestingUser = await prisma.user.findFirst({ where: { username: 'admin' } });
-    }
- 
-    if (!requestingUser) {
+    // Authentication: Use verified user from JWT middleware
+    if (!req.user?.userId) {
       res.status(401).json({ message: "Authentication required" });
       return;
     }
- 
+
     const userWithRoles = await prisma.user.findUnique({
-      where: { userId: requestingUser.userId },
+      where: { userId: req.user.userId },
       include: {
         team: {
           include: {
@@ -1638,14 +1471,13 @@ export const adminResetUserPassword = async (req: Request, res: Response): Promi
         }
       }
     });
- 
+
     const isAdmin = userWithRoles?.team?.teamRoles?.some((tr: any) => tr.role.name === 'ADMIN');
-    
+
     if (!isAdmin) {
       res.status(403).json({ message: "Access denied: Admin role required to reset password" });
       return;
     }
-    // --- End Authorization Check ---
 
     const user = await prisma.user.findUnique({
       where: { userId: parseInt(userId) },
